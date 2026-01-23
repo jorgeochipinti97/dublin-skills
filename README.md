@@ -66,6 +66,8 @@ dublin-skill-install .        # Interactive mode
 dublin-skill-install . --all  # Install all skills
 ```
 
+The installer automatically detects your system language (`LANG` environment variable) and displays messages in Spanish or English.
+
 ## Usage
 
 ### With Claude Code
