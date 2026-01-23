@@ -25,6 +25,7 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[product-planner](skills/product/product-planner)** | Product planning: PRDs, user stories, MVP scoping |
 | **[systems-thinking](skills/discovery/systems-thinking)** | Systems analysis: feedback loops, leverage points |
 | **[bind-api](skills/bind-api)** | BIND Argentina API integration (Open Banking) |
+| **[blog-writer](skills/content/blog-writer)** | Professional blog posts in English/Spanish — no hype, no fluff |
 
 ## Installation
 
@@ -46,10 +47,10 @@ The installer will create `.claude/skills/` if it doesn't exist.
 ### Available skills for installation
 
 ```
-bind-api              brand-guidelines      brand-identity
-domain-modeler        hexagonal-architect   premium-frontend-design
-product-planner       skill-creator         systems-thinking
-tdd-workflow
+bind-api              blog-writer           brand-guidelines
+brand-identity        domain-modeler        hexagonal-architect
+premium-frontend-design  product-planner    skill-creator
+systems-thinking      tdd-workflow
 ```
 
 ### Global command (recommended)
@@ -96,6 +97,7 @@ Each skill has a prompt file in `prompts/` with activation examples:
 ```
 prompts/
 ├── bind-api.md
+├── blog-writer.md
 ├── brand-guidelines.md
 ├── brand-identity.md
 ├── domain-modeler.md
@@ -146,6 +148,7 @@ description: Short description of when to use this skill
 ## Categories
 
 - **architecture** — Software architecture patterns
+- **content** — Writing and content creation
 - **discovery** — Problem analysis and exploration
 - **frontend** — Interface development
 - **implementation** — Development practices
