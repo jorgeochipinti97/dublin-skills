@@ -85,5 +85,7 @@ When adding or modifying skills:
 2. **Reference files**: Put reusable code/templates in a `references/` subdirectory
 3. **Anti-patterns**: Document what NOT to do — this is as important as the positive guidance
 4. **Output standards**: Specify the expected format (complete code, types, specific patterns)
+5. **Update install.sh**: Add new skills to the `SKILLS` array in `install.sh` (alphabetical order)
+6. **Update README.md**: Add to the "Available Skills" table and "Available skills for installation" list
 
 When using skills in other projects, load the SKILL.md and relevant reference files as context.

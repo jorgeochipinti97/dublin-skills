@@ -76,6 +76,7 @@ print_header() {
 typeset -A SKILLS
 SKILLS=(
     bind-api "bind-api"
+    blog-writer "content/blog-writer"
     brand-guidelines "brand-guidelines"
     brand-identity "brand-identity"
     domain-modeler "architecture/domain-modeler"
