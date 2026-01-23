@@ -16,6 +16,7 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | Skill | Description |
 |-------|-------------|
 | **[skill-creator](skills/skill-creator)** | Guide for creating effective skills that extend Claude's capabilities |
+| **[brand-identity](skills/brand-identity)** | Brand identity systems: color palettes, typography, spacing, UX principles |
 | **[brand-guidelines](skills/brand-guidelines)** | Anthropic brand colors, typography, and visual styling |
 | **[premium-frontend-design](skills/frontend/premium-frontend-design)** | Apple/Framer-quality React/Next.js interfaces: glass effects, gradients, micro-interactions |
 | **[hexagonal-architect](skills/architecture/hexagonal-architect)** | Hexagonal architecture (ports & adapters) for NestJS |
@@ -45,9 +46,10 @@ The installer will create `.claude/skills/` if it doesn't exist.
 ### Available skills for installation
 
 ```
-bind-api              domain-modeler        hexagonal-architect
-brand-guidelines      premium-frontend-design    product-planner
-skill-creator         systems-thinking      tdd-workflow
+bind-api              brand-guidelines      brand-identity
+domain-modeler        hexagonal-architect   premium-frontend-design
+product-planner       skill-creator         systems-thinking
+tdd-workflow
 ```
 
 ### Global command (recommended)
@@ -64,6 +66,15 @@ Then use from any project:
 cd my-project
 dublin-skill-install .        # Interactive mode
 dublin-skill-install . --all  # Install all skills
+```
+
+### Updating skills
+
+Update previously installed skills to their latest versions:
+
+```bash
+cd my-project
+dublin-skill-install update   # Updates all installed skills
 ```
 
 The installer automatically detects your system language (`LANG` environment variable) and displays messages in Spanish or English.
@@ -84,15 +95,16 @@ Each skill has a prompt file in `prompts/` with activation examples:
 
 ```
 prompts/
-├── skill-creator.md
+├── bind-api.md
 ├── brand-guidelines.md
-├── premium-frontend-design.md
-├── hexagonal-architect.md
+├── brand-identity.md
 ├── domain-modeler.md
-├── tdd-workflow.md
+├── hexagonal-architect.md
+├── premium-frontend-design.md
 ├── product-planner.md
+├── skill-creator.md
 ├── systems-thinking.md
-└── bind-api.md
+└── tdd-workflow.md
 ```
 
 Use these as quick reference for how to invoke each skill.

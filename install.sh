@@ -38,6 +38,9 @@ if [[ "$LANG" == es_* ]]; then
     L_DONE="Instalacion completada."
     L_INSTALLED_IN="Skills instaladas en"
     L_EXITING="Saliendo..."
+    L_UPDATING="Actualizando skills instaladas..."
+    L_NO_SKILLS="No hay skills instaladas para actualizar"
+    L_UPDATED="Actualizacion completada."
 else
     L_AVAILABLE="Available skills"
     L_INSTALL_ALL="Install all"
@@ -56,6 +59,9 @@ else
     L_DONE="Installation complete."
     L_INSTALLED_IN="Skills installed in"
     L_EXITING="Exiting..."
+    L_UPDATING="Updating installed skills..."
+    L_NO_SKILLS="No skills installed to update"
+    L_UPDATED="Update complete."
 fi
 
 print_header() {
@@ -71,6 +77,7 @@ typeset -A SKILLS
 SKILLS=(
     bind-api "bind-api"
     brand-guidelines "brand-guidelines"
+    brand-identity "brand-identity"
     domain-modeler "architecture/domain-modeler"
     hexagonal-architect "architecture/hexagonal-architect"
     premium-frontend-design "frontend/premium-frontend-design"
@@ -127,8 +134,53 @@ install_all() {
     done
 }
 
+update_skills() {
+    local claude_dir="$1/.claude"
+    local skills_dir="$claude_dir/skills"
+
+    if [[ ! -d "$skills_dir" ]]; then
+        echo "${RED}${L_NO_SKILLS}${NC}"
+        exit 1
+    fi
+
+    echo "${BLUE}${L_UPDATING}${NC}"
+    echo ""
+
+    local found=0
+    for skill_folder in "$skills_dir"/*/; do
+        if [[ -d "$skill_folder" ]]; then
+            local skill_name=$(basename "$skill_folder")
+            if [[ -n "${SKILLS[$skill_name]}" ]]; then
+                install_skill "$skill_name" "$claude_dir"
+                found=1
+            fi
+        fi
+    done
+
+    if [[ $found -eq 0 ]]; then
+        echo "${RED}${L_NO_SKILLS}${NC}"
+        exit 1
+    fi
+
+    echo ""
+    echo "${GREEN}${L_UPDATED}${NC}"
+}
+
 main() {
     print_header
+
+    # Handle update command
+    if [[ "$1" == "update" ]]; then
+        local target_dir="${2:-.}"
+        target_dir="$(cd "$target_dir" 2>/dev/null && pwd)" || {
+            echo "${RED}${L_DIR_NOT_FOUND}: $2${NC}"
+            exit 1
+        }
+        echo "${L_TARGET_DIR}: ${BLUE}$target_dir${NC}"
+        echo ""
+        update_skills "$target_dir"
+        exit 0
+    fi
 
     local target_dir="${1:-.}"
     target_dir="$(cd "$target_dir" 2>/dev/null && pwd)" || {
