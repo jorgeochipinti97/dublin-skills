@@ -50,19 +50,20 @@ brand-guidelines      premium-frontend-design    product-planner
 skill-creator         systems-thinking      tdd-workflow
 ```
 
-### Global alias (optional)
+### Global command (recommended)
 
-Add to your shell config:
+Create a symlink to use `dublin-skill-install` from anywhere:
 
 ```bash
-alias dublin-skills-install="/path/to/dublin-skills/install.sh"
+sudo ln -sf /path/to/dublin-skills/install.sh /usr/local/bin/dublin-skill-install
 ```
 
 Then use from any project:
 
 ```bash
 cd my-project
-dublin-skills-install . --all
+dublin-skill-install .        # Interactive mode
+dublin-skill-install . --all  # Install all skills
 ```
 
 ## Usage
