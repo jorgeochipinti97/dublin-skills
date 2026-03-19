@@ -19,13 +19,17 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[brand-identity](skills/brand-identity)** | Brand identity systems: color palettes, typography, spacing, UX principles |
 | **[brand-guidelines](skills/brand-guidelines)** | Anthropic brand colors, typography, and visual styling |
 | **[premium-frontend-design](skills/frontend/premium-frontend-design)** | Apple/Framer-quality React/Next.js interfaces: glass effects, gradients, micro-interactions |
+| **[react-performance](skills/frontend/react-performance)** | React/Next.js performance optimization: useEffect elimination, rendering, RSC, bundle analysis |
 | **[hexagonal-architect](skills/architecture/hexagonal-architect)** | Hexagonal architecture (ports & adapters) for NestJS |
 | **[domain-modeler](skills/architecture/domain-modeler)** | Domain modeling with DDD: entities, value objects, aggregates |
 | **[tdd-workflow](skills/implementation/tdd-workflow)** | Test-driven development: red-green-refactor |
 | **[product-planner](skills/product/product-planner)** | Product planning: PRDs, user stories, MVP scoping |
+| **[product-ux-advisor](skills/product/product-ux-advisor)** | UX audit that diagnoses missing or critical patterns — onboarding, wizards, empty states, activation flows |
 | **[systems-thinking](skills/discovery/systems-thinking)** | Systems analysis: feedback loops, leverage points |
 | **[bind-api](skills/bind-api)** | BIND Argentina API integration (Open Banking) |
+| **[infra-security](skills/infra-security)** | Infrastructure architect and security specialist — AWS, VPS, Azure, AI-as-a-Service, Docker cleanup & disk hygiene |
 | **[blog-writer](skills/content/blog-writer)** | Professional blog posts in English/Spanish — no hype, no fluff |
+| **[remotion-video](skills/media/remotion-video)** | Programmatic video generation from React components with Remotion |
 
 ## Installation
 
@@ -49,8 +53,9 @@ The installer will create `.claude/skills/` if it doesn't exist.
 ```
 bind-api              blog-writer           brand-guidelines
 brand-identity        domain-modeler        hexagonal-architect
-premium-frontend-design  product-planner    skill-creator
-systems-thinking      tdd-workflow
+infra-security        premium-frontend-design  product-planner
+product-ux-advisor    react-performance     remotion-video
+skill-creator         systems-thinking      tdd-workflow
 ```
 
 ### Global command (recommended)
@@ -102,8 +107,12 @@ prompts/
 ├── brand-identity.md
 ├── domain-modeler.md
 ├── hexagonal-architect.md
+├── infra-security.md
 ├── premium-frontend-design.md
 ├── product-planner.md
+├── product-ux-advisor.md
+├── react-performance.md
+├── remotion-video.md
 ├── skill-creator.md
 ├── systems-thinking.md
 └── tdd-workflow.md
@@ -152,6 +161,7 @@ description: Short description of when to use this skill
 - **discovery** — Problem analysis and exploration
 - **frontend** — Interface development
 - **implementation** — Development practices
+- **media** — Video and multimedia generation
 - **product** — Product planning
 
 ## License

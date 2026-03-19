@@ -13,18 +13,28 @@ skills/
 ├── architecture/
 │   ├── domain-modeler/       # DDD patterns: entities, value objects, aggregates, domain events
 │   └── hexagonal-architect/  # Ports & adapters architecture for NestJS
+├── content/
+│   └── blog-writer/          # Professional blog posts in English/Spanish
 ├── discovery/
 │   └── systems-thinking/     # System analysis: feedback loops, leverage points, stocks/flows
 ├── frontend/
-│   └── premium-frontend-design/  # Apple/Framer-quality UI with glass effects, gradients, animations
-│       └── references/           # Code libraries for effects, typography, motion, anti-patterns
+│   ├── premium-frontend-design/  # Apple/Framer-quality UI with glass effects, gradients, animations
+│   │   └── references/           # Code libraries for effects, typography, motion, anti-patterns
+│   └── react-performance/        # React/Next.js performance: useEffect elimination, RSC, bundle optimization
+│       └── references/           # react-patterns.md, nextjs-patterns.md
 ├── implementation/
 │   └── tdd-workflow/         # Red-green-refactor cycle, test patterns, AAA structure
+├── media/
+│   └── remotion-video/       # Programmatic video generation with Remotion + React
 ├── product/
-│   └── product-planner/      # PRDs, user stories (Given/When/Then), MVP scoping
-└── bind-api/                 # BIND Argentina Open Banking API integration
-    ├── references/           # Full API documentation
-    └── scripts/              # TypeScript client implementation
+│   ├── product-planner/      # PRDs, user stories (Given/When/Then), MVP scoping
+│   └── product-ux-advisor/   # UX audit: diagnoses missing patterns (onboarding, wizards, e-commerce)
+│       └── references/       # patterns.md, examples.md, ecommerce.md
+├── bind-api/                 # BIND Argentina Open Banking API integration
+│   ├── references/           # Full API documentation
+│   └── scripts/              # TypeScript client implementation
+└── infra-security/           # Infrastructure architect + cybersecurity specialist
+    └── references/           # aws.md, ai-infra.md, vps.md, security.md, architecture.md, azure.md
 ```
 
 ## Skill File Convention
@@ -51,6 +61,16 @@ Creates luxury React/Next.js interfaces with:
 
 Reference files in `references/` contain complete CSS/React code for all effects.
 
+### react-performance
+Audits and optimizes React/Next.js applications:
+- useEffect elimination (derived state, event handlers, key prop reset)
+- React Compiler (React 19+) vs manual memoization strategy
+- Server Components decision tree, 'use client' boundary placement
+- Bundle optimization (dynamic imports, barrel files, tree shaking)
+- Data fetching patterns (React.cache, preloading, waterfall avoidance)
+
+Reference files: `react-patterns.md` (rendering, memoization), `nextjs-patterns.md` (RSC, caching, CWV).
+
 ### hexagonal-architect
 Structures NestJS projects with:
 - Domain layer (entities, value objects, domain events)
@@ -76,6 +96,22 @@ Integration with BIND Argentina Open Banking sandbox:
 - OAuth 2.0 Direct Login authentication
 - Endpoints: accounts, transfers, DEBIN, eCheqs, CBU/CVU validation
 - TypeScript client in `scripts/bind_client.ts`
+
+### infra-security
+Senior infrastructure architect + cybersecurity specialist:
+- AWS-first (EC2, ECS, Lambda, Bedrock, VPC, IAM, cost optimization)
+- AI as a Service patterns: agent platforms, vLLM, vector DBs, Bedrock deep dive
+- VPS hardening: nginx, SSL, SSH, Docker, firewall
+- Security audits: OWASP, WAF, IAM policies, incident response
+- Architecture from scratch: tiered cost/complexity options, HA, DR, anti-patterns
+
+### product-ux-advisor
+Product UX consultant that audits web products and diagnoses missing patterns:
+- Prioritized diagnosis: Critical / Recommended / Polish
+- SaaS patterns: onboarding, wizards, empty states, activation checklists, command palette
+- E-commerce patterns: PDP (gallery, reviews, variants, notify OOS), PLP, cart, checkout
+- Real-world references: Linear, Vercel, Stripe, Notion, Zara, ASOS, Amazon
+- Pairs with `premium-frontend-design` for implementation
 
 ## Working with This Repository
 
