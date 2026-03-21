@@ -255,6 +255,102 @@ EXPOSE 3000
 CMD ["node", "dist/main.js"]
 ```
 
+### Monorepo Docker Builds (pnpm/turborepo/nx)
+
+Monorepos break Docker builds because dependencies live at the root, not inside each app. The key problems:
+
+1. **Lockfile is at root** — `pnpm-lock.yaml` / `package-lock.json` is in `/`, not in `/apps/web`
+2. **Workspace resolution** — packages reference each other via `workspace:*`
+3. **Build context** — Dockerfile in `apps/web/` can't see `../pnpm-lock.yaml`
+
+#### Solution: Build context = root, Dockerfile in app
+
+```yaml
+# docker-compose.yml
+services:
+  web:
+    build:
+      context: ..              # Root of monorepo
+      dockerfile: apps/web/Dockerfile.prod  # Dockerfile inside app
+```
+
+#### Monorepo Dockerfile Pattern (pnpm)
+```dockerfile
+FROM node:20-alpine AS builder
+WORKDIR /app
+RUN npm install -g pnpm
+
+# 1. Copy workspace config + lockfile from root
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# 2. Copy only this app's package.json (for cache efficiency)
+COPY apps/web/package.json ./apps/web/
+
+# 3. Install from root (resolves workspace deps)
+RUN pnpm install --frozen-lockfile
+
+# 4. Copy app source
+COPY apps/web/ ./apps/web/
+
+# 5. Build from app directory
+WORKDIR /app/apps/web
+RUN pnpm build
+
+# --- Production stage ---
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+# For Next.js standalone output
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+EXPOSE 3000
+CMD ["node", "apps/web/server.js"]
+
+# For NestJS / generic Node
+# COPY --from=builder /app/apps/api/dist ./dist
+# COPY --from=builder /app/apps/api/node_modules ./node_modules
+# COPY --from=builder /app/apps/api/package.json ./
+# CMD ["node", "dist/main.js"]
+```
+
+#### Common Monorepo Docker Mistakes
+| Mistake | Symptom | Fix |
+|---------|---------|-----|
+| Context is `apps/web/` not root | `pnpm-lock.yaml` not found, deps missing | Set `context: ..` in compose |
+| Using `--frozen-lockfile` without lockfile | Build fails on `pnpm install` | Use `--no-frozen-lockfile` or copy lockfile |
+| Not copying `pnpm-workspace.yaml` | workspace protocol `workspace:*` fails | Copy it in step 1 |
+| `.dockerignore` at wrong level | Sends GB of `node_modules` as context | Put `.dockerignore` at monorepo root |
+| Missing shared packages | `@myorg/shared` not found | Copy `packages/` dir before install |
+
+#### .dockerignore (monorepo root)
+```
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+.git
+.env*
+```
+
+#### Shared Packages Pattern
+If apps depend on internal `packages/*`:
+```dockerfile
+# After copying workspace config, also copy shared packages
+COPY packages/ ./packages/
+```
+
+#### Turbo Prune (optimal for large monorepos)
+```bash
+# Generates minimal workspace for just one app
+npx turbo prune web --docker
+
+# Then build from the pruned output
+# See: https://turbo.build/repo/docs/guides/tools/docker
+```
+
+---
+
 #### .dockerignore (reduce context, smaller images)
 ```
 node_modules

@@ -23,7 +23,7 @@ Load the appropriate reference file(s) based on the task:
 |------|------|
 | AWS services, IAM, VPC, EC2, ECS, Lambda, Bedrock, cost | `references/aws.md` |
 | AI as a Service, agent platforms, model serving, vector DBs | `references/ai-infra.md` |
-| VPS setup, nginx, SSH hardening, Linux, Docker on bare metal | `references/vps.md` |
+| VPS setup, nginx, SSH hardening, Linux, Docker on bare metal, **monorepo Docker builds** | `references/vps.md` |
 | Security audits, hardening, CVEs, pentesting, IAM policies | `references/security.md` |
 | High-level architecture patterns, HA, DR, cost optimization | `references/architecture.md` |
 | Azure-specific questions | `references/azure.md` |
