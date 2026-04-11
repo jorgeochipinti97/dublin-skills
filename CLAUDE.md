@@ -11,19 +11,33 @@ This is a **Claude Code skills library** — a collection of specialized prompts
 ```
 skills/
 ├── architecture/
+│   ├── api-architect/        # Scalable/reliable/secure API design or audit (REST/GraphQL/gRPC)
+│   │   └── references/       # design.md, security.md, scalability.md, reliability.md, observability.md
 │   ├── domain-modeler/       # DDD patterns: entities, value objects, aggregates, domain events
 │   └── hexagonal-architect/  # Ports & adapters architecture for NestJS
 ├── content/
-│   └── blog-writer/          # Professional blog posts in English/Spanish
+│   ├── blog-writer/          # Professional blog posts in English/Spanish
+│   ├── institutional-site-architect/  # Multi-page corporate / institutional site blueprints (sitemap, IA, brand voice, trust)
+│   │   └── references/       # information-architecture.md, brand-voice.md, page-anatomy.md, trust-authority.md, org-types.md
+│   └── landing-page-architect/  # Conversion-optimized landing page blueprints (copy + structure)
+│       └── references/       # copywriting-theory.md, landing-fundamentals.md, conversion-by-goal.md
+├── data/
+│   └── data-viz-architect/   # Dashboard + data viz architect — chart selection with WHY, layout, libraries
+│       └── references/       # chart-selection.md, dashboard-design.md, data-from-api.md, libraries.md
 ├── discovery/
 │   └── systems-thinking/     # System analysis: feedback loops, leverage points, stocks/flows
 ├── frontend/
 │   ├── premium-frontend-design/  # Apple/Framer-quality UI with glass effects, gradients, animations
 │   │   └── references/           # Code libraries for effects, typography, motion, anti-patterns
+│   ├── product-tour/             # Interactive product tours & onboarding flows for Next.js
+│   │   └── references/           # onboarding-patterns.md, accessibility.md, implementation-examples.md
 │   └── react-performance/        # React/Next.js performance: useEffect elimination, RSC, bundle optimization
-│       └── references/           # react-patterns.md, nextjs-patterns.md
+│       └── references/           # react-patterns.md, nextjs-patterns.md, code-examples.md
+├── github/
+│   └── github-safety/       # Safe Git workflow: prevents force push, history rewriting, destructive ops
 ├── implementation/
 │   └── tdd-workflow/         # Red-green-refactor cycle, test patterns, AAA structure
+│       └── references/       # examples.md
 ├── media/
 │   └── remotion-video/       # Programmatic video generation with Remotion + React
 ├── product/
@@ -33,8 +47,10 @@ skills/
 ├── bind-api/                 # BIND Argentina Open Banking API integration
 │   ├── references/           # Full API documentation
 │   └── scripts/              # TypeScript client implementation
-└── infra-security/           # Infrastructure architect + cybersecurity specialist
-    └── references/           # aws.md, ai-infra.md, vps.md, security.md, architecture.md, azure.md
+├── infra-security/           # Infrastructure architect + cybersecurity specialist
+│   └── references/           # aws.md, ai-infra.md, vps.md, security.md, architecture.md, azure.md
+└── skill-creator/            # Guide for creating new skills
+    └── references/           # design-philosophy.md, creation-process.md
 ```
 
 ## Skill File Convention
@@ -71,6 +87,22 @@ Audits and optimizes React/Next.js applications:
 
 Reference files: `react-patterns.md` (rendering, memoization), `nextjs-patterns.md` (RSC, caching, CWV).
 
+### product-tour
+Builds interactive product tours and onboarding flows for Next.js:
+- Library selection: Driver.js (recommended, 5KB), NextStep.js (multi-page tours)
+- Guided walkthroughs with DOM element highlighting
+- Onboarding patterns: activation checklists, welcome modals, progress tracking
+- Complex interaction tours (file uploads, form wizards, action-gated steps)
+- Accessibility: focus management, screen readers, keyboard nav, reduced motion
+
+Reference files: `onboarding-patterns.md` (checklists, modals, beacons), `accessibility.md` (WCAG, focus traps, ARIA).
+
+### github-safety
+Prevents destructive Git operations:
+- Absolute prohibitions: force push, rebase on pushed branches, reset --hard, amend pushed commits, --no-verify
+- Required practices: new commits over rewrites, feature branches, verify before push
+- Emergency protocol: STOP → show status → explain → propose → wait for confirmation
+
 ### hexagonal-architect
 Structures NestJS projects with:
 - Domain layer (entities, value objects, domain events)
@@ -78,6 +110,7 @@ Structures NestJS projects with:
 - Infrastructure layer (adapters: REST controllers, repositories)
 
 Dependency rule: Domain → Application → Infrastructure (dependencies point inward).
+Reference files: `implementation-patterns.md` (ports, use cases, adapters, module wiring, tests).
 
 ### domain-modeler
 Models business logic using DDD:

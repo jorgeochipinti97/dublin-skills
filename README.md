@@ -19,9 +19,12 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[brand-identity](skills/brand-identity)** | Brand identity systems: color palettes, typography, spacing, UX principles |
 | **[brand-guidelines](skills/brand-guidelines)** | Anthropic brand colors, typography, and visual styling |
 | **[premium-frontend-design](skills/frontend/premium-frontend-design)** | Apple/Framer-quality React/Next.js interfaces: glass effects, gradients, micro-interactions |
+| **[product-tour](skills/frontend/product-tour)** | Interactive product tours and onboarding flows for Next.js: guided walkthroughs, activation checklists, welcome modals |
 | **[react-performance](skills/frontend/react-performance)** | React/Next.js performance optimization: useEffect elimination, rendering, RSC, bundle analysis |
 | **[hexagonal-architect](skills/architecture/hexagonal-architect)** | Hexagonal architecture (ports & adapters) for NestJS |
+| **[api-architect](skills/architecture/api-architect)** | Senior API architect — designs or audits scalable, reliable, secure, observable APIs (REST/GraphQL/gRPC) with rationale per decision |
 | **[domain-modeler](skills/architecture/domain-modeler)** | Domain modeling with DDD: entities, value objects, aggregates |
+| **[github-safety](skills/github/github-safety)** | Safe Git/GitHub workflow: prevents force push, history rewriting, destructive operations |
 | **[tdd-workflow](skills/implementation/tdd-workflow)** | Test-driven development: red-green-refactor |
 | **[product-planner](skills/product/product-planner)** | Product planning: PRDs, user stories, MVP scoping |
 | **[product-ux-advisor](skills/product/product-ux-advisor)** | UX audit that diagnoses missing or critical patterns — onboarding, wizards, empty states, activation flows |
@@ -29,6 +32,9 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[bind-api](skills/bind-api)** | BIND Argentina API integration (Open Banking) |
 | **[infra-security](skills/infra-security)** | Infrastructure architect and security specialist — AWS, VPS, Azure, AI-as-a-Service, Docker cleanup & disk hygiene |
 | **[blog-writer](skills/content/blog-writer)** | Professional blog posts in English/Spanish — no hype, no fluff |
+| **[landing-page-architect](skills/content/landing-page-architect)** | Conversion-optimized landing page blueprints (copy + structure) — hands off to product-ux-advisor + premium-frontend-design |
+| **[institutional-site-architect](skills/content/institutional-site-architect)** | Multi-page institutional / corporate site blueprints — sitemap, IA, brand voice, trust strategy, per-page copy direction for B2B SaaS, agencies, law firms, VC, nonprofits, personal brands |
+| **[data-viz-architect](skills/data/data-viz-architect)** | Dashboard + data viz architect — picks chart type per business question WITH the reason, KPI hierarchy, layout, library, data fetching strategy |
 | **[remotion-video](skills/media/remotion-video)** | Programmatic video generation from React components with Remotion |
 
 ## Installation
@@ -51,9 +57,11 @@ The installer will create `.claude/skills/` if it doesn't exist.
 ### Available skills for installation
 
 ```
-bind-api              blog-writer           brand-guidelines
-brand-identity        domain-modeler        hexagonal-architect
-infra-security        premium-frontend-design  product-planner
+api-architect         bind-api              blog-writer
+brand-guidelines      brand-identity        data-viz-architect
+domain-modeler        github-safety         hexagonal-architect
+infra-security        institutional-site-architect  landing-page-architect
+premium-frontend-design  product-planner    product-tour
 product-ux-advisor    react-performance     remotion-video
 skill-creator         systems-thinking      tdd-workflow
 ```
@@ -101,15 +109,20 @@ Each skill has a prompt file in `prompts/` with activation examples:
 
 ```
 prompts/
+├── api-architect.md
 ├── bind-api.md
 ├── blog-writer.md
 ├── brand-guidelines.md
 ├── brand-identity.md
+├── data-viz-architect.md
 ├── domain-modeler.md
 ├── hexagonal-architect.md
 ├── infra-security.md
+├── institutional-site-architect.md
+├── landing-page-architect.md
 ├── premium-frontend-design.md
 ├── product-planner.md
+├── product-tour.md
 ├── product-ux-advisor.md
 ├── react-performance.md
 ├── remotion-video.md
@@ -158,8 +171,10 @@ description: Short description of when to use this skill
 
 - **architecture** — Software architecture patterns
 - **content** — Writing and content creation
+- **data** — Data visualization and dashboards
 - **discovery** — Problem analysis and exploration
 - **frontend** — Interface development
+- **github** — Git/GitHub workflow safety
 - **implementation** — Development practices
 - **media** — Video and multimedia generation
 - **product** — Product planning

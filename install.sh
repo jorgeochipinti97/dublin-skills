@@ -75,14 +75,20 @@ print_header() {
 # Available skills (relative path from skills/)
 typeset -A SKILLS
 SKILLS=(
+    api-architect "architecture/api-architect"
     bind-api "bind-api"
     blog-writer "content/blog-writer"
     brand-guidelines "brand-guidelines"
     brand-identity "brand-identity"
+    data-viz-architect "data/data-viz-architect"
     domain-modeler "architecture/domain-modeler"
+    github-safety "github/github-safety"
     hexagonal-architect "architecture/hexagonal-architect"
     infra-security "infra-security"
+    institutional-site-architect "content/institutional-site-architect"
+    landing-page-architect "content/landing-page-architect"
     premium-frontend-design "frontend/premium-frontend-design"
+    product-tour "frontend/product-tour"
     react-performance "frontend/react-performance"
     product-planner "product/product-planner"
     product-ux-advisor "product/product-ux-advisor"
@@ -172,6 +178,13 @@ update_skills() {
 }
 
 main() {
+    # Strip carriage returns from arguments (common when copy-pasting from Windows/web)
+    local -a clean_args=()
+    for arg in "$@"; do
+        clean_args+=("${arg//$'\r'/}")
+    done
+    set -- "${clean_args[@]}"
+
     print_header
 
     # Handle update command
