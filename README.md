@@ -18,6 +18,7 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[skill-creator](skills/skill-creator)** | Guide for creating effective skills that extend Claude's capabilities |
 | **[brand-identity](skills/brand-identity)** | Brand identity systems: color palettes, typography, spacing, UX principles |
 | **[brand-guidelines](skills/brand-guidelines)** | Anthropic brand colors, typography, and visual styling |
+| **[frontend-foundation](skills/frontend/frontend-foundation)** | Day-0 frontend architecture: dual theme (dark + light) from start, spacing system, reusable component layer on headless primitives (Base UI/Radix) |
 | **[premium-frontend-design](skills/frontend/premium-frontend-design)** | Apple/Framer-quality React/Next.js interfaces: glass effects, gradients, micro-interactions |
 | **[product-tour](skills/frontend/product-tour)** | Interactive product tours and onboarding flows for Next.js: guided walkthroughs, activation checklists, welcome modals |
 | **[react-performance](skills/frontend/react-performance)** | React/Next.js performance optimization: useEffect elimination, rendering, RSC, bundle analysis |
@@ -25,7 +26,16 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[api-architect](skills/architecture/api-architect)** | Senior API architect — designs or audits scalable, reliable, secure, observable APIs (REST/GraphQL/gRPC) with rationale per decision |
 | **[domain-modeler](skills/architecture/domain-modeler)** | Domain modeling with DDD: entities, value objects, aggregates |
 | **[github-safety](skills/github/github-safety)** | Safe Git/GitHub workflow: prevents force push, history rewriting, destructive operations |
+| **[sdd-workflow](skills/methodology/sdd-workflow)** | Spec-Driven Development orchestration — proposal → specs → design → tasks → apply → verify → archive. Triggers, commands, artifact store policy (Engram/OpenSpec/none), sub-agent launching templates |
 | **[tdd-workflow](skills/implementation/tdd-workflow)** | Test-driven development: red-green-refactor |
+| **[testing-strategy](skills/implementation/testing-strategy)** | WHAT to test, at which layer, with which tool — pyramid, doubles, integration, E2E, contract tests |
+| **[error-handling](skills/implementation/error-handling)** | Error taxonomy, Problem Details (RFC 7807), structured logging, Error Boundaries, retry/backoff |
+| **[auth-architect](skills/security/auth-architect)** | Authentication + authorization design/audit: OAuth, JWT vs sessions, RBAC/ABAC, passkeys, common vulnerabilities |
+| **[database-architect](skills/data/database-architect)** | Postgres-first schema design, zero-downtime migrations, indexes, N+1, RLS, Prisma/Drizzle/Kysely |
+| **[forms-and-validation](skills/frontend/forms-and-validation)** | Production forms with React Hook Form + Zod — multi-step, async validation, file upload, a11y, Server Actions |
+| **[orchestrator](skills/meta/orchestrator)** | Skill Orchestrator / Router — analyzes installed skills, evaluates opportunity cost, resolves dependencies, emits ordered execution plan + task list |
+| **[claude-md-keeper](skills/meta/claude-md-keeper)** | Keeps CLAUDE.md aligned with reality. Detects drift (package.json, filesystem, git log, skills). NEVER auto-writes — always proposes diff for review |
+| **[session-bridge](skills/meta/session-bridge)** | SESSION.md for session-to-session continuity. Hard caps (300 lines, 72h). Secret scanner. Marks promotion candidates for claude-md-keeper |
 | **[product-planner](skills/product/product-planner)** | Product planning: PRDs, user stories, MVP scoping |
 | **[product-ux-advisor](skills/product/product-ux-advisor)** | UX audit that diagnoses missing or critical patterns — onboarding, wizards, empty states, activation flows |
 | **[systems-thinking](skills/discovery/systems-thinking)** | Systems analysis: feedback loops, leverage points |
@@ -57,13 +67,17 @@ The installer will create `.claude/skills/` if it doesn't exist.
 ### Available skills for installation
 
 ```
-api-architect         bind-api              blog-writer
-brand-guidelines      brand-identity        data-viz-architect
-domain-modeler        github-safety         hexagonal-architect
+api-architect         auth-architect        bind-api
+blog-writer           brand-guidelines      brand-identity
+claude-md-keeper      database-architect    data-viz-architect
+domain-modeler        error-handling        forms-and-validation
+frontend-foundation   github-safety         hexagonal-architect
 infra-security        institutional-site-architect  landing-page-architect
-premium-frontend-design  product-planner    product-tour
-product-ux-advisor    react-performance     remotion-video
+orchestrator          premium-frontend-design  product-planner
+product-tour          product-ux-advisor    react-performance
+remotion-video        sdd-workflow          session-bridge
 skill-creator         systems-thinking      tdd-workflow
+testing-strategy
 ```
 
 ### Global command (recommended)
@@ -115,7 +129,14 @@ prompts/
 ├── brand-guidelines.md
 ├── brand-identity.md
 ├── data-viz-architect.md
+├── auth-architect.md
+├── claude-md-keeper.md
+├── database-architect.md
 ├── domain-modeler.md
+├── error-handling.md
+├── forms-and-validation.md
+├── frontend-foundation.md
+├── orchestrator.md
 ├── hexagonal-architect.md
 ├── infra-security.md
 ├── institutional-site-architect.md
@@ -127,8 +148,11 @@ prompts/
 ├── react-performance.md
 ├── remotion-video.md
 ├── skill-creator.md
+├── sdd-workflow.md
+├── session-bridge.md
 ├── systems-thinking.md
-└── tdd-workflow.md
+├── tdd-workflow.md
+└── testing-strategy.md
 ```
 
 Use these as quick reference for how to invoke each skill.

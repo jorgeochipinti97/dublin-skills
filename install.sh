@@ -76,12 +76,19 @@ print_header() {
 typeset -A SKILLS
 SKILLS=(
     api-architect "architecture/api-architect"
+    auth-architect "security/auth-architect"
     bind-api "bind-api"
     blog-writer "content/blog-writer"
     brand-guidelines "brand-guidelines"
     brand-identity "brand-identity"
+    claude-md-keeper "meta/claude-md-keeper"
+    database-architect "data/database-architect"
     data-viz-architect "data/data-viz-architect"
     domain-modeler "architecture/domain-modeler"
+    error-handling "implementation/error-handling"
+    forms-and-validation "frontend/forms-and-validation"
+    frontend-foundation "frontend/frontend-foundation"
+    orchestrator "meta/orchestrator"
     github-safety "github/github-safety"
     hexagonal-architect "architecture/hexagonal-architect"
     infra-security "infra-security"
@@ -93,9 +100,12 @@ SKILLS=(
     product-planner "product/product-planner"
     product-ux-advisor "product/product-ux-advisor"
     remotion-video "media/remotion-video"
+    sdd-workflow "methodology/sdd-workflow"
+    session-bridge "meta/session-bridge"
     skill-creator "skill-creator"
     systems-thinking "discovery/systems-thinking"
     tdd-workflow "implementation/tdd-workflow"
+    testing-strategy "implementation/testing-strategy"
 )
 
 list_skills() {

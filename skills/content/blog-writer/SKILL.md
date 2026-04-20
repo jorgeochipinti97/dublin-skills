@@ -46,15 +46,35 @@ Content here...
 - Show, don't tell
 - Let the content speak for itself
 
-**Avoid (vendehumo signals):**
-- "Revolutionary", "game-changing", "disruptive"
-- "In today's fast-paced world..."
-- "Let me tell you why this matters..."
-- Excessive exclamation marks
-- Rhetorical questions as hooks
-- Promising transformation or life-changing results
-- Vague claims without specifics
-- "10x", "unlock", "supercharge", "leverage"
+**Filler Word Index — BANNED (instant AI / vendehumo tell):**
+
+| Category | Forbidden |
+|---|---|
+| Hype verbs | Elevate, Unleash, Transform, Revolutionize, Empower, Accelerate, Unlock, Supercharge, Leverage, Turbocharge |
+| Hype adjectives | Seamless, Cutting-edge, State-of-the-art, Best-in-class, Next-gen, Game-changing, Disruptive, Revolutionary, World-class, Industry-leading |
+| Hype phrases | "In today's fast-paced world", "Let me tell you why this matters", "Imagine a world where", "The future of X is here", "Unlock the power of" |
+| Multiplier hype | "10x your productivity", "100% more efficient", "Game-changing results" |
+| Hollow transitions | "Moreover", "Furthermore", "In conclusion", "Without further ado" |
+| Rhetorical hooks | "Have you ever wondered...?", "What if I told you...?", "Here's the thing..." |
+
+**The Replacement Rule:**
+
+Every forbidden word exists because it signals without saying. Replace with a **concrete verb + specific outcome**:
+
+| ❌ | ✅ |
+|---|---|
+| "Elevate your workflow" | "Ship PRs 40% faster" |
+| "Unleash the power of X" | "X reduces the query from 800ms to 40ms" |
+| "Seamless integration" | "3-line install. Works with the 4 providers you already use." |
+| "Revolutionary approach" | "We stopped doing X. The result was Y." |
+| "Next-gen platform" | (just describe what it is) |
+
+**Other bans:**
+
+- No excessive exclamation marks (one per post max — usually zero)
+- No rhetorical questions as hooks
+- No promising "transformation" or "life-changing results"
+- No vague claims without numbers/examples
 
 **Do:**
 - Start with the point, not a preamble

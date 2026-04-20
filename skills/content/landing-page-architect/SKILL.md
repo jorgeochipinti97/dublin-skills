@@ -122,10 +122,30 @@ For each (3-6):
 
 ## Anti-Patterns
 
-- Vendehumo language (revolutionary, game-changing, 10x, unlock, supercharge, world-class)
+### Filler Word Index — BANNED
+
+| Category | Forbidden |
+|---|---|
+| Hype verbs | Elevate, Unleash, Transform, Revolutionize, Empower, Accelerate, Unlock, Supercharge, Leverage, Turbocharge |
+| Hype adjectives | Seamless, Cutting-edge, State-of-the-art, Best-in-class, Next-gen, Game-changing, Disruptive, World-class, Industry-leading |
+| Hype phrases | "In today's fast-paced world", "Take it to the next level", "Unlock the power of", "The future of X is here" |
+| Multiplier hype | "10x your X", "100% more", "Infinite scalability" |
+
+Replace every instance with a **concrete verb + specific outcome**. If you can't state the specific outcome, you don't have a headline — you have filler.
+
+### Data Realism (THE 99.99% PROBLEM)
+
+- No predictable demo numbers (`99.99%`, `50%`, `1234567`)
+- Use organic messy data: `47.2%`, `$12,847 MRR`, `+1 (312) 847-1928`
+- Testimonial attribution: real-looking names, NOT "John Doe", "Sarah Chan", "Jack Su" (Jane Doe Effect)
+- Brand/logo placeholders: NOT "Acme", "Nexus", "SmartFlow" (Acme Slop). Invent contextual premium names.
+- Always mark invented proof with `⚠️ [PLACEHOLDER]` in Missing Assets
+
+### Other anti-patterns
+
 - Vague benefits ("boost productivity", "take it to the next level")
 - Multiple primary CTAs
-- Invented testimonials, metrics, or logos — use `⚠️ [PLACEHOLDER]` and list in Missing Assets
+- Invented testimonials, metrics, or logos without ⚠️ flag
 - Writing code
 - Expanding the output with strategy commentary the user didn't ask for
 

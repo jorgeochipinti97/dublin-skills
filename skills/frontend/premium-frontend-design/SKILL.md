@@ -1,229 +1,253 @@
 ---
 name: premium-frontend-design
-description: Create luxury, Apple/Framer-quality frontend interfaces with liquid glass effects, mesh gradients, aurora backgrounds, and sophisticated micro-interactions. Use when building premium UI components, landing pages, dashboards, or any React/Next.js interface requiring high-end visual polish. Avoids generic AI aesthetics (v0-style), emphasizing editorial quality, intentional whitespace, and museum-grade craftsmanship.
+description: Create luxury, Apple/Framer-quality frontend interfaces with liquid glass effects, mesh gradients, aurora backgrounds, and sophisticated micro-interactions. Use when building premium UI components, landing pages, dashboards, or any React/Next.js interface requiring high-end visual polish. Avoids generic AI aesthetics (v0-style), emphasizing editorial quality, intentional whitespace, and museum-grade craftsmanship. Invoke AFTER frontend-foundation (which owns tokens, theme, spacing, component system).
 ---
 
-# Premium Frontend Design Skill
+# Premium Frontend Design
 
-Create interfaces that feel like they belong in an Apple keynote or Framer showcase. Every component should look like it took weeks to craft.
+Create interfaces that feel like Apple keynote or Framer showcase quality.
 
 ## Design Philosophy: "Quiet Luxury"
 
-The aesthetic is **restrained opulence** — expensive-looking without being loud. Think:
-- Apple's product pages (massive typography, breathing room, subtle depth)
-- Framer's templates (fluid motion, glass layers, gradient meshes)
-- Linear's interface (dark elegance, precision, purposeful animation)
-- Vercel's marketing (clean gradients, sharp typography, confident whitespace)
+**Restrained opulence** — expensive-looking without being loud.
+Inspirations: Apple (breathing room, subtle depth), Linear (dark elegance), Vercel (clean gradients, confident whitespace).
 
-**NOT**: v0's default output, shadcn without customization, generic purple gradients, icon-heavy UIs, cramped layouts.
+**NOT**: v0 defaults, uncustomized shadcn, generic purple gradients, icon-heavy UIs, cramped layouts.
 
 ---
 
-## Core Principles
+## 1. Parameter Dials (tune output to the project)
 
-### 1. Typography First
-Typography carries 60% of the visual weight. Before any effects:
-- Use **large, confident type** (48-96px for headlines on desktop)
-- Pair a distinctive display font with a refined body font
-- Letter-spacing adjustments are mandatory (-0.02em to -0.05em for headlines)
-- Line-height should breathe (1.1-1.2 for headlines, 1.6-1.8 for body)
+Set these 3 dials at the start. They drive every decision below. Defaults shown; the user can override in chat ("set MOTION_INTENSITY to 9").
 
-**Approved Font Pairings** (load via Google Fonts or CDN):
-| Display | Body | Vibe |
-|---------|------|------|
-| SF Pro Display | SF Pro Text | Apple native |
-| Geist | Geist Mono | Vercel-esque |
-| Satoshi | Inter (sparingly) | Modern startup |
-| Instrument Serif | Instrument Sans | Editorial luxury |
-| Playfair Display | Source Sans 3 | Classic elegance |
-| Space Grotesk | DM Sans | Tech-forward |
-| Syne | Work Sans | Bold creative |
-| Bricolage Grotesque | IBM Plex Sans | Sophisticated |
-| Manrope | Manrope | Clean geometric |
-| Plus Jakarta Sans | Plus Jakarta Sans | Friendly premium |
+```
+DESIGN_VARIANCE  = 8   (1 = perfect symmetry, 10 = artsy chaos)
+MOTION_INTENSITY = 6   (1 = static, 10 = cinematic magic physics)
+VISUAL_DENSITY   = 4   (1 = art gallery airy, 10 = pilot cockpit packed)
+```
 
-### 2. Whitespace as Design Element
-Negative space is not empty — it's structural.
-- Minimum padding: 24px (mobile), 48px (tablet), 80-120px (desktop)
-- Section spacing: 120-200px between major sections
-- Let single elements breathe in vast space
-- Asymmetric layouts create visual interest
+### DESIGN_VARIANCE
 
-### 3. Color with Restraint
-Maximum 3-4 colors. One dominant, one accent, rest neutral.
-- **Dark mode default** (easier to achieve luxury feel)
-- Background: Never pure black (#000). Use #0a0a0a, #09090b, #030303, #0c0c0c
-- Grays with subtle hue shifts (warm grays, cool grays with blue/purple tint)
-- Accent colors: vibrant but used sparingly (buttons, highlights, glows)
-- Gradients: subtle, multi-stop, with noise texture overlay
+| Range | Behavior |
+|---|---|
+| 1-3 (Predictable) | `justify-center`, strict 12-col symmetrical grids, equal paddings |
+| 4-7 (Offset) | `margin-top: -2rem` overlaps, varied aspect ratios (4:3 next to 16:9), left-aligned headers over centered data |
+| 8-10 (Asymmetric) | Masonry, `grid-template-columns: 2fr 1fr 1fr`, massive empty zones (`padding-left: 20vw`) |
 
-### 4. Depth Through Layering
-Create hierarchy with:
-- Glass morphism (backdrop-filter: blur + transparency)
-- Subtle shadows (large blur radius, low opacity, colored shadows)
-- Border gradients (1px borders with gradient backgrounds via pseudo-elements)
-- Overlapping elements with considered z-index
+**Mobile override:** Levels 4-10 MUST collapse to strict single-column (`w-full px-4 py-8`) below `md:` to prevent horizontal scroll.
 
-### 5. Motion with Purpose
-Animation should feel:
-- **Inevitable** — like it couldn't move any other way
-- **Swift** — 200-400ms for micro-interactions, 600-800ms for reveals
-- **Eased** — cubic-bezier(0.16, 1, 0.3, 1) for smooth deceleration
-- Use Framer Motion for React, CSS for simple hover states
+### MOTION_INTENSITY
+
+| Range | Behavior |
+|---|---|
+| 1-3 (Static) | No auto-animations. CSS `:hover` / `:active` only. |
+| 4-7 (Fluid CSS) | `transition: all .3s cubic-bezier(0.16, 1, 0.3, 1)`, animation-delay cascades, strictly `transform` + `opacity` |
+| 8-10 (Choreographed) | Scroll-triggered reveals, parallax, Framer hooks. **Never** `window.addEventListener('scroll')` — use Framer's scroll hooks. |
+
+### VISUAL_DENSITY
+
+| Range | Behavior |
+|---|---|
+| 1-3 (Art Gallery) | Massive whitespace, huge section gaps, expensive feel |
+| 4-7 (Daily App) | Normal SaaS spacing |
+| 8-10 (Cockpit) | Tiny paddings, no cards — `border-t` / `divide-y` instead. Mandatory `font-mono` for numbers. |
 
 ---
 
-## Effects Reference
+## 2. Design Engineering (bias correction)
 
-Load `references/effects-library.md` for complete code implementations.
+LLMs have strong statistical biases toward generic UI clichés. These rules exist specifically to counter them.
 
-### Glass Effects Hierarchy
-1. **Frosted Glass** — Subtle blur, light transparency
-2. **Liquid Glass** — Animated shimmer, gradient overlay, refraction
-3. **Crystal Glass** — Sharp reflections, rainbow edge highlights
-4. **Smoke Glass** — Dark, deep blur, gradient edge fade
-5. **Holographic Glass** — Iridescent color shift on angle
+### Typography
+- **Headlines default:** `text-4xl md:text-6xl tracking-tighter leading-none`
+- **Body default:** `text-base text-foreground/70 leading-relaxed max-w-[65ch]`
+- **Font choice:** prefer `Geist`, `Outfit`, `Cabinet Grotesk`, `Satoshi` over Inter
+- **Dashboard/SaaS UI:** Sans only. Pairings: `Geist + Geist Mono`, `Satoshi + JetBrains Mono`. **Serif is BANNED on dashboards.**
+- **No oversized H1s.** Control hierarchy with weight + color, not only scale.
 
-### Gradient Systems
-1. **Mesh Gradients** — Multi-point color interpolation
-2. **Aurora Backgrounds** — Animated flowing color waves
-3. **Radial Glow** — Soft light emanation from focal points
-4. **Gradient Borders** — 1px gradient stroke via pseudo-elements
-5. **Conic Gradients** — Rotational color for badges/loaders
+### Color Calibration
+- **Max 1 accent.** Saturation < 80%.
+- Absolute neutral bases (Zinc/Slate) + single high-contrast accent (Emerald, Electric Blue, Deep Rose).
+- One palette per project. Never fluctuate warm/cool grays in the same UI.
+- **Never** pure `#000000` — use `#0a0a0a`, `zinc-950`, `#09090b`.
 
-### Background Treatments
-1. **Noise Texture** — SVG/CSS noise at 3-8% opacity
-2. **Dot Grid** — Subtle pattern for spatial depth
-3. **Gradient Orbs** — Large blurred color circles
-4. **Light Leak** — Diagonal gradients simulating light
-5. **Grain Film** — Animated noise for texture
+### Materiality (Anti-Card Overuse)
+- **`VISUAL_DENSITY > 7`**: generic card containers BANNED. Group with `border-t`, `divide-y`, or pure negative space.
+- Cards ONLY when elevation communicates hierarchy.
+- Shadows: **tint to background hue**, never neutral black.
 
-### Micro-interactions
-1. **Magnetic Hover** — Element attracted to cursor
-2. **Tilt Perspective** — 3D rotation following mouse
-3. **Glow Trail** — Gradient following cursor path
-4. **Reveal Blur** — Elements emerge from blur
-5. **Stagger Cascade** — Sequential element entrance
+### Layout Diversification
+- **`DESIGN_VARIANCE > 4`**: centered hero/H1 BANNED. Force split-screen 50/50, left-aligned text + right-aligned asset, or asymmetric whitespace.
+- **3-column equal card grid BANNED.** Use 2-col zig-zag, asymmetric grid, or horizontal scroll instead.
 
----
-
-## Component Architecture
-
-### Hero Sections
-```
-Layout: Full viewport (min-h-screen), centered content
-Typography: 64-96px headline, -0.03em tracking, 600-700 weight
-Subheading: 20-24px, 60% opacity, max-w-2xl
-CTA: Single primary button with glow, optional secondary text link
-Background: Mesh gradient OR aurora OR gradient orbs
-Depth: Floating glass elements, subtle parallax
-```
-
-### Cards
-```
-Container: rounded-2xl or rounded-3xl (20-24px)
-Background: Glass with noise texture overlay
-Border: 1px white/10 with optional gradient on hover
-Shadow: 0 25px 50px -12px with color tint
-Hover: translateY(-4px), scale(1.01), border glow
-Padding: 24-32px internal spacing
-```
-
-### Navigation
-```
-Position: Fixed, glass background after scroll threshold
-Height: 64-80px with centered content
-Links: Minimal (5 max), pill indicator for active
-Transition: Background opacity/blur on scroll
-Mobile: Full overlay with staggered item animation
-```
-
-### Buttons
-```
-Primary: Gradient background, glow shadow, scale(0.98) on press
-Secondary: Glass/ghost with gradient border on hover
-Size: Minimum 44px height, 16-24px horizontal padding
-Radius: rounded-xl (12px) or rounded-full for pills
-States: Hover glow, active scale, focus ring
-```
+### Interactive States (MANDATORY per component)
+LLMs generate only "happy success" states. You must implement all four:
+- **Loading** — skeletal loaders matching layout sizes. No generic circular spinners.
+- **Empty** — beautifully composed empty state showing how to populate data.
+- **Error** — inline, clear, next-step-oriented (no raw messages).
+- **Tactile on `:active`** — `-translate-y-[1px]` or `scale-[0.98]` for physical push feedback.
 
 ---
 
-## Implementation Standards
+## 3. AI Tells — Forbidden Patterns with Names
 
-### Tech Stack
-- **Framework**: React 18+ / Next.js 14+
-- **Styling**: Tailwind CSS (extended config)
-- **Animation**: Framer Motion
-- **Types**: TypeScript always
-- **Fonts**: Variable fonts when available
+Memorable names so the patterns are easy to flag in review.
 
-### Code Patterns
+### THE LILA BAN
+No "AI purple/blue" aesthetic. No purple button glows, no neon gradients. Pull accent from Emerald / Electric Blue / Deep Rose / Amber.
+
+### THE JANE DOE EFFECT
+No "John Doe", "Sarah Chan", "Jack Su" in demo content. Use creative, realistic-sounding names. No generic SVG "egg" avatars or Lucide user icons — use believable photo placeholders (`picsum.photos/seed/{random}/800/600`) or custom monogram avatars.
+
+### ACME STARTUP SLOP
+No "Acme", "Nexus", "SmartFlow", "FlowAI". Invent premium contextual brand names. No generic logos (circle with gradient) — use a wordmark or distinctive monogram.
+
+### THE 99.99% PROBLEM
+No predictable numbers: `99.99%`, `50%`, `1234567`. Use organic messy data: `47.2%`, `+1 (312) 847-1928`, `$12,847`, dates like `Apr 3, 2025`.
+
+### FILLER WORD INDEX (copy)
+Forbidden AI copywriting clichés:
+- "Elevate", "Unleash", "Seamless", "Next-gen", "Revolutionize", "Game-changing"
+- "Empowering", "Transform your workflow", "Unlock the power of"
+- "Cutting-edge", "State-of-the-art", "Best-in-class"
+
+Replace with concrete verbs and specific outcomes. "Ship faster" > "Accelerate your workflow".
+
+### THE INTER TELL
+Default `Inter` without heavy customization = instant AI tell. Pick a more distinctive sans (Geist, Satoshi, Cabinet Grotesk, Outfit) or pair Inter with a serif/display for contrast.
+
+### PURE BLACK TELL
+`#000000` + `#FFFFFF` is lazy. Use `zinc-950` / `#0a0a0a` on dark, `zinc-50` / `#fafafa` on light.
+
+### GENERIC 3-CARD ROW
+"Hero → 3 feature cards → CTA" is the AI default. Force variation: zig-zag layout, bento grid, horizontal scroll row, asymmetric 2-col.
+
+### UNSPLASH LINK ROT
+No raw Unsplash links (they break). Use `https://picsum.photos/seed/{string}/800/600` or UI-Avatars for avatars.
+
+### GRADIENT TEXT HEADLINE
+Gradient text on large headers = early-2020s AI look. Use solid color + subtle tracking/weight for emphasis.
+
+### CUSTOM MOUSE CURSOR
+Outdated, breaks accessibility, ruins mobile. Never generate these.
+
+---
+
+## 4. Dependency Verification Mandate
+
+**Before importing ANY third-party library**, grep `package.json`. If missing, output the install command BEFORE the code:
+
+```bash
+pnpm add framer-motion  # example when framer-motion is absent
+```
+
+Libraries that trigger this check: `framer-motion`, `gsap`, `three`, `@phosphor-icons/react`, `@radix-ui/*`, `@base-ui-components/react`, `class-variance-authority`, `clsx`, `tailwind-merge`, `next-themes`, `react-hook-form`, `zod`.
+
+Never assume a library exists. Never invent imports.
+
+---
+
+## 5. Motion Rules
+
+- **200-400ms** micro-interactions
+- **600-800ms** reveals
+- Default easing: `cubic-bezier(0.16, 1, 0.3, 1)` (out-expo) for reveals
+- **Spring physics** on all interactive elements: `{ type: "spring", stiffness: 100, damping: 20 }`. No linear easing on interactive feedback.
+- **Layout transitions:** Framer `layout` / `layoutId` for smooth reorder + shared-element transitions
+- **Staggered orchestration:** `staggerChildren` in Framer or CSS `animation-delay: calc(var(--index) * 100ms)`. Parent variants + children must be in the same Client Component tree.
+
+### Liquid Glass (beyond backdrop-blur)
+```css
+.liquid-glass {
+  background: rgb(255 255 255 / 0.03);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 8px 30px rgb(0 0 0 / 0.35);
+}
+```
+
+### Magnetic Buttons (if `MOTION_INTENSITY > 5`)
+Never use `useState` for continuous hover animations — the re-render cost collapses mobile performance. Use Framer's `useMotionValue` + `useTransform`:
+
 ```tsx
-// Always use CSS custom properties for theming
-const styles = {
-  '--glow-color': 'rgba(124, 58, 237, 0.5)',
-  '--glass-bg': 'rgba(255, 255, 255, 0.05)',
-} as React.CSSProperties;
-
-// Prefer composition for complex effects
-<GlassCard>
-  <NoiseOverlay opacity={0.04} />
-  <GradientBorder />
-  <Content />
-</GlassCard>
+const x = useMotionValue(0);
+const y = useMotionValue(0);
+const handleMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  x.set((e.clientX - rect.left - rect.width / 2) * 0.2);
+  y.set((e.clientY - rect.top - rect.height / 2) * 0.2);
+};
 ```
-
-### Quality Checklist
-Before completion, verify:
-- [ ] Typography: Distinctive fonts, proper tracking/leading
-- [ ] Colors: 3-4 max, dark mode polished
-- [ ] Space: Generous padding, breathing room
-- [ ] Depth: Glass, shadows, or layering present
-- [ ] Motion: Hover states, transitions, entrance animations
-- [ ] Noise: Texture overlay where appropriate
-- [ ] Responsive: Scales gracefully to mobile
-- [ ] Final test: Would Framer/Apple/Linear ship this?
 
 ---
 
-## Anti-Patterns (Forbidden)
+## 6. Performance Guardrails
 
-See `references/anti-patterns.md` for visual examples.
+- Animate **only** `transform` and `opacity`. Never `top`, `left`, `width`, `height`.
+- Grain/noise overlays: apply to `fixed inset-0 z-50 pointer-events-none` pseudo-element only — never on scrolling containers.
+- `will-change: transform` sparingly (only on elements actively animating)
+- No mixing GSAP + Framer in the same component tree. Framer for UI; GSAP/Three.js only for isolated scrolltelling / canvas backgrounds with strict `useEffect` cleanup.
 
-**NEVER DO**:
-- Purple-to-blue gradients on white (v0 signature)
-- Uniform 8px border-radius everywhere
-- Icon grids with description text
-- Everything centered with equal spacing
-- Gray borders (#e5e5e5) on white cards
-- Inter font without heavy customization
-- Hard-edged shadows
-- Cramped padding (<16px on desktop)
-- Stock illustrations or generic icons
-- "Hero → Features Grid → CTA" without variation
+---
 
-**ALWAYS ASK**: "Would a designer at Apple review this favorably?"
+## 7. Viewport Stability
+
+- **Never** `h-screen` for hero sections — iOS Safari breaks layout catastrophically
+- Always `min-h-[100dvh]` for full-height
+- Never complex flex math (`w-[calc(33%-1rem)]`) — use CSS Grid (`grid grid-cols-1 md:grid-cols-3 gap-6`)
+
+---
+
+## 8. Shadcn Customization
+
+`shadcn/ui` allowed, but **never** in default state. You must customize radii, colors, and shadows to match the project aesthetic. Own the `components/ui/` layer — shadcn is a starting point, not the destination.
+
+---
+
+## Tech Stack
+
+React 18+ / Next.js 14+, Tailwind CSS, Framer Motion, TypeScript, variable fonts, icons from `@phosphor-icons/react` or `@radix-ui/react-icons` (never mix icon libraries).
+
+---
+
+## Anti-Patterns (consolidated forbidden list)
+
+| Anti-pattern | Name |
+|---|---|
+| Purple-to-blue gradient accents | THE LILA BAN |
+| `#000000` / `#ffffff` raw | Pure Black Tell |
+| Inter with zero customization | The Inter Tell |
+| "John Doe" / generic egg avatars | Jane Doe Effect |
+| "Acme" / "Nexus" brand names | Acme Slop |
+| `99.99%`, `50%`, `1234567` | 99.99% Problem |
+| "Elevate / Unleash / Seamless" copy | Filler Word Index |
+| 3-column equal feature cards | Generic 3-Card Row |
+| Gradient text on headlines | Gradient Headline |
+| Custom mouse cursor | Cursor Anti-pattern |
+| Unsplash links | Unsplash Link Rot |
+| `h-screen` on hero | iOS Safari Killer |
+| Animating `width`/`height` | Layout Thrash |
+| `useState` for magnetic hover | Mobile Collapse |
+| `shadcn/ui` default state | Off-the-shelf Tell |
+
+**Test:** "Would a designer at Apple review this favorably?"
 
 ---
 
 ## Reference Files
 
-When implementing, load these as needed:
-- `references/effects-library.md` — Complete CSS/React code for all effects
+Load as needed during implementation:
+- `references/effects-library.md` — CSS/React code for glass, gradients, backgrounds, micro-interactions
 - `references/typography-system.md` — Font loading, responsive scales, pairing rules
 - `references/motion-patterns.md` — Framer Motion configs, CSS keyframes, easing
 - `references/anti-patterns.md` — Visual examples of what to avoid
 
----
-
 ## Output Standards
 
-All generated code must:
-1. Be complete and runnable (no placeholders)
-2. Include TypeScript types
-3. Import required dependencies (Framer Motion, fonts)
-4. Use Tailwind with custom values where needed
-5. Include responsive breakpoints
-6. Have comments explaining non-obvious techniques
-7. Provide CSS custom properties for easy theming
+- State the 3 dials at the start of any generation (confirmed or overridden)
+- Be CONCISE — lead with code, minimize explanations
+- Complete, runnable code (no placeholders)
+- TypeScript + Tailwind with semantic tokens (consumed from `frontend-foundation`)
+- Include responsive breakpoints
+- Verify `package.json` before importing any library
+- Implement ALL interactive states (loading / empty / error / active)
