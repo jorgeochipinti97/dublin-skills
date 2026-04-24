@@ -75,8 +75,10 @@ print_header() {
 # Available skills (relative path from skills/)
 typeset -A SKILLS
 SKILLS=(
+    ai-avatar-director "ugc/ai-avatar-director"
     api-architect "architecture/api-architect"
     auth-architect "security/auth-architect"
+    backend-performance "backend/backend-performance"
     bind-api "bind-api"
     blog-writer "content/blog-writer"
     brand-guidelines "brand-guidelines"
@@ -106,6 +108,9 @@ SKILLS=(
     systems-thinking "discovery/systems-thinking"
     tdd-workflow "implementation/tdd-workflow"
     testing-strategy "implementation/testing-strategy"
+    ugc-post-production "ugc/ugc-post-production"
+    ugc-scriptwriter "ugc/ugc-scriptwriter"
+    ugc-video-prompting "ugc/ugc-video-prompting"
 )
 
 list_skills() {

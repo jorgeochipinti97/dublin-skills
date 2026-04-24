@@ -22,6 +22,7 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[premium-frontend-design](skills/frontend/premium-frontend-design)** | Apple/Framer-quality React/Next.js interfaces: glass effects, gradients, micro-interactions |
 | **[product-tour](skills/frontend/product-tour)** | Interactive product tours and onboarding flows for Next.js: guided walkthroughs, activation checklists, welcome modals |
 | **[react-performance](skills/frontend/react-performance)** | React/Next.js performance optimization: useEffect elimination, rendering, RSC, bundle analysis |
+| **[backend-performance](skills/backend/backend-performance)** | Backend performance audit: N+1 queries, async/event loop, caching (Redis/HTTP/CDN), connection pooling, payload shape, rate limiting, OpenTelemetry tracing |
 | **[hexagonal-architect](skills/architecture/hexagonal-architect)** | Hexagonal architecture (ports & adapters) for NestJS |
 | **[api-architect](skills/architecture/api-architect)** | Senior API architect — designs or audits scalable, reliable, secure, observable APIs (REST/GraphQL/gRPC) with rationale per decision |
 | **[domain-modeler](skills/architecture/domain-modeler)** | Domain modeling with DDD: entities, value objects, aggregates |
@@ -46,6 +47,10 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[institutional-site-architect](skills/content/institutional-site-architect)** | Multi-page institutional / corporate site blueprints — sitemap, IA, brand voice, trust strategy, per-page copy direction for B2B SaaS, agencies, law firms, VC, nonprofits, personal brands |
 | **[data-viz-architect](skills/data/data-viz-architect)** | Dashboard + data viz architect — picks chart type per business question WITH the reason, KPI hierarchy, layout, library, data fetching strategy |
 | **[remotion-video](skills/media/remotion-video)** | Programmatic video generation from React components with Remotion |
+| **[ugc-scriptwriter](skills/ugc/ugc-scriptwriter)** | UGC video scripts for AI avatar delivery: 10 ad angles, hook engineering, per-platform pacing, ES/EN, shoot-ready tables |
+| **[ai-avatar-director](skills/ugc/ai-avatar-director)** | Vendor-agnostic director brief for AI avatar video generation: casting, wardrobe, setting, framing, voice — works with HeyGen / Hedra / Akool / Arcads / Synthesia |
+| **[ugc-post-production](skills/ugc/ugc-post-production)** | Edit Decision List for UGC cuts: captions, visual hooks, B-roll, music, SFX — every effect earns its place or gets cut |
+| **[ugc-video-prompting](skills/ugc/ugc-video-prompting)** | Text-to-video / image-to-video prompts for Veo 3 and Seedance 2.0 that produce UGC-style content: phone feel, natural light, negative-prompt boilerplate, character consistency pack |
 
 ## Installation
 
@@ -67,17 +72,19 @@ The installer will create `.claude/skills/` if it doesn't exist.
 ### Available skills for installation
 
 ```
-api-architect         auth-architect        bind-api
-blog-writer           brand-guidelines      brand-identity
-claude-md-keeper      database-architect    data-viz-architect
-domain-modeler        error-handling        forms-and-validation
-frontend-foundation   github-safety         hexagonal-architect
-infra-security        institutional-site-architect  landing-page-architect
-orchestrator          premium-frontend-design  product-planner
+ai-avatar-director    api-architect         auth-architect
+backend-performance   bind-api              blog-writer
+brand-guidelines      brand-identity        claude-md-keeper
+database-architect    data-viz-architect    domain-modeler
+error-handling        forms-and-validation  frontend-foundation
+github-safety         hexagonal-architect   infra-security
+institutional-site-architect                landing-page-architect
+orchestrator          premium-frontend-design                product-planner
 product-tour          product-ux-advisor    react-performance
 remotion-video        sdd-workflow          session-bridge
 skill-creator         systems-thinking      tdd-workflow
-testing-strategy
+testing-strategy      ugc-post-production   ugc-scriptwriter
+ugc-video-prompting
 ```
 
 ### Global command (recommended)
@@ -124,6 +131,7 @@ Each skill has a prompt file in `prompts/` with activation examples:
 ```
 prompts/
 ├── api-architect.md
+├── backend-performance.md
 ├── bind-api.md
 ├── blog-writer.md
 ├── brand-guidelines.md
@@ -152,7 +160,11 @@ prompts/
 ├── session-bridge.md
 ├── systems-thinking.md
 ├── tdd-workflow.md
-└── testing-strategy.md
+├── testing-strategy.md
+├── ugc-scriptwriter.md
+├── ai-avatar-director.md
+├── ugc-post-production.md
+└── ugc-video-prompting.md
 ```
 
 Use these as quick reference for how to invoke each skill.
@@ -194,6 +206,7 @@ description: Short description of when to use this skill
 ## Categories
 
 - **architecture** — Software architecture patterns
+- **backend** — Backend performance, runtime, observability
 - **content** — Writing and content creation
 - **data** — Data visualization and dashboards
 - **discovery** — Problem analysis and exploration
@@ -202,6 +215,7 @@ description: Short description of when to use this skill
 - **implementation** — Development practices
 - **media** — Video and multimedia generation
 - **product** — Product planning
+- **ugc** — AI UGC pipeline (script → avatar direction → post-production)
 
 ## License
 

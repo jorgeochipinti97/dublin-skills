@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a **Claude Code skills library** — a collection of specialized prompts, reference materials, and code templates that extend Claude Code's capabilities in specific domains. Currently **31 skills** across 13 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
+This is a **Claude Code skills library** — a collection of specialized prompts, reference materials, and code templates that extend Claude Code's capabilities in specific domains. Currently **36 skills** across 15 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
 
 ## Structure
 
@@ -16,6 +16,9 @@ skills/
 │   ├── domain-modeler/       # DDD patterns: entities, value objects, aggregates, domain events
 │   └── hexagonal-architect/  # Ports & adapters architecture for NestJS
 │       └── references/       # implementation-patterns.md
+├── backend/
+│   └── backend-performance/  # Backend performance audit — N+1, async/event loop, caching, observability
+│       └── references/       # queries.md, async-and-io.md, caching.md, observability.md
 ├── content/
 │   ├── blog-writer/          # Professional blog posts in English/Spanish (Filler Word Index enforced)
 │   ├── institutional-site-architect/  # Multi-page corporate / institutional site blueprints
@@ -69,6 +72,12 @@ skills/
 ├── security/
 │   └── auth-architect/       # Authentication + authorization: OAuth, JWT vs sessions, RBAC/ABAC, passkeys, common vulnerabilities
 │       └── references/       # patterns.md (Better-Auth, NestJS + JWT rotation, RBAC guard, CASL, password reset, rate limit)
+├── ugc/
+│   ├── ugc-scriptwriter/     # UGC video scripts for AI avatar delivery — 10 ad angles, hook engineering, per-platform pacing, ES/EN
+│   │   └── references/       # angles.md (10 angle skeletons + selection heuristics)
+│   ├── ai-avatar-director/   # Vendor-agnostic director brief — casting, wardrobe, setting, framing, voice — for HeyGen/Hedra/Akool/Arcads/Synthesia
+│   ├── ugc-video-prompting/  # Text-to-video / image-to-video prompts for Veo 3 and Seedance 2.0 — UGC realism tells, negative-prompt boilerplate, character consistency pack
+│   └── ugc-post-production/  # Edit Decision List: captions, visual hooks, B-roll, music, SFX — every effect earns its place
 ├── bind-api/                 # BIND Argentina Open Banking API integration
 │   ├── references/           # Full API documentation
 │   └── scripts/              # TypeScript client implementation (bind_client.ts)
@@ -247,6 +256,22 @@ Audits and optimizes React/Next.js applications:
 
 Reference files: `react-patterns.md` (rendering, memoization), `nextjs-patterns.md` (RSC, caching, CWV), `code-examples.md` (BAD/GOOD pairs).
 
+### Backend
+
+#### backend-performance
+Non-destructive review gate after backend implementation skills. Audits Node.js/TypeScript APIs for:
+- **Queries** — N+1, missing indexes, SELECT *, OFFSET on large tables, long transactions, ORM gotchas (Prisma/Drizzle/Kysely)
+- **Async & I/O** — blocking event loop, sync crypto, large JSON, worker threads, sequential vs parallel awaits, `p-limit` for fan-out, timeouts, streaming
+- **Caching** — HTTP headers + CDN, Redis read-through, stampede protection (single-flight), SWR, keyspace discipline, hit-rate metrics
+- **Connection pooling** — pool sizing, PgBouncer modes, serverless gotchas
+- **Payload shape** — DTOs vs full entities, compression, NDJSON streaming, Fastify schema-based serialization
+- **Rate limiting & backpressure** — per-user/per-IP limits, circuit breakers, queue depth alarms
+- **Observability** — OpenTelemetry auto-instrumentation, Pino with correlation IDs, Prom metrics (RED + USE), event loop lag, SLOs + error budgets
+
+Auto-invoke after `api-architect`, `hexagonal-architect`, `database-architect`, `auth-architect`. Delegates to `database-architect` for schema/index design and to `error-handling` for error taxonomy/resilience.
+
+Reference files: `queries.md`, `async-and-io.md`, `caching.md`, `observability.md`.
+
 #### product-tour
 Builds interactive product tours and onboarding flows for Next.js:
 - Library selection: Driver.js (recommended, 5KB), NextStep.js (multi-page tours)
@@ -270,6 +295,63 @@ Brand identity systems: color palettes, typography, spacing, UX principles.
 
 #### brand-guidelines
 Anthropic brand colors, typography, and visual styling.
+
+### UGC Pipeline
+
+End-to-end AI UGC creation. Two rendering branches share `ugc-scriptwriter` and `ugc-post-production`:
+
+- **Lipsync branch** (talking head): `ugc-scriptwriter` → `ai-avatar-director` → `ugc-post-production`. For HeyGen / Hedra / Akool / Arcads / Synthesia.
+- **Generative branch** (Veo 3 / Seedance 2.0): `ugc-scriptwriter` → `ugc-video-prompting` → `ugc-post-production`. For scene-based UGC, B-roll, POV, demo shots.
+
+The two branches can be combined in one campaign (e.g. lipsync for the talking-head testimonial + generative for B-roll product shots).
+
+Shared vocabulary (Filler Word Index, Jane Doe Effect, Pure Black Tell, Data Realism) consistent with the rest of the ecosystem.
+
+#### ugc-scriptwriter
+Writes shoot-ready UGC scripts for AI avatar delivery:
+- **10 ad angles** with fixed skeletons: testimonial, problem-solution, founder, reaction, demo, before-after, comparison, myth-bust, POV, list
+- **Hook engineering** — 7 formulas (specific result, contrarian, callout, curiosity gap, direct address, visual anomaly, pattern interrupt) + 5 anti-patterns
+- **Per-platform pacing** — TikTok / Reels / Shorts / Meta Feed / YouTube Pre-roll with hook windows, caption density, CTA style
+- **Per-region language** — ES (AR / MX / ES / LATAM neutro) / EN (US / UK)
+- **Multi-variant mode** — same angle different hooks (A/B/C) or different angles for split-test
+- **Output**: timing table (time / spoken line / on-screen text / B-roll) + direction notes + claims used with `⚠️ PLACEHOLDER` flags
+- **Filler Word Index** enforced (ES + EN), Data Realism (messy numbers, no Jane Doe, no Acme Slop)
+
+Reference: `angles.md` (10 angle skeletons + selection heuristics, loaded only when in use).
+
+#### ai-avatar-director
+Translates a script into a vendor-agnostic director brief:
+- **Casting framework** — demographic match × angle archetype × product-category credibility (skincare vs SaaS vs fintech vs luxury etc.)
+- **Wardrobe** by brand voice (premium / friendly / expert / irreverent / clinical / street) × angle overrides, with anti-patterns (busy patterns, logos, Pure Black Tell, stark white)
+- **Setting / background** — home / home office / neutral studio / bedroom / outdoor / office / gym matched to angle, with depth-of-field rules
+- **Framing & movement** — shot size per beat (hook MCU, body alternate, CTA push-in), locked vs handheld feel
+- **Voice direction** — tone × cadence × energy (1-10) per angle, accent by region (ES-AR voseo mandatory, not neutral)
+- **Anti-patterns named**: Jane Doe Effect, Uncanny Valley Triad, Inter Tell of Avatars, Demographic Cosplay, Same-Face Syndrome
+- **Vendor notes** for HeyGen / Hedra / Akool / Arcads / Synthesia, plus a copy-paste vendor-agnostic prompt block
+- **Output**: director brief (casting / wardrobe / setting / framing / voice / do-not) + vendor-agnostic prompt
+
+#### ugc-video-prompting
+Writes text-to-video and image-to-video prompts for **Google Veo 3 / Veo 3.1** and **ByteDance Seedance 2.0** that produce UGC (not cinema):
+- **7-slot anatomy** — Subject / Context / Action / Camera / Lighting / Style / Audio, adapted per model
+- **UGC realism "tells"** — selfie framing, handheld sway, natural light, realistic skin, phone audio feel
+- **UGC anti-tells** — cinematic lighting, 4K, dolly, drone, Dutch angle, perfect skin, cinematic bokeh (all banned for UGC)
+- **Veo 3 specifics** — 5-part formula [Cinematography + Subject + Action + Context + Style], camera in its own sentence, film grammar it understands, dialogue in quotes for sync audio
+- **Seedance 2.0 specifics** — motion-first when I2V (model sees the reference, don't re-describe), multi-asset (talent + product + env), mandatory negative-prompt boilerplate (no logos / no extra fingers / no jump cuts / no whip pans / character consistency / realistic physics)
+- **Angle → prompt matrix** — per ad angle: camera / framing / action template
+- **Character & object consistency pack** — master reference + locked seed + canonical 1-sentence fragment for multi-shot campaigns
+- **Output**: structured prompt + negative prompt + seed/consistency plan + audio lines + validation checklist
+
+Alternative to `ai-avatar-director` when the pipeline uses generative video; complementary when used for B-roll alongside a lipsync talking head.
+
+#### ugc-post-production
+Edit Decision List (EDL) for the final cut — every FX has a stated reason or it gets cut:
+- **Captions** — style per brand voice (karaoke / phrase / sentence bottom), font/weight/color, timing schemes, placement safe zones (avoid bottom-left/right UI bands)
+- **Visual hooks library** with when-to-use / when-NOT-to-use: zoom punch, jump cut, shake, whip pan, flash frame, speed ramp, freeze frame + text, B-roll intercut, PiP
+- **B-roll strategy** — A/B-roll ratio per angle, timing rules (never cut during critical spoken words, min 0.8s hold, max 4s cutaway)
+- **Music & sound design** — genre × brand voice, BPM range, drop alignment to hook/CTA, ducking -12dB under speech, silence-before-CTA pattern
+- **Export specs** — aspect ratio, resolution, codec (H.264 10-12 Mbps), audio (-16 LUFS Meta/TikTok, -14 LUFS YouTube), file naming
+- **Anti-patterns named**: edit-dumping, caption wall (>7 words), music drowning dialogue, B-roll during critical words, Inter Tell captions, Pure Black Tell, default library SFX at full volume
+- **Output**: EDL table (time / beat / cut / FX / caption / B-roll / SFX / music / WHY) + caption plan + music plan + B-roll list + sound design + export specs + missing assets
 
 ### Implementation
 
@@ -349,3 +431,11 @@ When using skills in other projects, load the SKILL.md and relevant reference fi
 - **Polish-last**: `premium-frontend-design` is polish — run after `product-ux-advisor` and `frontend-foundation`
 - **Security-pre-ship**: `infra-security` runs before any production deploy
 - **SDD for substantial changes**: `sdd-workflow` activates on triggers or when changes touch ≥ 3 files / architecture
+- **Performance audit after frontend**: `react-performance` runs as a non-destructive review gate after any frontend implementation skill (`frontend-foundation`, `premium-frontend-design`, `forms-and-validation`, `product-tour`, `landing-page-architect`) produces React code. Conditional: fires only if new components, `useEffect`, data fetching, render loops, or > 2 components touched. Skip on trivial edits, copy-only changes, or style-only tweaks.
+- **Performance audit after backend**: `backend-performance` runs as a non-destructive review gate after any backend implementation skill (`api-architect`, `hexagonal-architect`, `database-architect`, `auth-architect`) produces code. Conditional: fires on new endpoint/handler, new DB query, async/IO work, loop with awaits, large payloads, or > 2 backend files touched. Skip on config-only, doc-only, or type-only changes.
+- **UGC pipeline order**:
+  - Lipsync branch: `ugc-scriptwriter` → `ai-avatar-director` → `ugc-post-production`
+  - Generative branch: `ugc-scriptwriter` → `ugc-video-prompting` → `ugc-post-production`
+  - Hybrid campaigns use both branches (lipsync for talking head, generative for B-roll/scene)
+  - Never skip the scriptwriter — the script drives both casting and prompt engineering
+  - Never skip post-production — generative renders still need captions, music sync, and hook FX

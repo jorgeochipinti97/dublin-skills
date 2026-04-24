@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "updated": "2026-04-19",
+  "version": "1.3.0",
+  "updated": "2026-04-24",
   "description": "Machine-readable index of all skills in this repository. Used by the orchestrator skill (and dublin-agent) to plan without parsing every SKILL.md. Keep in sync when adding/modifying skills.",
   "skills": [
     {
@@ -54,7 +54,7 @@
       "tags": ["nestjs", "ports-adapters", "clean-architecture", "layering"],
       "triggers": ["nestjs", "hexagonal", "ports and adapters", "clean architecture", "backend structure"],
       "depends_on": ["domain-modeler"],
-      "unlocks": ["api-architect", "testing-strategy"],
+      "unlocks": ["api-architect", "testing-strategy", "backend-performance"],
       "cost": "low",
       "value": "high"
     },
@@ -65,7 +65,7 @@
       "tags": ["rest", "graphql", "grpc", "api-design", "security", "scalability", "observability"],
       "triggers": ["api design", "rest", "graphql", "grpc", "endpoint", "versioning", "rate limit"],
       "depends_on": ["hexagonal-architect"],
-      "unlocks": [],
+      "unlocks": ["backend-performance"],
       "cost": "medium",
       "value": "high"
     },
@@ -76,7 +76,7 @@
       "tags": ["postgres", "schema", "migrations", "indexes", "prisma", "drizzle", "rls", "multi-tenant"],
       "triggers": ["database", "schema", "migration", "postgres", "prisma", "drizzle", "index", "n+1", "multi-tenant"],
       "depends_on": ["domain-modeler"],
-      "unlocks": ["hexagonal-architect", "auth-architect"],
+      "unlocks": ["hexagonal-architect", "auth-architect", "backend-performance"],
       "cost": "medium",
       "value": "very-high"
     },
@@ -87,7 +87,7 @@
       "tags": ["authentication", "authorization", "oauth", "jwt", "sessions", "rbac", "abac", "passkeys"],
       "triggers": ["auth", "login", "signup", "oauth", "jwt", "session", "rbac", "permissions", "passkey", "sso"],
       "depends_on": ["database-architect"],
-      "unlocks": ["forms-and-validation"],
+      "unlocks": ["forms-and-validation", "backend-performance"],
       "cost": "medium",
       "value": "very-high"
     },
@@ -142,7 +142,7 @@
       "tags": ["design-tokens", "theming", "dark-mode", "light-mode", "spacing", "layout-primitives", "component-system", "base-ui", "radix"],
       "triggers": ["new frontend", "design tokens", "dark mode", "theme", "spacing", "component system", "base ui", "radix"],
       "depends_on": [],
-      "unlocks": ["premium-frontend-design", "forms-and-validation", "product-tour", "landing-page-architect"],
+      "unlocks": ["premium-frontend-design", "forms-and-validation", "product-tour", "landing-page-architect", "react-performance"],
       "cost": "medium",
       "value": "very-high"
     },
@@ -153,7 +153,7 @@
       "tags": ["aesthetics", "glass", "gradients", "motion", "framer-motion", "typography"],
       "triggers": ["premium ui", "apple-quality", "framer", "glass morphism", "luxury design", "polish"],
       "depends_on": ["frontend-foundation"],
-      "unlocks": [],
+      "unlocks": ["react-performance"],
       "cost": "medium",
       "value": "medium"
     },
@@ -164,7 +164,7 @@
       "tags": ["react-hook-form", "zod", "validation", "multi-step", "file-upload", "server-actions"],
       "triggers": ["form", "validation", "zod", "react hook form", "wizard", "multi-step", "upload"],
       "depends_on": ["frontend-foundation"],
-      "unlocks": [],
+      "unlocks": ["react-performance"],
       "cost": "medium",
       "value": "high"
     },
@@ -175,7 +175,7 @@
       "tags": ["onboarding", "walkthrough", "driver-js", "nextstep", "activation"],
       "triggers": ["product tour", "onboarding", "walkthrough", "activation checklist", "welcome modal", "driver.js"],
       "depends_on": ["frontend-foundation"],
-      "unlocks": [],
+      "unlocks": ["react-performance"],
       "cost": "low",
       "value": "medium"
     },
@@ -184,11 +184,26 @@
       "path": "frontend/react-performance",
       "category": "frontend",
       "tags": ["performance", "useeffect", "rsc", "memoization", "bundle", "core-web-vitals"],
-      "triggers": ["performance", "useeffect", "server component", "bundle size", "render", "core web vitals"],
+      "triggers": ["performance", "useeffect", "server component", "bundle size", "render", "core web vitals", "post-frontend review", "react audit", "perf audit"],
       "depends_on": [],
       "unlocks": [],
       "cost": "medium",
-      "value": "high-post-mvp"
+      "value": "high-post-mvp",
+      "auto_invoke_after": ["frontend-foundation", "premium-frontend-design", "forms-and-validation", "product-tour", "landing-page-architect"],
+      "auto_invoke_conditions": ["new React components created", "useEffect used", "lists or render loops", "data fetching / async work", "more than 2 components touched"]
+    },
+    {
+      "name": "backend-performance",
+      "path": "backend/backend-performance",
+      "category": "backend",
+      "tags": ["performance", "n+1", "queries", "caching", "redis", "async", "event-loop", "observability", "tracing", "opentelemetry", "node"],
+      "triggers": ["backend performance", "n+1", "slow query", "slow endpoint", "cache", "redis", "event loop", "blocking", "tracing", "opentelemetry", "latency", "p95", "p99", "post-backend review", "backend audit", "perf audit"],
+      "depends_on": [],
+      "unlocks": [],
+      "cost": "medium",
+      "value": "high-post-mvp",
+      "auto_invoke_after": ["api-architect", "hexagonal-architect", "database-architect", "auth-architect"],
+      "auto_invoke_conditions": ["new endpoint or handler created", "new DB query introduced", "async / I/O work added", "loop over collection with awaits", "payload larger than ~1MB", "more than 2 backend files touched"]
     },
     {
       "name": "landing-page-architect",
@@ -197,7 +212,7 @@
       "tags": ["landing-page", "conversion", "copywriting", "cta"],
       "triggers": ["landing page", "conversion", "hero", "cta", "marketing page"],
       "depends_on": [],
-      "unlocks": ["premium-frontend-design"],
+      "unlocks": ["premium-frontend-design", "react-performance"],
       "cost": "low",
       "value": "high-when-needed"
     },
@@ -343,6 +358,50 @@
       "unlocks": [],
       "cost": "low",
       "value": "very-high-at-start"
+    },
+    {
+      "name": "ugc-scriptwriter",
+      "path": "ugc/ugc-scriptwriter",
+      "category": "ugc",
+      "tags": ["ugc", "scriptwriting", "hooks", "tiktok", "reels", "shorts", "meta-ads", "ad-angles", "avatar-script"],
+      "triggers": ["ugc script", "avatar script", "guion ugc", "guion avatar", "tiktok script", "reels script", "shorts script", "hook variants", "ad hook", "ad angle", "video script"],
+      "depends_on": [],
+      "unlocks": ["ai-avatar-director", "ugc-post-production"],
+      "cost": "low",
+      "value": "very-high-for-ugc-pipeline"
+    },
+    {
+      "name": "ai-avatar-director",
+      "path": "ugc/ai-avatar-director",
+      "category": "ugc",
+      "tags": ["ugc", "avatar", "casting", "wardrobe", "voice-direction", "heygen", "hedra", "akool", "arcads", "synthesia", "director-brief"],
+      "triggers": ["avatar direction", "director brief", "casting avatar", "heygen brief", "hedra brief", "brief crudo", "wardrobe avatar", "voice direction", "avatar casting"],
+      "depends_on": ["ugc-scriptwriter"],
+      "unlocks": ["ugc-post-production"],
+      "cost": "low",
+      "value": "very-high-for-ugc-pipeline"
+    },
+    {
+      "name": "ugc-post-production",
+      "path": "ugc/ugc-post-production",
+      "category": "ugc",
+      "tags": ["ugc", "edit", "edl", "captions", "b-roll", "visual-hooks", "music", "sfx", "capcut", "premiere", "davinci"],
+      "triggers": ["ugc edit", "edl ugc", "captions ugc", "post production ugc", "edit avatar video", "plan de edicion", "visual hooks", "music sync", "video fx"],
+      "depends_on": ["ai-avatar-director"],
+      "unlocks": [],
+      "cost": "low",
+      "value": "very-high-for-ugc-pipeline"
+    },
+    {
+      "name": "ugc-video-prompting",
+      "path": "ugc/ugc-video-prompting",
+      "category": "ugc",
+      "tags": ["ugc", "veo", "veo-3", "seedance", "bytedance", "text-to-video", "image-to-video", "t2v", "i2v", "generative-video", "prompt-engineering", "character-consistency"],
+      "triggers": ["veo", "veo 3", "veo prompt", "seedance", "seedance prompt", "text to video prompt", "image to video prompt", "prompt ugc video", "negative prompt seedance", "character consistency", "t2v prompt", "i2v prompt"],
+      "depends_on": ["ugc-scriptwriter"],
+      "unlocks": ["ugc-post-production"],
+      "cost": "low",
+      "value": "very-high-for-generative-ugc-pipeline"
     }
   ],
   "phases": {
@@ -352,17 +411,20 @@
     "frontend_foundation": ["frontend-foundation"],
     "ux_ui": ["product-ux-advisor", "premium-frontend-design", "forms-and-validation"],
     "feature_layer": ["product-tour", "landing-page-architect", "institutional-site-architect", "data-viz-architect"],
-    "cross_cutting": ["error-handling", "testing-strategy", "tdd-workflow", "react-performance", "github-safety"],
+    "cross_cutting": ["error-handling", "testing-strategy", "tdd-workflow", "react-performance", "backend-performance", "github-safety"],
     "ops": ["infra-security"],
-    "gtm": ["blog-writer", "brand-identity", "remotion-video"]
+    "gtm": ["blog-writer", "brand-identity", "remotion-video"],
+    "ugc_pipeline": ["ugc-scriptwriter", "ai-avatar-director", "ugc-video-prompting", "ugc-post-production"]
   },
-  "cross_cutting": ["testing-strategy", "error-handling", "github-safety", "tdd-workflow", "sdd-workflow"],
+  "cross_cutting": ["testing-strategy", "error-handling", "github-safety", "tdd-workflow", "sdd-workflow", "react-performance", "backend-performance"],
   "conventions": {
     "foundation_first": "frontend-foundation always precedes premium-frontend-design, product-tour, forms-and-validation, landing-page-architect",
     "data_before_auth": "database-architect precedes auth-architect (auth needs user/session tables)",
     "domain_before_architecture": "domain-modeler precedes hexagonal-architect/api-architect",
     "polish_last": "premium-frontend-design is polish — run after product-ux-advisor and frontend-foundation",
     "security_pre_ship": "infra-security runs before any production deploy",
-    "sdd_for_substantial_changes": "sdd-workflow activates on triggers (sdd new, sdd ff, etc.) or when changes touch ≥ 3 files / architecture"
+    "sdd_for_substantial_changes": "sdd-workflow activates on triggers (sdd new, sdd ff, etc.) or when changes touch ≥ 3 files / architecture",
+    "performance_audit_after_frontend": "react-performance runs as a non-destructive review gate after any frontend implementation skill (frontend-foundation, premium-frontend-design, forms-and-validation, product-tour, landing-page-architect) produces React code. Conditional: new components, useEffect, data fetching, render loops, or > 2 components touched. Skip on trivial edits, copy changes, or style-only tweaks.",
+    "performance_audit_after_backend": "backend-performance runs as a non-destructive review gate after any backend implementation skill (api-architect, hexagonal-architect, database-architect, auth-architect) produces code. Conditional: new endpoint/handler, new DB query, async/IO work, loop with awaits, large payload, or > 2 backend files touched. Skip on trivial edits, config changes, or doc-only tweaks."
   }
 }
