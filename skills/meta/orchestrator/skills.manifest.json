@@ -1,6 +1,6 @@
 {
-  "version": "1.3.0",
-  "updated": "2026-04-24",
+  "version": "1.4.0",
+  "updated": "2026-04-28",
   "description": "Machine-readable index of all skills in this repository. Used by the orchestrator skill (and dublin-agent) to plan without parsing every SKILL.md. Keep in sync when adding/modifying skills.",
   "skills": [
     {
@@ -139,10 +139,10 @@
       "name": "frontend-foundation",
       "path": "frontend/frontend-foundation",
       "category": "frontend",
-      "tags": ["design-tokens", "theming", "dark-mode", "light-mode", "spacing", "layout-primitives", "component-system", "base-ui", "radix"],
-      "triggers": ["new frontend", "design tokens", "dark mode", "theme", "spacing", "component system", "base ui", "radix"],
+      "tags": ["design-tokens", "theming", "dark-mode", "light-mode", "spacing", "layout-primitives", "component-system", "base-ui", "radix", "mobile-first", "cls", "icon-budget", "design-contract"],
+      "triggers": ["new frontend", "design tokens", "dark mode", "theme", "spacing", "component system", "base ui", "radix", "mobile first", "responsive", "layout shift", "cls", "icon budget", "design.md"],
       "depends_on": [],
-      "unlocks": ["premium-frontend-design", "forms-and-validation", "product-tour", "landing-page-architect", "react-performance"],
+      "unlocks": ["premium-frontend-design", "forms-and-validation", "product-tour", "landing-page-architect", "react-performance", "frontend-output-validator"],
       "cost": "medium",
       "value": "very-high"
     },
@@ -150,10 +150,10 @@
       "name": "premium-frontend-design",
       "path": "frontend/premium-frontend-design",
       "category": "frontend",
-      "tags": ["aesthetics", "glass", "gradients", "motion", "framer-motion", "typography"],
-      "triggers": ["premium ui", "apple-quality", "framer", "glass morphism", "luxury design", "polish"],
+      "tags": ["aesthetics", "glass", "gradients", "motion", "framer-motion", "typography", "ai-tells", "icon-soup", "mobile-afterthought"],
+      "triggers": ["premium ui", "apple-quality", "framer", "glass morphism", "luxury design", "polish", "icon soup", "ai tells"],
       "depends_on": ["frontend-foundation"],
-      "unlocks": ["react-performance"],
+      "unlocks": ["react-performance", "frontend-output-validator"],
       "cost": "medium",
       "value": "medium"
     },
@@ -191,6 +191,19 @@
       "value": "high-post-mvp",
       "auto_invoke_after": ["frontend-foundation", "premium-frontend-design", "forms-and-validation", "product-tour", "landing-page-architect"],
       "auto_invoke_conditions": ["new React components created", "useEffect used", "lists or render loops", "data fetching / async work", "more than 2 components touched"]
+    },
+    {
+      "name": "frontend-output-validator",
+      "path": "frontend/frontend-output-validator",
+      "category": "frontend",
+      "tags": ["review-gate", "design-contract", "validation", "wcag", "contrast", "cls", "icon-budget", "mobile-first", "ai-tells", "lighthouse"],
+      "triggers": ["frontend audit", "design audit", "validate ui", "icon count", "contrast check", "cls audit", "mobile audit", "design.md compliance", "ai tells review"],
+      "depends_on": [],
+      "unlocks": [],
+      "cost": "low",
+      "value": "very-high-post-implementation",
+      "auto_invoke_after": ["frontend-foundation", "premium-frontend-design", "forms-and-validation", "product-tour", "landing-page-architect"],
+      "auto_invoke_conditions": ["new components or layouts", "new images / videos / iframes / fonts / icons", "more than 1 component touched", "hover/focus/active states modified"]
     },
     {
       "name": "backend-performance",
@@ -411,12 +424,12 @@
     "frontend_foundation": ["frontend-foundation"],
     "ux_ui": ["product-ux-advisor", "premium-frontend-design", "forms-and-validation"],
     "feature_layer": ["product-tour", "landing-page-architect", "institutional-site-architect", "data-viz-architect"],
-    "cross_cutting": ["error-handling", "testing-strategy", "tdd-workflow", "react-performance", "backend-performance", "github-safety"],
+    "cross_cutting": ["error-handling", "testing-strategy", "tdd-workflow", "react-performance", "backend-performance", "frontend-output-validator", "github-safety"],
     "ops": ["infra-security"],
     "gtm": ["blog-writer", "brand-identity", "remotion-video"],
     "ugc_pipeline": ["ugc-scriptwriter", "ai-avatar-director", "ugc-video-prompting", "ugc-post-production"]
   },
-  "cross_cutting": ["testing-strategy", "error-handling", "github-safety", "tdd-workflow", "sdd-workflow", "react-performance", "backend-performance"],
+  "cross_cutting": ["testing-strategy", "error-handling", "github-safety", "tdd-workflow", "sdd-workflow", "react-performance", "backend-performance", "frontend-output-validator"],
   "conventions": {
     "foundation_first": "frontend-foundation always precedes premium-frontend-design, product-tour, forms-and-validation, landing-page-architect",
     "data_before_auth": "database-architect precedes auth-architect (auth needs user/session tables)",
@@ -425,6 +438,8 @@
     "security_pre_ship": "infra-security runs before any production deploy",
     "sdd_for_substantial_changes": "sdd-workflow activates on triggers (sdd new, sdd ff, etc.) or when changes touch ≥ 3 files / architecture",
     "performance_audit_after_frontend": "react-performance runs as a non-destructive review gate after any frontend implementation skill (frontend-foundation, premium-frontend-design, forms-and-validation, product-tour, landing-page-architect) produces React code. Conditional: new components, useEffect, data fetching, render loops, or > 2 components touched. Skip on trivial edits, copy changes, or style-only tweaks.",
-    "performance_audit_after_backend": "backend-performance runs as a non-destructive review gate after any backend implementation skill (api-architect, hexagonal-architect, database-architect, auth-architect) produces code. Conditional: new endpoint/handler, new DB query, async/IO work, loop with awaits, large payload, or > 2 backend files touched. Skip on trivial edits, config changes, or doc-only tweaks."
+    "performance_audit_after_backend": "backend-performance runs as a non-destructive review gate after any backend implementation skill (api-architect, hexagonal-architect, database-architect, auth-architect) produces code. Conditional: new endpoint/handler, new DB query, async/IO work, loop with awaits, large payload, or > 2 backend files touched. Skip on trivial edits, config changes, or doc-only tweaks.",
+    "design_audit_after_frontend": "frontend-output-validator runs as a non-destructive review gate after any frontend implementation skill (frontend-foundation, premium-frontend-design, forms-and-validation, product-tour, landing-page-architect) produces UI. Reads project DESIGN.md as source of truth. Checks: WCAG contrast, CLS sources, icon budget per region, touch targets ≥ 44px, viewport meta, mobile-first compliance, forbidden AI Tells (Pure Black, LILA BAN, Inter Tell, Icon Soup, Mobile Afterthought, Layout Shift Sloppy, Filler Word Index, Jane Doe Effect, Acme Slop). Conditional: new components, new images/videos/fonts/icons, > 1 component touched, hover/focus/active states modified. Skip on copy-only or type-only changes.",
+    "design_contract_per_project": "Every project ships a DESIGN.md at repo root combining YAML tokens (breakpoints, colors, typography, spacing, motion, iconBudget, contentPriority, aiTellsEnforced) with markdown rationale. Format borrows from Google Labs DESIGN.md (https://github.com/google-labs-code/design.md) and extends with Dublin specifics. Agent reads it at start of every session. CI validates with scripts/validate-design.ts."
   }
 }

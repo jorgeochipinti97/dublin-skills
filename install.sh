@@ -90,6 +90,7 @@ SKILLS=(
     error-handling "implementation/error-handling"
     forms-and-validation "frontend/forms-and-validation"
     frontend-foundation "frontend/frontend-foundation"
+    frontend-output-validator "frontend/frontend-output-validator"
     orchestrator "meta/orchestrator"
     github-safety "github/github-safety"
     hexagonal-architect "architecture/hexagonal-architect"

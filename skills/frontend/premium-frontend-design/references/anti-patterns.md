@@ -414,5 +414,170 @@ If your design has 3+ of these, it's AI slop:
 - [ ] No noise or texture
 - [ ] Linear animations
 - [ ] Generic stock illustrations
+- [ ] Icons in every nav item / card / list item / button (Icon Soup)
+- [ ] Mixed icon libraries (Lucide + Phosphor + Heroicons in one project)
+- [ ] Mobile is "responsive later" (no content priority, hover-only interactions, < 44px tap targets)
+- [ ] CLS > 0.05 on first load (images without dims, font swap reflow, banner-in-flow)
 
 **Zero tolerance policy: If something looks like AI made it, redo it.**
+
+---
+
+## Icon Soup (named AI Tell)
+
+The single most common "AI dashboard" tell. Every list item gets an icon, every nav has an icon, every card has an icon, every button has an icon, every form field has a leading icon AND a trailing icon. Six icons in six brand colors at the top of the page.
+
+### ❌ Icon Soup — what it looks like
+
+```tsx
+<aside className="flex flex-col gap-1 p-4">
+  <NavItem icon={Home}>Home</NavItem>
+  <NavItem icon={Users}>Customers</NavItem>
+  <NavItem icon={Package}>Products</NavItem>
+  <NavItem icon={ShoppingCart}>Orders</NavItem>
+  <NavItem icon={DollarSign}>Revenue</NavItem>
+  <NavItem icon={BarChart}>Analytics</NavItem>
+  <NavItem icon={Calendar}>Schedule</NavItem>
+  <NavItem icon={Mail}>Inbox</NavItem>
+  <NavItem icon={Settings}>Settings</NavItem>
+  <NavItem icon={LifeBuoy}>Help</NavItem>
+</aside>
+
+<section className="grid grid-cols-3 gap-6">
+  <Card icon={<Zap className="text-yellow-400" />} title="Fast" desc="..." />
+  <Card icon={<Shield className="text-blue-400" />} title="Secure" desc="..." />
+  <Card icon={<Heart className="text-pink-400" />} title="Loved" desc="..." />
+</section>
+```
+
+This screams "AI dashboard". Sticker-sheet syndrome. Cut by 50%.
+
+### ✅ Editorial alternative — typography over icons
+
+```tsx
+<aside className="flex flex-col gap-8 p-6">
+  <Group label="Operate">
+    <NavItem>Customers</NavItem>
+    <NavItem>Products</NavItem>
+    <NavItem>Orders</NavItem>
+  </Group>
+  <Group label="Analyze">
+    <NavItem>Revenue</NavItem>
+    <NavItem>Analytics</NavItem>
+  </Group>
+  <Group label="Account">
+    <NavItem>Settings</NavItem>
+    <NavItem icon={LogOut}>Sign out</NavItem>  {/* destructive earns icon */}
+  </Group>
+</aside>
+
+<section className="grid grid-cols-2 gap-16">
+  <article>
+    <span className="text-xs uppercase tracking-widest text-muted-foreground">01</span>
+    <h3 className="text-2xl mt-2">Fast</h3>
+    <p className="text-foreground/70 mt-3 leading-relaxed">...</p>
+  </article>
+  <article>
+    <span className="text-xs uppercase tracking-widest text-muted-foreground">02</span>
+    <h3 className="text-2xl mt-2">Secure</h3>
+    <p className="text-foreground/70 mt-3 leading-relaxed">...</p>
+  </article>
+</section>
+```
+
+### Icon Budget (cite from `frontend-foundation/references/icon-budget.md`)
+
+| Region | Max | Notes |
+|---|---|---|
+| Top nav | 5 | Logo + 3 nav + user. |
+| Hero | 1 | Usually zero. |
+| Card | 2 | Usually 1. |
+| Button | 1 | Icon OR icon+text. Never icon+text+icon. |
+| Form field | 1 | Leading OR trailing. Not both. |
+| Footer social | 3 | Brand marks only. |
+
+**Hard rules:**
+- One icon library per project (`lucide-react` OR `@phosphor-icons/react` OR `@radix-ui/react-icons`). Never mix.
+- One stroke weight globally.
+- Color via `currentColor` (status colors are the only exception).
+- Decorative icons: `aria-hidden`. Functional icons: `aria-label` or visible text.
+
+### The "delete every icon" test
+
+Mentally remove every icon from the design. Does the UI still work? Then most of those icons were decorative duplication. Keep only the ones that fail the test (icon-only buttons, status indicators, brand marks).
+
+---
+
+## Mobile Afterthought (named AI Tell)
+
+The "we'll do mobile later" pattern. Mobile becomes shrunk desktop, not a designed mobile experience.
+
+### ❌ Mobile Afterthought — symptoms
+
+- Sidebar that shrinks to a thin column on mobile (instead of becoming a bottom tab bar or drawer)
+- Multi-column grid that stacks but keeps oversized desktop spacing
+- Modal dialogs that don't use safe-area insets
+- Hover-only menus (invisible on touch)
+- Tap targets < 44px ("the icon is small but the click area is fine") — no it's not
+- Body text < 16px (iOS auto-zooms on focus)
+- `100vh` on hero (iOS Safari address bar makes it overflow)
+- Forms with wrong `inputMode` (number field but text keyboard)
+
+### ✅ Mobile-first done right
+
+- Content priority worksheet written BEFORE layout (see `frontend-foundation/references/mobile-first.md`)
+- 360px is the design starting point, not 1440px
+- Sidebar → bottom tab bar (3-5 items) OR off-canvas drawer
+- Dropdowns / dialogs → bottom sheets (Vaul or Base UI Drawer)
+- Touch targets ≥ 44×44 CSS px, 8px apart
+- Body text ≥ 16px (`text-base`)
+- `min-h-[100dvh]` for full-height
+- Safe-area insets on fixed top/bottom bars
+- Forms use proper `inputMode` + `autoComplete`
+- Hover states have a touch equivalent (persistent active state, not hover-only)
+
+### The "premium on a 360px iPhone" test
+
+Open the site on an iPhone SE 1st gen viewport (320×568) or iPhone 12 mini (360×780). Does it still feel premium? If it feels like a stripped-down version of the desktop site, it's not mobile-designed.
+
+---
+
+## Layout Shift Sloppy (named AI Tell)
+
+CLS > 0.05 — the page jumps as it loads. Apple, Stripe, Linear do not jump. Neither should you.
+
+### ❌ Layout Shift Sloppy — symptoms
+
+```tsx
+// Image without dims → jumps in
+<img src="/hero.jpg" alt="Hero" />
+
+// Web font swap → text reflows when font loads
+@font-face { font-family: 'Geist'; src: url(/geist.woff2); }
+
+// Banner pushed into normal flow → entire page shifts down
+<>
+  <CookieBanner />
+  <Header />
+  <main>...</main>
+</>
+
+// Accordion animating height: auto → broken animation + CLS
+<div style={{ height: open ? 'auto' : 0 }}>...</div>
+
+// Skeleton 60px tall, real card 180px tall → 120px shift
+```
+
+### ✅ Layout Shift Sloppy — fix
+
+Refer to `frontend-foundation/references/cls-zero.md` for full BAD/GOOD pairs. Quick rules:
+
+- Every image: `width`+`height` or `aspect-ratio`
+- Web fonts: `font-display: swap` + `size-adjust` fallback + `<link rel="preload">`
+- Banners / toasts: layered (`fixed`/`absolute`), never inline
+- Accordion: `grid-template-rows: 0fr → 1fr`, never `height: auto`
+- Skeletons: match real content dimensions exactly
+
+### Target: CLS < 0.05
+
+Measure in dev (Lighthouse), monitor in prod (`web-vitals` package). If CLS > 0.05 on a route, fix before ship.

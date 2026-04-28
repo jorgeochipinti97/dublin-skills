@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a **Claude Code skills library** — a collection of specialized prompts, reference materials, and code templates that extend Claude Code's capabilities in specific domains. Currently **36 skills** across 15 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
+This is a **Claude Code skills library** — a collection of specialized prompts, reference materials, and code templates that extend Claude Code's capabilities in specific domains. Currently **37 skills** across 15 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
 
 ## Structure
 
@@ -35,10 +35,13 @@ skills/
 ├── frontend/
 │   ├── forms-and-validation/     # Production forms: React Hook Form + Zod, multi-step, async, file upload, a11y, Server Actions
 │   │   └── references/           # patterns.md (templates)
-│   ├── frontend-foundation/      # Day-0 architecture: dual theme (View Transitions slow-fast-slow), spacing system, headless component system (Base UI/Radix), sidebar pattern
-│   │   └── references/           # theming.md, spacing.md, component-system.md
-│   ├── premium-frontend-design/  # Apple/Framer-quality UI — 3 dials (VARIANCE/MOTION/DENSITY), AI Tells with names (LILA BAN, Jane Doe Effect, Acme Slop, Filler Word Index, 99.99% Problem)
+│   ├── frontend-foundation/      # Day-0: 6 Pillars — dual theme (View Transitions slow-fast-slow), spacing, headless component system (Base UI/Radix), Mobile-First with content priority, CLS Zero, Icon Budget. Plus DESIGN.md contract per project (extends Google Labs DESIGN.md format)
+│   │   └── references/           # theming.md, spacing.md, component-system.md, mobile-first.md, cls-zero.md, icon-budget.md, design-contract.md
+│   ├── premium-frontend-design/  # Apple/Framer-quality UI — 3 dials (VARIANCE/MOTION/DENSITY), AI Tells with names (LILA BAN, Jane Doe Effect, Acme Slop, Filler Word Index, 99.99% Problem, Icon Soup, Mobile Afterthought, Layout Shift Sloppy)
 │   │   └── references/           # effects-library.md, typography-system.md, motion-patterns.md, anti-patterns.md
+│   ├── frontend-output-validator/ # Review gate AFTER frontend implementation. Layer 1 static (rg patterns) + Layer 2 Lighthouse. Checks contrast, CLS, icon budget, touch targets, mobile-first, viewport, AI Tells, DESIGN.md drift
+│   │   ├── references/           # check-catalog.md (every check), grep-patterns.md (rg/AST patterns), lighthouse-integration.md
+│   │   └── scripts/              # validate-frontend.ts (Layer 1 implementation)
 │   ├── product-tour/             # Interactive product tours & onboarding flows for Next.js
 │   │   └── references/           # onboarding-patterns.md, accessibility.md, implementation-examples.md
 │   └── react-performance/        # React/Next.js performance: useEffect elimination, RSC, bundle optimization
@@ -207,15 +210,17 @@ Authentication + authorization for web/mobile:
 ### Frontend
 
 #### frontend-foundation
-Day-0 frontend architecture. Invoke BEFORE `premium-frontend-design` when starting a new product:
-- **Dual theme** (dark + light) from day 0 via semantic CSS variables (next-themes + Tailwind v4)
-- **Theme toggle** uses View Transitions API with slow-fast-slow ease `cubic-bezier(0.65, 0, 0.35, 1)` (off-main-thread)
-- **Spacing system**: one scale, layout primitives own spacing (Stack, Row, Grid, Section, Container), never arbitrary values, `gap` over margin
-- **Component system** on headless primitives (Base UI / Radix / React Aria) + branded `ui/` layer with CVA variants
-- **Sidebar pattern**: collapsible with icon-rail, pill/oval trigger, `Cmd+B` shortcut
-- **Cross-cutting mandates**: dependency verification (grep package.json before import), interactive states (loading/empty/error/active), hardware acceleration (transform/opacity only, `min-h-[100dvh]`)
+Day-0 frontend architecture. **6 Pillars** — invoke BEFORE `premium-frontend-design` when starting a new product:
+- **Pillar 1 — Dual theme** (dark + light) from day 0 via semantic CSS variables (next-themes + Tailwind v4). Theme toggle uses View Transitions API with slow-fast-slow ease `cubic-bezier(0.65, 0, 0.35, 1)` (off-main-thread)
+- **Pillar 2 — Spacing system**: one scale, layout primitives own spacing (Stack, Row, Grid, Section, Container), never arbitrary values, `gap` over margin
+- **Pillar 3 — Component system** on headless primitives (Base UI / Radix / React Aria) + branded `ui/` layer with CVA variants. Sidebar collapsible with icon-rail
+- **Pillar 4 — Mobile-First with Content Priority**: design starts at 360px. Content priority worksheet (critical / primary / secondary / tertiary) BEFORE any layout. Touch targets ≥ 44×44 CSS px. `100dvh` not `100vh`. Mobile pattern swaps (sidebar → bottom tab, dropdown → bottom sheet, modal → full-screen sheet)
+- **Pillar 5 — CLS Zero**: target < 0.05. Every image has `width`+`height` or `aspect-ratio`. Iframes wrapped in aspect-ratio container. Web fonts use `font-display: swap` + size-adjust fallback + preload. Banners overlay (`fixed`), never inline. Accordions use `grid-template-rows: 0fr → 1fr`. Skeletons match real content dimensions
+- **Pillar 6 — Icon Budget**: nav ≤ 5, hero ≤ 1, card ≤ 2, button ≤ 1, form field ≤ 1, footer social ≤ 3. One library per project. `currentColor` for inheritance. Decorative `aria-hidden`, functional `aria-label`. Icon Soup forbidden
+- **Cross-cutting mandates**: dependency verification (grep package.json before import), interactive states (loading/empty/error/active), hardware acceleration (transform/opacity only)
+- **Design Contract per project**: `DESIGN.md` at repo root combining YAML tokens (breakpoints, colors, typography, spacing, motion, iconBudget, contentPriority, aiTellsEnforced) with markdown rationale. Format borrows from [Google Labs DESIGN.md](https://github.com/google-labs-code/design.md) and extends with Dublin specifics
 
-Reference files: `theming.md` (CSS vars, next-themes, View Transitions, contrast), `spacing.md` (scale, layout primitives code), `component-system.md` (Base UI vs Radix, CVA templates, Sidebar).
+Reference files: `theming.md`, `spacing.md`, `component-system.md`, `mobile-first.md` (content priority worksheet, mobile pattern swaps, touch targets, safe-area, container queries, `clamp()`), `cls-zero.md` (BAD/GOOD pairs for every CLS source), `icon-budget.md` (per-region budgets, Icon Soup examples), `design-contract.md` (DESIGN.md template + CI lint script).
 
 #### premium-frontend-design
 Creates luxury React/Next.js interfaces with:
@@ -229,6 +234,9 @@ Creates luxury React/Next.js interfaces with:
   - Pure Black Tell (never `#000`)
   - Inter Tell (distinctive sans only)
   - Generic 3-Card Row (use zig-zag / bento / scroll instead)
+  - **Icon Soup** (icons everywhere, no budget — enforce `frontend-foundation` Pillar 6)
+  - **Mobile Afterthought** ("responsive later" → mobile becomes shrunk-desktop. Use mobile-first content priority)
+  - **Layout Shift Sloppy** (CLS > 0.05 — premium products do not jump on load)
 - Glass morphism with inner border + tinted shadow
 - Framer Motion spring physics, magnetic buttons via `useMotionValue` (never `useState`)
 - Typography: distinctive font pairings, -0.02em to -0.05em tracking on headlines
@@ -245,6 +253,18 @@ Production forms with React Hook Form + Zod:
 - File upload with progress (XHR, direct-to-S3)
 - Server Actions integration
 - Full a11y checklist
+
+#### frontend-output-validator
+Non-destructive review gate that runs AFTER any frontend implementation skill. Pairs with `react-performance` (perf audit) — this audits **design contract compliance**:
+- **Layer 1 — static checks** (rg / AST grep): forbidden tokens (Pure Black Tell, raw hex in components), LILA BAN gradient detection, gradient text on headlines, mixed icon libraries, `100vh` instead of `100dvh`, `<img>` without dimensions, `transition-all` / `transition-[height]`, `addEventListener('scroll')`, viewport meta validation, body text size on inputs (iOS auto-zoom), safe-area on fixed bottom bars, hover-only interactions, Filler Word Index (Elevate / Unleash / Seamless / Next-gen / Revolutionize / etc.), Jane Doe Effect (John Doe / Sarah Chan / Acme / Nexus / Lorem ipsum), Unsplash link rot, 99.99% Problem
+- **Layer 2 — Lighthouse CI**: actual CLS measurement (target < 0.05), LCP, computed contrast (light + dark), `tap-targets` audit, `viewport`, `image-aspect-ratio`, `font-display`. Run mobile (360×800) + desktop separately
+- **Layer 3 — Visual regression** (optional, expensive): Playwright screenshots at 360 / 768 / 1280 viewports
+- **DESIGN.md compliance**: file exists, YAML parses, required keys present (breakpoints, iconBudget, cls.target, aiTellsEnforced), token drift detection (DESIGN.md vs Tailwind config / CSS vars)
+- **Output contract**: pass/fail report with `file:line` references, severity (🔴 fail / 🟡 warn / 🟢 info), grouped by rule. > 5 warnings → suggest `claude-md-keeper` review for systemic drift
+
+Auto-invoke after `frontend-foundation`, `premium-frontend-design`, `forms-and-validation`, `product-tour`, `landing-page-architect`. Conditional: new components/layouts, new images/videos/iframes/fonts/icons, > 1 component touched, hover/focus/active states modified. Skip on copy-only or type-only changes.
+
+Reference files: `check-catalog.md` (every check + example failure), `grep-patterns.md` (exact rg/AST patterns for static checks), `lighthouse-integration.md` (lhci config, GitHub Actions, mobile vs desktop runs). Script: `scripts/validate-frontend.ts` (Layer 1 starting implementation).
 
 #### react-performance
 Audits and optimizes React/Next.js applications:
@@ -433,6 +453,11 @@ When using skills in other projects, load the SKILL.md and relevant reference fi
 - **SDD for substantial changes**: `sdd-workflow` activates on triggers or when changes touch ≥ 3 files / architecture
 - **Performance audit after frontend**: `react-performance` runs as a non-destructive review gate after any frontend implementation skill (`frontend-foundation`, `premium-frontend-design`, `forms-and-validation`, `product-tour`, `landing-page-architect`) produces React code. Conditional: fires only if new components, `useEffect`, data fetching, render loops, or > 2 components touched. Skip on trivial edits, copy-only changes, or style-only tweaks.
 - **Performance audit after backend**: `backend-performance` runs as a non-destructive review gate after any backend implementation skill (`api-architect`, `hexagonal-architect`, `database-architect`, `auth-architect`) produces code. Conditional: fires on new endpoint/handler, new DB query, async/IO work, loop with awaits, large payloads, or > 2 backend files touched. Skip on config-only, doc-only, or type-only changes.
+- **Design audit after frontend**: `frontend-output-validator` runs as a non-destructive review gate after any frontend implementation skill produces UI. Reads project `DESIGN.md` as source of truth. Validates contrast, CLS, icon budget, touch targets, viewport meta, mobile-first compliance, forbidden AI Tells (Pure Black / LILA BAN / Inter Tell / Icon Soup / Mobile Afterthought / Layout Shift Sloppy / Filler Word Index / Jane Doe Effect / Acme Slop). Conditional: fires on new components/layouts, new images/videos/fonts/icons, > 1 component touched, hover/focus/active states modified. Skip on copy-only or type-only changes. Pairs with `react-performance` (perf vs design contract).
+- **Design contract per project**: every project ships a `DESIGN.md` at repo root combining YAML tokens (breakpoints, colors, typography, spacing, motion, iconBudget, contentPriority, aiTellsEnforced) with markdown rationale. Format borrows from [Google Labs DESIGN.md](https://github.com/google-labs-code/design.md) and extends with Dublin specifics (motion, breakpoints, icon budget, content priority, AI Tells). Agent reads it at start of every session. CI validates with `scripts/validate-design.ts` (Zod schema). Optional: `npx @google/design.md lint` for contrast + token diff.
+- **Mobile-first content priority**: every screen has a `contentPriority` block in `DESIGN.md` (critical / primary / secondary / tertiary). Layouts are designed at 360px first, then scaled up. Mobile pattern swaps mandatory: sidebar → bottom tab bar, dropdown → bottom sheet, modal → full-screen sheet, hover-only → persistent active state.
+- **CLS Zero target**: < 0.05 (Core Web Vitals "Good" is < 0.1). Every image has `width`+`height` or `aspect-ratio`. Web fonts use `font-display: swap` + size-adjust fallback + preload. Banners overlay (`fixed`), never inline. Accordions use `grid-template-rows: 0fr → 1fr`.
+- **Icon budget enforcement**: nav ≤ 5, hero ≤ 1, card ≤ 2, button ≤ 1, form field ≤ 1, footer social ≤ 3. One library per project (no mixing). Counted by `frontend-output-validator`, not vibed.
 - **UGC pipeline order**:
   - Lipsync branch: `ugc-scriptwriter` → `ai-avatar-director` → `ugc-post-production`
   - Generative branch: `ugc-scriptwriter` → `ugc-video-prompting` → `ugc-post-production`

@@ -18,8 +18,9 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[skill-creator](skills/skill-creator)** | Guide for creating effective skills that extend Claude's capabilities |
 | **[brand-identity](skills/brand-identity)** | Brand identity systems: color palettes, typography, spacing, UX principles |
 | **[brand-guidelines](skills/brand-guidelines)** | Anthropic brand colors, typography, and visual styling |
-| **[frontend-foundation](skills/frontend/frontend-foundation)** | Day-0 frontend architecture: dual theme (dark + light) from start, spacing system, reusable component layer on headless primitives (Base UI/Radix) |
-| **[premium-frontend-design](skills/frontend/premium-frontend-design)** | Apple/Framer-quality React/Next.js interfaces: glass effects, gradients, micro-interactions |
+| **[frontend-foundation](skills/frontend/frontend-foundation)** | Day-0 frontend architecture: dual theme (dark + light), spacing system, mobile-first with content priority, CLS Zero, icon budget, design contract (DESIGN.md), component layer on headless primitives (Base UI/Radix) |
+| **[premium-frontend-design](skills/frontend/premium-frontend-design)** | Apple/Framer-quality React/Next.js interfaces: glass effects, gradients, micro-interactions, named AI Tells (LILA BAN, Inter Tell, Icon Soup, Mobile Afterthought, Layout Shift Sloppy, Filler Word Index) |
+| **[frontend-output-validator](skills/frontend/frontend-output-validator)** | Review gate AFTER frontend implementation — validates contrast (WCAG), CLS sources, icon budget, touch targets, mobile-first compliance, viewport meta, forbidden AI Tells, DESIGN.md contract drift. Layer 1 static + Layer 2 Lighthouse |
 | **[product-tour](skills/frontend/product-tour)** | Interactive product tours and onboarding flows for Next.js: guided walkthroughs, activation checklists, welcome modals |
 | **[react-performance](skills/frontend/react-performance)** | React/Next.js performance optimization: useEffect elimination, rendering, RSC, bundle analysis |
 | **[backend-performance](skills/backend/backend-performance)** | Backend performance audit: N+1 queries, async/event loop, caching (Redis/HTTP/CDN), connection pooling, payload shape, rate limiting, OpenTelemetry tracing |
@@ -77,7 +78,8 @@ backend-performance   bind-api              blog-writer
 brand-guidelines      brand-identity        claude-md-keeper
 database-architect    data-viz-architect    domain-modeler
 error-handling        forms-and-validation  frontend-foundation
-github-safety         hexagonal-architect   infra-security
+frontend-output-validator                   github-safety
+hexagonal-architect   infra-security
 institutional-site-architect                landing-page-architect
 orchestrator          premium-frontend-design                product-planner
 product-tour          product-ux-advisor    react-performance

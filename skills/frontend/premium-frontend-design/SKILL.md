@@ -131,6 +131,29 @@ Gradient text on large headers = early-2020s AI look. Use solid color + subtle t
 ### CUSTOM MOUSE CURSOR
 Outdated, breaks accessibility, ruins mobile. Never generate these.
 
+### ICON SOUP
+Icons everywhere = visual noise, no information gain. The "AI dashboard" tell.
+
+**The pattern**: every nav item has an icon, every card has an icon, every list item has an icon, every button has an icon, every form field has a leading icon AND a trailing icon. Six icons in a row in six brand colors.
+
+**The fix**: enforce the icon budget from `frontend-foundation` (Pillar 6). One library only. Icons earn their place by adding information the label doesn't carry. If deleting an icon doesn't change the user's understanding, delete it.
+
+**Hard limits per region:** nav ≤ 5, hero ≤ 1, card ≤ 2, button ≤ 1, form field ≤ 1, footer social ≤ 3. See `frontend-foundation/references/icon-budget.md`.
+
+### MOBILE AFTERTHOUGHT
+"Responsive later" = mobile becomes shrunk-desktop. Premium does not happen by accident on mobile — it happens by starting at 360px.
+
+**The pattern**: design completed on a 1440px frame, then `md:` breakpoint variants pasted over. Touch targets too small. Hover-only interactions. Sidebar-shrunk-to-drawer instead of bottom-tab-bar. Modal dialog instead of bottom sheet. Multi-column grid stacked on top of itself.
+
+**The fix**: content priority worksheet from `frontend-foundation` Pillar 4 + the mobile pattern swap table. See `frontend-foundation/references/mobile-first.md`.
+
+### LAYOUT SHIFT SLOPPY
+CLS > 0.05 = the page jumps as it loads. Premium products do not jump.
+
+**The pattern**: images without dimensions, web fonts swapping mid-paint, banner inserted in normal flow pushing content down, accordion animating `height: auto`, skeleton dimensions don't match the loaded content.
+
+**The fix**: every image gets `width`+`height` or `aspect-ratio`. Web fonts use `font-display: swap` + size-adjust fallback + preload. Banners are layered (`fixed`), never inline. Skeletons match real dimensions. See `frontend-foundation/references/cls-zero.md`.
+
 ---
 
 ## 4. Dependency Verification Mandate
@@ -229,6 +252,12 @@ React 18+ / Next.js 14+, Tailwind CSS, Framer Motion, TypeScript, variable fonts
 | Animating `width`/`height` | Layout Thrash |
 | `useState` for magnetic hover | Mobile Collapse |
 | `shadcn/ui` default state | Off-the-shelf Tell |
+| Icons everywhere, no budget | Icon Soup |
+| Mixed icon libraries | Icon Library Mix |
+| Designed on desktop, mobile retrofitted | Mobile Afterthought |
+| Touch targets < 44px | Tap Target Tell |
+| CLS > 0.05 (page jumps on load) | Layout Shift Sloppy |
+| `<img>` without dimensions | CLS Image Source |
 
 **Test:** "Would a designer at Apple review this favorably?"
 
