@@ -11,6 +11,7 @@ if [[ -L "$SCRIPT_PATH" ]]; then
 fi
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 SKILLS_SOURCE="$SCRIPT_DIR/skills"
+AGENTS_SOURCE="$SCRIPT_DIR/agents"
 
 # Colors
 RED='\033[0;31m'
@@ -41,6 +42,10 @@ if [[ "$LANG" == es_* ]]; then
     L_UPDATING="Actualizando skills instaladas..."
     L_NO_SKILLS="No hay skills instaladas para actualizar"
     L_UPDATED="Actualizacion completada."
+    L_AGENT_INSTALLING="Instalando dublin-agent en"
+    L_AGENT_BACKUP="Backup creado en"
+    L_AGENT_DONE="Agente instalado."
+    L_AGENT_NOT_FOUND="No se encontro el archivo del agente"
 else
     L_AVAILABLE="Available skills"
     L_INSTALL_ALL="Install all"
@@ -62,6 +67,10 @@ else
     L_UPDATING="Updating installed skills..."
     L_NO_SKILLS="No skills installed to update"
     L_UPDATED="Update complete."
+    L_AGENT_INSTALLING="Installing dublin-agent into"
+    L_AGENT_BACKUP="Backup saved to"
+    L_AGENT_DONE="Agent installed."
+    L_AGENT_NOT_FOUND="Agent file not found"
 fi
 
 print_header() {
@@ -193,6 +202,31 @@ update_skills() {
     echo "${GREEN}${L_UPDATED}${NC}"
 }
 
+install_agent() {
+    local agent_src="$AGENTS_SOURCE/dublin-agent.md"
+    local agent_dest_dir="$HOME/.claude/agents"
+    local agent_dest="$agent_dest_dir/dublin-agent.md"
+
+    if [[ ! -f "$agent_src" ]]; then
+        echo "${RED}${L_AGENT_NOT_FOUND}: $agent_src${NC}"
+        return 1
+    fi
+
+    mkdir -p "$agent_dest_dir"
+
+    if [[ -f "$agent_dest" ]]; then
+        local backup="$agent_dest.bak.$(date +%Y%m%d-%H%M%S)"
+        cp "$agent_dest" "$backup"
+        echo "${YELLOW}  ${L_AGENT_BACKUP}: $backup${NC}"
+    fi
+
+    echo "${BLUE}${L_AGENT_INSTALLING}: $agent_dest_dir${NC}"
+    cp "$agent_src" "$agent_dest"
+    echo "${GREEN}  ✓ dublin-agent.md${NC}"
+    echo ""
+    echo "${GREEN}${L_AGENT_DONE}${NC}"
+}
+
 main() {
     # Strip carriage returns from arguments (common when copy-pasting from Windows/web)
     local -a clean_args=()
@@ -202,6 +236,12 @@ main() {
     set -- "${clean_args[@]}"
 
     print_header
+
+    # Handle agent command (installs dublin-agent to ~/.claude/agents/)
+    if [[ "$1" == "agent" ]]; then
+        install_agent
+        exit $?
+    fi
 
     # Handle update command
     if [[ "$1" == "update" ]]; then

@@ -9,6 +9,8 @@ This is a **Claude Code skills library** — a collection of specialized prompts
 ## Structure
 
 ```
+agents/
+└── dublin-agent.md           # Senior-architect mentor agent (installed to ~/.claude/agents/ via install.sh agent)
 skills/
 ├── architecture/
 │   ├── api-architect/        # Scalable/reliable/secure API design or audit (REST/GraphQL/gRPC)
@@ -94,9 +96,9 @@ skills/
 
 ## Companion Assets (outside `skills/`)
 
-- **`~/.claude/agents/dublin-agent.md`** — user-scope senior-architect mentor agent (invoked via `Task(subagent_type: 'dublin-agent')`). Auto-detects this library and delegates to skills. Successor to the historical `gentleman` agent (backup kept as `gentleman.backup.md`).
-- **`~/.claude/agent-memory/shared/preferences.md`** — universal user preferences (voseo, no emojis, bun, philosophy, Dublin conventions). Read by dublin-agent and any future agent.
-- **`~/.claude/agent-memory/dublin-agent/`** — agent-specific operational memory.
+- **`agents/dublin-agent.md`** (in this repo) — versioned source of the senior-architect mentor agent. Installed to `~/.claude/agents/dublin-agent.md` via `./install.sh agent` (creates a timestamped backup if a previous version exists). Invoked via `Task(subagent_type: 'dublin-agent')`. Auto-detects this library and delegates to skills. Successor to the historical `gentleman` agent.
+- **`~/.claude/agent-memory/shared/preferences.md`** — universal user preferences (voseo, no emojis, bun, philosophy, Dublin conventions). Read by dublin-agent and any future agent. Stays user-scope, not in this repo.
+- **`~/.claude/agent-memory/dublin-agent/`** — agent-specific operational memory. Stays user-scope.
 
 ## Skill File Convention
 

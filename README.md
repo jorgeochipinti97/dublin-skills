@@ -1,6 +1,29 @@
 # Dublin Skills
 
-A collection of skills for [Claude Code](https://claude.ai/code) that extend its capabilities in specific domains.
+A collection of skills for [Claude Code](https://claude.ai/code) that extend its capabilities in specific domains, paired with the **dublin-agent** — a senior-architect mentor agent that auto-detects this library and delegates to the right skill.
+
+## Quick Start
+
+```bash
+git clone https://github.com/jorgeochipinti97/dublin-skills.git
+cd dublin-skills
+
+# Install the dublin-agent (user-scope, available from any project)
+./install.sh agent
+
+# Install skills into a project
+./install.sh ~/my-project --all
+```
+
+Prefer no clone? Install just the agent with one command:
+
+```bash
+mkdir -p ~/.claude/agents && curl -fsSL \
+  https://raw.githubusercontent.com/jorgeochipinti97/dublin-skills/main/agents/dublin-agent.md \
+  -o ~/.claude/agents/dublin-agent.md
+```
+
+Then invoke it from Claude Code via `Task(subagent_type: 'dublin-agent')`.
 
 ## What are Skills?
 
@@ -115,6 +138,18 @@ dublin-skill-install update   # Updates all installed skills
 ```
 
 The installer automatically detects your system language (`LANG` environment variable) and displays messages in Spanish or English.
+
+### Installing the dublin-agent
+
+The repo also ships the **dublin-agent** — a senior-architect mentor agent (`agents/dublin-agent.md`) that auto-detects this skills library and delegates to the right skill. Agents are user-scoped (live in `~/.claude/agents/`), so install once and use from any project:
+
+```bash
+./install.sh agent
+# or, with the global symlink
+dublin-skill-install agent
+```
+
+If you already have `~/.claude/agents/dublin-agent.md`, the installer creates a timestamped backup before overwriting. After installing, invoke it from Claude Code with `Task(subagent_type: 'dublin-agent')` or the `/dublin` command.
 
 ## Usage
 
