@@ -92,6 +92,7 @@ SKILLS=(
     blog-writer "content/blog-writer"
     brand-guidelines "brand-guidelines"
     brand-identity "brand-identity"
+    change-safety "ops/change-safety"
     claude-md-keeper "meta/claude-md-keeper"
     database-architect "data/database-architect"
     data-viz-architect "data/data-viz-architect"
@@ -106,6 +107,7 @@ SKILLS=(
     infra-security "infra-security"
     institutional-site-architect "content/institutional-site-architect"
     landing-page-architect "content/landing-page-architect"
+    mobile-design "frontend/mobile-design"
     premium-frontend-design "frontend/premium-frontend-design"
     product-tour "frontend/product-tour"
     react-performance "frontend/react-performance"
@@ -204,8 +206,10 @@ update_skills() {
 
 install_agent() {
     local agent_src="$AGENTS_SOURCE/dublin-agent.md"
+    local agent_refs_src="$AGENTS_SOURCE/dublin-agent/references"
     local agent_dest_dir="$HOME/.claude/agents"
     local agent_dest="$agent_dest_dir/dublin-agent.md"
+    local agent_refs_dest="$agent_dest_dir/dublin-agent/references"
 
     if [[ ! -f "$agent_src" ]]; then
         echo "${RED}${L_AGENT_NOT_FOUND}: $agent_src${NC}"
@@ -223,6 +227,14 @@ install_agent() {
     echo "${BLUE}${L_AGENT_INSTALLING}: $agent_dest_dir${NC}"
     cp "$agent_src" "$agent_dest"
     echo "${GREEN}  ✓ dublin-agent.md${NC}"
+
+    # Install references (loaded on-demand by the agent for token efficiency)
+    if [[ -d "$agent_refs_src" ]]; then
+        mkdir -p "$agent_refs_dest"
+        rsync -av --exclude='.DS_Store' "$agent_refs_src/" "$agent_refs_dest/" > /dev/null 2>&1
+        echo "${GREEN}  ✓ dublin-agent/references/${NC}"
+    fi
+
     echo ""
     echo "${GREEN}${L_AGENT_DONE}${NC}"
 }

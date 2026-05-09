@@ -239,6 +239,18 @@ function checkSafeArea() {
   }
 }
 
+function checkVeeVeeDubTrap() {
+  // width: 100vw (CSS) and w-screen / w-[100vw] (Tailwind) — overflow risk because 100vw includes scrollbar
+  const cssMatches = rg('\\bwidth:\\s*100vw\\b');
+  for (const line of cssMatches) {
+    report('mobile.vvw-trap', 'warn', 'width: 100vw includes scrollbar — use 100% (or wrap in overflow-x: clip if full-bleed needed)', line);
+  }
+  const twMatches = rg('\\bw-screen\\b|\\bw-\\[100vw\\]');
+  for (const line of twMatches) {
+    report('mobile.vvw-trap', 'warn', 'w-screen / w-[100vw] includes scrollbar — use w-full (or wrap full-bleed in overflow-x-clip)', line);
+  }
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // Report
 // ────────────────────────────────────────────────────────────────────────────
@@ -297,6 +309,7 @@ function main() {
   checkViewportMeta();
   checkBodyFontSize();
   checkSafeArea();
+  checkVeeVeeDubTrap();
 
   printReport();
 

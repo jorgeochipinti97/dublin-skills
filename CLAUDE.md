@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a **Claude Code skills library** — a collection of specialized prompts, reference materials, and code templates that extend Claude Code's capabilities in specific domains. Currently **37 skills** across 15 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
+This is a **Claude Code skills library** — a collection of specialized prompts, reference materials, and code templates that extend Claude Code's capabilities in specific domains. Currently **39 skills** across 16 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
 
 ## Structure
 
@@ -44,6 +44,8 @@ skills/
 │   ├── frontend-output-validator/ # Review gate AFTER frontend implementation. Layer 1 static (rg patterns) + Layer 2 Lighthouse. Checks contrast, CLS, icon budget, touch targets, mobile-first, viewport, AI Tells, DESIGN.md drift
 │   │   ├── references/           # check-catalog.md (every check), grep-patterns.md (rg/AST patterns), lighthouse-integration.md
 │   │   └── scripts/              # validate-frontend.ts (Layer 1 implementation)
+│   ├── mobile-design/            # Mobile as a first-class surface — Shrunk Desktop AI Tell, overflow killers, mobile-native patterns (bottom sheet, FAB, swipe, sticky CTA, segmented control), thumb zones, touch targets, fluid type, mobile form config
+│   │   └── references/           # overflow-killers.md, mobile-patterns.md, touch-and-type.md
 │   ├── product-tour/             # Interactive product tours & onboarding flows for Next.js
 │   │   └── references/           # onboarding-patterns.md, accessibility.md, implementation-examples.md
 │   └── react-performance/        # React/Next.js performance: useEffect elimination, RSC, bundle optimization
@@ -62,6 +64,9 @@ skills/
 ├── methodology/
 │   └── sdd-workflow/         # Spec-Driven Development — triggers, commands, dep graph, artifact store (engram/openspec/none), sub-agent patterns
 │       └── references/       # sub-agent-patterns.md, artifact-policy.md
+├── ops/
+│   └── change-safety/        # Pre-flight guardrail before any prod write — snapshot, rollback, comms, in-flight check, change window
+│       └── references/       # checklist.md, rollback-playbook.md, postmortem-template.md
 ├── meta/
 │   ├── claude-md-keeper/     # CLAUDE.md drift detection + diff-review proposals. NEVER auto-writes. On-demand only.
 │   │   └── references/       # drift-detection.md (signal catalog), promotion-policy.md (2-of-3 rule)
@@ -246,6 +251,17 @@ Creates luxury React/Next.js interfaces with:
 
 Reference files in `references/` contain complete CSS/React code for all effects.
 
+#### mobile-design
+Mobile as a first-class surface, not a desktop scaled down. Pairs with `frontend-foundation` (Pillar 4 owns the baseline) — this skill owns mobile-as-its-own-medium and the killer of horizontal overflow. Run AFTER `frontend-foundation`, BEFORE `premium-frontend-design` polish.
+
+- **New AI Tell — Shrunk Desktop**: mobile UI is the desktop UI compressed into 360px (sidebar squeezed onto a 360px strip, modal centered at 90%, hover dropdowns, top-right CTAs). Sibling to `Mobile Afterthought` from premium-frontend-design.
+- **Overflow killers** — every cause of "se sale de pantalla" with BAD/GOOD pairs: `width: 100vw` (Vee-Vee-Dub Trap), `min-width` on grid children, long unbroken text without `overflow-wrap: anywhere`, images without `max-width: 100%`, tables without scroll wrapper, `<pre>` without `overflow-x: auto`, padding sum > viewport, headlines without `clamp()`, too many columns at 360px. Includes runtime detection snippet and the `* { outline }` debug recipe.
+- **Mobile-native patterns** — bottom tab bar, bottom sheet (Vaul), FAB, swipe actions, pull-to-refresh, sticky bottom CTA, segmented control, full-screen modal sheet, hamburger as anti-pattern. Each with when YES / when NO / minimal snippet.
+- **Touch & type** — Hoo's Map thumb zones (natural / stretch / hard), 44×44 touch targets with hit slop, fluid type with `clamp()`, line-height 1.5-1.6 mobile body, mobile form config (`inputMode` + `autoComplete` + `font-size: 16px`), safe area insets, image strategy (`<picture>`, `srcset`, AVIF→WebP→JPG).
+- **5 non-negotiable mandates**: design starts at 360px / touch ≥ 44×44 with ≥ 8px spacing / zero horizontal overflow / `100dvh` not `100vh` / safe area on every fixed bottom element.
+
+Reference files: `overflow-killers.md`, `mobile-patterns.md`, `touch-and-type.md`.
+
 #### forms-and-validation
 Production forms with React Hook Form + Zod:
 - Shared Zod schema client + server
@@ -413,6 +429,28 @@ Prevents destructive Git operations:
 - Required practices: new commits over rewrites, feature branches, verify before push
 - Emergency protocol: STOP → show status → explain → propose → wait for confirmation
 
+#### change-safety
+Pre-flight guardrail before any production write. Auto-invokes on signals: `ALTER`, `DROP`, `TRUNCATE`, `RENAME`, `UPDATE`/`DELETE` without `WHERE`, mass batches, deploy to prod, store/CMS catalog or pricing or inventory edit, env/secret rotation, DNS change, TLS swap, IAM/security group change, infra parameter change.
+
+Forces seven-step protocol before execution:
+1. One-sentence change description (verb + object + system + window)
+2. Snapshot/backup taken AND tested by restoring to scratch
+3. Rollback plan written (trigger + procedure + RTO) — copy-paste runbook ready
+4. Stakeholder communication (customer T-24h banner + internal + on-call)
+5. In-flight transaction check (`pg_stat_activity`, queue depth, replication lag, active checkouts)
+6. Change window declared (off-peak by audience timezone, hard deadline)
+7. Approval gate (second human for medium+ changes, pair-execute for destructive)
+
+Decision trees by change type: DB schema (3-step rename, lock_timeout, NOT VALID + VALIDATE), DB data (SELECT first, transaction with explicit limit, COPY before DELETE), Store/CMS (export catalog/theme/pages first, draft channel test, bulk-edit history), Deploy (last green SHA, decoupled migration+code, feature flag ramp), Config (diff before/after, nginx -t, DNS TTL pre-lower), Infra (RDS param apply_method, autoscaling cooldown, blue-green resize).
+
+Per-system rollback playbook: Postgres (pg_dump + PITR), MySQL (mysqldump --single-transaction), Mongo (mongodump + Atlas snapshot), Redis (BGSAVE + dump.rdb), Shopify (catalog CSV + theme zip), WooCommerce (wp db export + wp-content tar), Vercel (rollback via SHA), Netlify (rollbackSiteDeploy), S3/R2 (versioning + delete bad version), DNS (lowered TTL + restore values), App config (vault-stored values + redeploy), TLS (ACME automated), IAM (saved JSON re-apply).
+
+Postmortem template included: blameless, timeline, root cause vs trigger, action items with owner+due+priority+type, "what went well / what went poorly / where we got lucky".
+
+Pairs with `database-architect` (zero-downtime migrations), `github-safety` (non-destructive git), `infra-security` (security audits), `error-handling` (rollback trigger detection).
+
+Reference files: `checklist.md` (full pre-flight, copy into runbook), `rollback-playbook.md` (per-system commands), `postmortem-template.md` (template + GOOD/BAD examples).
+
 ### Integration & Media
 
 #### bind-api
@@ -447,11 +485,13 @@ When using skills in other projects, load the SKILL.md and relevant reference fi
 
 ## Conventions (Dublin)
 
-- **Foundation-first**: `frontend-foundation` precedes `premium-frontend-design` / `forms-and-validation` / `product-tour` / `landing-page-architect`
+- **Foundation-first**: `frontend-foundation` precedes `mobile-design` / `premium-frontend-design` / `forms-and-validation` / `product-tour` / `landing-page-architect`
+- **Mobile-as-medium-before-polish**: `mobile-design` runs AFTER `frontend-foundation` (Pillar 4 baseline) and BEFORE `premium-frontend-design` polish. Triggers on user reports of horizontal overflow, mobile UX issues, or any product where mobile traffic > desktop traffic.
 - **Data-before-auth**: `database-architect` precedes `auth-architect` (auth needs user/session tables)
 - **Domain-before-architecture**: `domain-modeler` precedes `hexagonal-architect` / `api-architect`
 - **Polish-last**: `premium-frontend-design` is polish — run after `product-ux-advisor` and `frontend-foundation`
 - **Security-pre-ship**: `infra-security` runs before any production deploy
+- **Change-safety pre-write**: `change-safety` runs as a mandatory gate BEFORE any production write. Auto-invokes on `ALTER`/`DROP`/`TRUNCATE`/`RENAME`, `UPDATE`/`DELETE` without `WHERE`, mass batch operations, deploy to prod, store/CMS catalog or pricing or inventory edits, env/secret rotation, DNS change, TLS swap, IAM/security group change. Forces snapshot + rollback plan + comms + in-flight check + change window + approver before execution. Pairs with `database-architect` (zero-downtime migrations) and `github-safety` (non-destructive git). NOT a code generator — a gate that returns Go/No-Go.
 - **SDD for substantial changes**: `sdd-workflow` activates on triggers or when changes touch ≥ 3 files / architecture
 - **Performance audit after frontend**: `react-performance` runs as a non-destructive review gate after any frontend implementation skill (`frontend-foundation`, `premium-frontend-design`, `forms-and-validation`, `product-tour`, `landing-page-architect`) produces React code. Conditional: fires only if new components, `useEffect`, data fetching, render loops, or > 2 components touched. Skip on trivial edits, copy-only changes, or style-only tweaks.
 - **Performance audit after backend**: `backend-performance` runs as a non-destructive review gate after any backend implementation skill (`api-architect`, `hexagonal-architect`, `database-architect`, `auth-architect`) produces code. Conditional: fires on new endpoint/handler, new DB query, async/IO work, loop with awaits, large payloads, or > 2 backend files touched. Skip on config-only, doc-only, or type-only changes.

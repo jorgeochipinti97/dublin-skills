@@ -86,6 +86,8 @@ How to fix → `frontend-foundation/references/mobile-first.md`
 | `mobile.hover-only` | 🟡 | `:hover` interaction without `:focus-visible` or persistent state — `src/components/menu.tsx:14` |
 | `mobile.content-priority` | 🟡 | Route present but `DESIGN.md` `contentPriority` block missing this route — `/pricing` |
 | `mobile.input-mode` | 🟡 | `<input type="email">` without `inputMode="email"` — `src/components/form/email.tsx:8` |
+| `mobile.vvw-trap` | 🟡 | `width: 100vw` / `w-screen` / `w-[100vw]` includes scrollbar — overflow on Android Chrome — `src/components/banner.tsx:5` |
+| `mobile.overflow-runtime` | 🟡 | Runtime check (Lighthouse / Playwright at 360px): `document.documentElement.scrollWidth > window.innerWidth` — see Layer 2 / Layer 3 |
 
 ---
 

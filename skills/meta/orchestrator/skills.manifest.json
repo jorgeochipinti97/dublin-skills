@@ -147,6 +147,17 @@
       "value": "very-high"
     },
     {
+      "name": "mobile-design",
+      "path": "frontend/mobile-design",
+      "category": "frontend",
+      "tags": ["frontend", "mobile", "responsive", "ux", "bottom-sheet", "fab", "thumb-zone", "touch-target", "overflow", "safe-area", "ios", "android"],
+      "triggers": ["mobile", "responsive", "se sale de pantalla", "no se ve bien en celular", "horizontal scroll", "scroll horizontal", "mobile ux", "shrunk desktop", "mobile afterthought", "bottom sheet", "fab", "tab bar", "swipe action", "pull to refresh", "sticky cta", "thumb zone", "touch target", "tap target", "ios auto-zoom", "viewport meta", "safe area", "notch", "100dvh"],
+      "depends_on": ["frontend-foundation"],
+      "unlocks": ["premium-frontend-design", "frontend-output-validator"],
+      "cost": "low",
+      "value": "high"
+    },
+    {
       "name": "premium-frontend-design",
       "path": "frontend/premium-frontend-design",
       "category": "frontend",
@@ -296,6 +307,18 @@
       "value": "very-high-always-on"
     },
     {
+      "name": "change-safety",
+      "path": "ops/change-safety",
+      "category": "ops",
+      "tags": ["change-management", "rollback", "snapshot", "backup", "runbook", "production-write", "postmortem", "in-flight-transactions"],
+      "triggers": ["alter table", "drop column", "drop table", "truncate", "update without where", "delete without where", "mass update", "deploy to prod", "migration", "shopify catalog", "woocommerce", "store edit", "price change", "inventory bulk", "env rotation", "secret rotation", "dns change", "tls cert", "iam policy", "rollback plan", "production change", "before changing prod"],
+      "depends_on": [],
+      "unlocks": [],
+      "cost": "low",
+      "value": "very-high-pre-write",
+      "auto_invoke_on_signal": ["ALTER", "DROP", "TRUNCATE", "RENAME", "UPDATE without WHERE", "DELETE without WHERE", "deploy to prod", "shopify edit", "woocommerce edit", "feature flag flip prod", "env rotation", "dns change", "tls swap", "iam policy change", "security group change"]
+    },
+    {
       "name": "bind-api",
       "path": "bind-api",
       "category": "integration",
@@ -421,15 +444,15 @@
     "discovery": ["systems-thinking", "product-planner"],
     "domain_data": ["domain-modeler", "database-architect"],
     "architecture": ["hexagonal-architect", "api-architect", "auth-architect"],
-    "frontend_foundation": ["frontend-foundation"],
+    "frontend_foundation": ["frontend-foundation", "mobile-design"],
     "ux_ui": ["product-ux-advisor", "premium-frontend-design", "forms-and-validation"],
     "feature_layer": ["product-tour", "landing-page-architect", "institutional-site-architect", "data-viz-architect"],
-    "cross_cutting": ["error-handling", "testing-strategy", "tdd-workflow", "react-performance", "backend-performance", "frontend-output-validator", "github-safety"],
-    "ops": ["infra-security"],
+    "cross_cutting": ["error-handling", "testing-strategy", "tdd-workflow", "react-performance", "backend-performance", "frontend-output-validator", "github-safety", "change-safety"],
+    "ops": ["infra-security", "change-safety"],
     "gtm": ["blog-writer", "brand-identity", "remotion-video"],
     "ugc_pipeline": ["ugc-scriptwriter", "ai-avatar-director", "ugc-video-prompting", "ugc-post-production"]
   },
-  "cross_cutting": ["testing-strategy", "error-handling", "github-safety", "tdd-workflow", "sdd-workflow", "react-performance", "backend-performance", "frontend-output-validator"],
+  "cross_cutting": ["testing-strategy", "error-handling", "github-safety", "change-safety", "tdd-workflow", "sdd-workflow", "react-performance", "backend-performance", "frontend-output-validator"],
   "conventions": {
     "foundation_first": "frontend-foundation always precedes premium-frontend-design, product-tour, forms-and-validation, landing-page-architect",
     "data_before_auth": "database-architect precedes auth-architect (auth needs user/session tables)",
@@ -440,6 +463,7 @@
     "performance_audit_after_frontend": "react-performance runs as a non-destructive review gate after any frontend implementation skill (frontend-foundation, premium-frontend-design, forms-and-validation, product-tour, landing-page-architect) produces React code. Conditional: new components, useEffect, data fetching, render loops, or > 2 components touched. Skip on trivial edits, copy changes, or style-only tweaks.",
     "performance_audit_after_backend": "backend-performance runs as a non-destructive review gate after any backend implementation skill (api-architect, hexagonal-architect, database-architect, auth-architect) produces code. Conditional: new endpoint/handler, new DB query, async/IO work, loop with awaits, large payload, or > 2 backend files touched. Skip on trivial edits, config changes, or doc-only tweaks.",
     "design_audit_after_frontend": "frontend-output-validator runs as a non-destructive review gate after any frontend implementation skill (frontend-foundation, premium-frontend-design, forms-and-validation, product-tour, landing-page-architect) produces UI. Reads project DESIGN.md as source of truth. Checks: WCAG contrast, CLS sources, icon budget per region, touch targets ≥ 44px, viewport meta, mobile-first compliance, forbidden AI Tells (Pure Black, LILA BAN, Inter Tell, Icon Soup, Mobile Afterthought, Layout Shift Sloppy, Filler Word Index, Jane Doe Effect, Acme Slop). Conditional: new components, new images/videos/fonts/icons, > 1 component touched, hover/focus/active states modified. Skip on copy-only or type-only changes.",
-    "design_contract_per_project": "Every project ships a DESIGN.md at repo root combining YAML tokens (breakpoints, colors, typography, spacing, motion, iconBudget, contentPriority, aiTellsEnforced) with markdown rationale. Format borrows from Google Labs DESIGN.md (https://github.com/google-labs-code/design.md) and extends with Dublin specifics. Agent reads it at start of every session. CI validates with scripts/validate-design.ts."
+    "design_contract_per_project": "Every project ships a DESIGN.md at repo root combining YAML tokens (breakpoints, colors, typography, spacing, motion, iconBudget, contentPriority, aiTellsEnforced) with markdown rationale. Format borrows from Google Labs DESIGN.md (https://github.com/google-labs-code/design.md) and extends with Dublin specifics. Agent reads it at start of every session. CI validates with scripts/validate-design.ts.",
+    "change_safety_pre_write": "change-safety runs BEFORE any production write. Auto-invokes on signals: ALTER/DROP/TRUNCATE/RENAME, UPDATE/DELETE without WHERE, mass batch updates, deploy to prod, store/CMS catalog or pricing or inventory edit, env/secret rotation, DNS change, TLS swap, IAM/security group change, infra parameter change. Forces snapshot, rollback plan, stakeholder comms, in-flight transaction check, change window, approval gate. Pairs with database-architect (zero-downtime migrations), github-safety (non-destructive git), infra-security (audits)."
   }
 }

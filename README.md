@@ -42,6 +42,7 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[brand-identity](skills/brand-identity)** | Brand identity systems: color palettes, typography, spacing, UX principles |
 | **[brand-guidelines](skills/brand-guidelines)** | Anthropic brand colors, typography, and visual styling |
 | **[frontend-foundation](skills/frontend/frontend-foundation)** | Day-0 frontend architecture: dual theme (dark + light), spacing system, mobile-first with content priority, CLS Zero, icon budget, design contract (DESIGN.md), component layer on headless primitives (Base UI/Radix) |
+| **[mobile-design](skills/frontend/mobile-design)** | Mobile as a first-class surface — kills horizontal overflow, picks mobile-native patterns (bottom sheet, FAB, swipe, sticky CTA, segmented control), thumb-zone ergonomics, touch targets, fluid type, mobile form config (inputMode, autoComplete, font-size 16). Defines the Shrunk Desktop AI Tell |
 | **[premium-frontend-design](skills/frontend/premium-frontend-design)** | Apple/Framer-quality React/Next.js interfaces: glass effects, gradients, micro-interactions, named AI Tells (LILA BAN, Inter Tell, Icon Soup, Mobile Afterthought, Layout Shift Sloppy, Filler Word Index) |
 | **[frontend-output-validator](skills/frontend/frontend-output-validator)** | Review gate AFTER frontend implementation — validates contrast (WCAG), CLS sources, icon budget, touch targets, mobile-first compliance, viewport meta, forbidden AI Tells, DESIGN.md contract drift. Layer 1 static + Layer 2 Lighthouse |
 | **[product-tour](skills/frontend/product-tour)** | Interactive product tours and onboarding flows for Next.js: guided walkthroughs, activation checklists, welcome modals |
@@ -51,6 +52,7 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[api-architect](skills/architecture/api-architect)** | Senior API architect — designs or audits scalable, reliable, secure, observable APIs (REST/GraphQL/gRPC) with rationale per decision |
 | **[domain-modeler](skills/architecture/domain-modeler)** | Domain modeling with DDD: entities, value objects, aggregates |
 | **[github-safety](skills/github/github-safety)** | Safe Git/GitHub workflow: prevents force push, history rewriting, destructive operations |
+| **[change-safety](skills/ops/change-safety)** | Pre-flight guardrail before any prod write — snapshot, rollback plan, stakeholder comms, in-flight transaction check, change window. Auto-invokes on ALTER/DROP/UPDATE/DELETE, store/CMS edits, deploys, env rotation, DNS/TLS/IAM changes |
 | **[sdd-workflow](skills/methodology/sdd-workflow)** | Spec-Driven Development orchestration — proposal → specs → design → tasks → apply → verify → archive. Triggers, commands, artifact store policy (Engram/OpenSpec/none), sub-agent launching templates |
 | **[tdd-workflow](skills/implementation/tdd-workflow)** | Test-driven development: red-green-refactor |
 | **[testing-strategy](skills/implementation/testing-strategy)** | WHAT to test, at which layer, with which tool — pyramid, doubles, integration, E2E, contract tests |
@@ -98,14 +100,15 @@ The installer will create `.claude/skills/` if it doesn't exist.
 ```
 ai-avatar-director    api-architect         auth-architect
 backend-performance   bind-api              blog-writer
-brand-guidelines      brand-identity        claude-md-keeper
-database-architect    data-viz-architect    domain-modeler
-error-handling        forms-and-validation  frontend-foundation
-frontend-output-validator                   github-safety
-hexagonal-architect   infra-security
+brand-guidelines      brand-identity        change-safety
+claude-md-keeper      database-architect    data-viz-architect
+domain-modeler        error-handling        forms-and-validation
+frontend-foundation   frontend-output-validator
+github-safety         hexagonal-architect   infra-security
 institutional-site-architect                landing-page-architect
-orchestrator          premium-frontend-design                product-planner
-product-tour          product-ux-advisor    react-performance
+mobile-design         orchestrator          premium-frontend-design
+product-planner       product-tour          product-ux-advisor
+react-performance
 remotion-video        sdd-workflow          session-bridge
 skill-creator         systems-thinking      tdd-workflow
 testing-strategy      ugc-post-production   ugc-scriptwriter
@@ -173,6 +176,7 @@ prompts/
 ├── blog-writer.md
 ├── brand-guidelines.md
 ├── brand-identity.md
+├── change-safety.md
 ├── data-viz-architect.md
 ├── auth-architect.md
 ├── claude-md-keeper.md
@@ -186,6 +190,7 @@ prompts/
 ├── infra-security.md
 ├── institutional-site-architect.md
 ├── landing-page-architect.md
+├── mobile-design.md
 ├── premium-frontend-design.md
 ├── product-planner.md
 ├── product-tour.md
@@ -251,6 +256,7 @@ description: Short description of when to use this skill
 - **github** — Git/GitHub workflow safety
 - **implementation** — Development practices
 - **media** — Video and multimedia generation
+- **ops** — Production operations safety (rollbacks, change management)
 - **product** — Product planning
 - **ugc** — AI UGC pipeline (script → avatar direction → post-production)
 
