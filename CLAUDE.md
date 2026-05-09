@@ -489,7 +489,7 @@ When adding or modifying skills, update ALL of the following (in order):
 2. **Reference files** in `references/` subdirectory — reusable code/templates, loaded on demand.
 3. **Anti-patterns** — document what NOT to do (as important as the positive guidance).
 4. **Output standards** — specify expected format (complete code, types, specific patterns).
-5. **`install.sh`** — add to the `SKILLS` array (alphabetical order).
+5. **`install.sh`** — add to the `SKILLS` array (alphabetical order). The installer is multi-tool: Claude Code (`~/.claude/skills/` or `<project>/.claude/skills/`), OpenCode (`~/.config/opencode/skills/` or `<project>/.opencode/skills/`), Codex CLI (`~/.agents/skills/` or `<project>/.agents/skills/`), or Universal mode (writes to `~/.agents/skills/` — read by all 3 tools). Has wizard + flag modes (`--tool`, `--scope`, `--all`). New skills work in all tools automatically as long as `SKILL.md` follows the standard frontmatter (`name`, `description`).
 6. **`skills/meta/orchestrator/skills.manifest.json`** — add entry with tags, triggers, deps, cost, value.
 7. **`README.md`** — table row + "Available skills for installation" list + `prompts/` index.
 8. **`CLAUDE.md`** (this file) — tree + Key Skills entry. Or run `claude-md-keeper` afterwards to catch drift.

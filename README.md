@@ -8,14 +8,17 @@ A collection of skills for [Claude Code](https://claude.ai/code) that extend its
 git clone https://github.com/jorgeochipinti97/dublin-skills.git
 cd dublin-skills
 
-# Install the dublin-agent (user-scope, available from any project)
+# Install the dublin-agent (asks which tool: Claude / OpenCode / both)
 ./install.sh agent
 
-# Install skills into a project
-./install.sh ~/my-project --all
+# Install skills into a project — interactive wizard asks tool + scope
+./install.sh ~/my-project
+
+# Or skip the wizard with flags
+./install.sh ~/my-project --tool=universal --scope=project --all
 ```
 
-Prefer no clone? Install just the agent with one command:
+Prefer no clone? Install just the agent with one command (Claude Code):
 
 ```bash
 mkdir -p ~/.claude/agents && curl -fsSL \
@@ -24,6 +27,54 @@ mkdir -p ~/.claude/agents && curl -fsSL \
 ```
 
 Then invoke it from Claude Code via `Task(subagent_type: 'dublin-agent')`.
+
+## Multi-tool support
+
+The installer (`ds`) supports **Claude Code, OpenCode, and Codex CLI**, with a `Universal` mode that all three tools read.
+
+| Tool | User-scope path | Project-scope path |
+|---|---|---|
+| **Claude Code** | `~/.claude/skills/` | `<project>/.claude/skills/` |
+| **OpenCode** | `~/.config/opencode/skills/` | `<project>/.opencode/skills/` |
+| **Codex CLI** | `~/.agents/skills/` | `<project>/.agents/skills/` |
+| **Universal** | `~/.agents/skills/` | `<project>/.agents/skills/` |
+
+**Why Universal:** OpenCode also reads `~/.claude/skills/` and `~/.agents/skills/`. Codex reads `~/.agents/skills/`. So installing in **`~/.agents/skills/`** makes the skills visible to **all three tools at once**.
+
+### Wizard mode (default)
+
+```bash
+ds                       # asks tool + scope + skills
+ds ~/my-project          # asks tool + skills (scope auto = project)
+```
+
+### Flag mode (skip wizard, scriptable)
+
+```bash
+ds --tool=claude    --scope=user    --all                    # global Claude
+ds --tool=opencode  --scope=project ~/my-project --all       # OpenCode in project
+ds --tool=codex     --scope=user    --all                    # Codex CLI global
+ds --tool=universal --scope=user    --all                    # write once, read by 3
+ds ~/my-project change-safety mobile-design                  # specific skills
+```
+
+### Agent install (per-tool)
+
+```bash
+ds agent                       # asks tool (Claude / OpenCode / both)
+ds agent --tool=claude         # ~/.claude/agents/dublin-agent.md
+ds agent --tool=opencode       # ~/.config/opencode/agents/dublin-agent.md
+ds agent --tool=universal      # both Claude + OpenCode
+# Codex CLI does not support agents (uses AGENTS.md instead)
+```
+
+### Other commands
+
+```bash
+ds list                        # list available skills (no install)
+ds update <path>               # update skills already installed in <path>
+ds --help                      # full usage
+```
 
 ## What are Skills?
 
@@ -81,20 +132,28 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 
 ## Installation
 
-Install skills into any project's `.claude/skills/` directory:
+The installer (`./install.sh` or the global `ds` symlink) is multi-tool — see the [Multi-tool support](#multi-tool-support) section above for full details.
+
+Quick reference:
 
 ```bash
-# Interactive mode (select from menu)
+# Interactive wizard (asks tool + scope + skills)
 ./install.sh /path/to/your/project
 
-# Install all skills
+# All skills, default tool (Claude Code)
 ./install.sh /path/to/your/project --all
 
-# Install specific skills
+# All skills for OpenCode
+./install.sh /path/to/your/project --tool=opencode --all
+
+# Universal mode (visible to Claude / OpenCode / Codex at once)
+./install.sh /path/to/your/project --tool=universal --all
+
+# Specific skills
 ./install.sh /path/to/your/project tdd-workflow domain-modeler premium-frontend-design
 ```
 
-The installer will create `.claude/skills/` if it doesn't exist.
+The installer creates the target directory automatically if it does not exist.
 
 ### Available skills for installation
 
@@ -146,15 +205,18 @@ The installer automatically detects your system language (`LANG` environment var
 
 ### Installing the dublin-agent
 
-The repo also ships the **dublin-agent** — a senior-architect mentor agent (`agents/dublin-agent.md`) that auto-detects this skills library and delegates to the right skill. Agents are user-scoped (live in `~/.claude/agents/`), so install once and use from any project:
+The repo also ships the **dublin-agent** — a senior-architect mentor agent (`agents/dublin-agent.md`) that auto-detects this skills library and delegates to the right skill. Agents are user-scoped, so install once and use from any project.
 
 ```bash
-./install.sh agent
-# or, with the global symlink
-dublin-skill-install agent
+ds agent                     # interactive (asks tool: Claude / OpenCode / both)
+ds agent --tool=claude       # ~/.claude/agents/dublin-agent.md
+ds agent --tool=opencode     # ~/.config/opencode/agents/dublin-agent.md
+ds agent --tool=universal    # installs in BOTH Claude and OpenCode dirs
 ```
 
-If you already have `~/.claude/agents/dublin-agent.md`, the installer creates a timestamped backup before overwriting. After installing, invoke it from Claude Code with `Task(subagent_type: 'dublin-agent')` or the `/dublin` command.
+Codex CLI does not have a separate "agent" concept (it uses `AGENTS.md` for instructions), so the agent file is not installed there — but Codex *does* read skills from `~/.agents/skills/`, so the skills work end-to-end via Universal mode.
+
+If you already have a `dublin-agent.md` at the target location, the installer creates a timestamped backup before overwriting. After installing, invoke it from Claude Code with `Task(subagent_type: 'dublin-agent')` or the `/dublin` command. From OpenCode, invoke via the agent name `dublin-agent`.
 
 ## Usage
 
