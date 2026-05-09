@@ -57,3 +57,7 @@ description: Safe Git/GitHub workflow. Triggers on ANY git operation (commit, pu
 - Show exact commands before running them
 - One operation at a time — don't chain destructive commands
 - Always end git operations with `git status` to confirm state
+
+## Pairs With
+
+- **`git-workflow`** — constructive counterpart. This skill is DEFENSIVE (what NEVER to do). For team setup (Conventional Commits, PR template, husky hooks, branch protection, CODEOWNERS, CONTRIBUTING.md), invoke `git-workflow` instead. Both can run together.

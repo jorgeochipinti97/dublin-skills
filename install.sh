@@ -102,6 +102,7 @@ SKILLS=(
     frontend-foundation "frontend/frontend-foundation"
     frontend-output-validator "frontend/frontend-output-validator"
     orchestrator "meta/orchestrator"
+    git-workflow "github/git-workflow"
     github-safety "github/github-safety"
     hexagonal-architect "architecture/hexagonal-architect"
     infra-security "infra-security"

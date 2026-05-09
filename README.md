@@ -52,6 +52,7 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[api-architect](skills/architecture/api-architect)** | Senior API architect — designs or audits scalable, reliable, secure, observable APIs (REST/GraphQL/gRPC) with rationale per decision |
 | **[domain-modeler](skills/architecture/domain-modeler)** | Domain modeling with DDD: entities, value objects, aggregates |
 | **[github-safety](skills/github/github-safety)** | Safe Git/GitHub workflow: prevents force push, history rewriting, destructive operations |
+| **[git-workflow](skills/github/git-workflow)** | Team Git workflow (constructive): Conventional Commits + commitlint, branch strategy, PR template + size limits, conflict/rebase rules, husky hooks, CODEOWNERS, branch protection. Names 4 AI Tells: Garbage Commit, Frankenstein PR, Eternal Branch, History Bomb. Enforcement runs LOCAL — zero LLM tokens at runtime |
 | **[change-safety](skills/ops/change-safety)** | Pre-flight guardrail before any prod write — snapshot, rollback plan, stakeholder comms, in-flight transaction check, change window. Auto-invokes on ALTER/DROP/UPDATE/DELETE, store/CMS edits, deploys, env rotation, DNS/TLS/IAM changes |
 | **[sdd-workflow](skills/methodology/sdd-workflow)** | Spec-Driven Development orchestration — proposal → specs → design → tasks → apply → verify → archive. Triggers, commands, artifact store policy (Engram/OpenSpec/none), sub-agent launching templates |
 | **[tdd-workflow](skills/implementation/tdd-workflow)** | Test-driven development: red-green-refactor |
@@ -104,7 +105,8 @@ brand-guidelines      brand-identity        change-safety
 claude-md-keeper      database-architect    data-viz-architect
 domain-modeler        error-handling        forms-and-validation
 frontend-foundation   frontend-output-validator
-github-safety         hexagonal-architect   infra-security
+git-workflow          github-safety         hexagonal-architect
+infra-security
 institutional-site-architect                landing-page-architect
 mobile-design         orchestrator          premium-frontend-design
 product-planner       product-tour          product-ux-advisor
@@ -185,6 +187,7 @@ prompts/
 ├── error-handling.md
 ├── forms-and-validation.md
 ├── frontend-foundation.md
+├── git-workflow.md
 ├── orchestrator.md
 ├── hexagonal-architect.md
 ├── infra-security.md

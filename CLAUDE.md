@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a **Claude Code skills library** — a collection of specialized prompts, reference materials, and code templates that extend Claude Code's capabilities in specific domains. Currently **39 skills** across 16 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
+This is a **Claude Code skills library** — a collection of specialized prompts, reference materials, and code templates that extend Claude Code's capabilities in specific domains. Currently **40 skills** across 16 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
 
 ## Structure
 
@@ -51,7 +51,9 @@ skills/
 │   └── react-performance/        # React/Next.js performance: useEffect elimination, RSC, bundle optimization
 │       └── references/           # react-patterns.md, nextjs-patterns.md, code-examples.md
 ├── github/
-│   └── github-safety/       # Safe Git workflow: prevents force push, history rewriting, destructive ops
+│   ├── github-safety/       # Safe Git workflow: prevents force push, history rewriting, destructive ops
+│   └── git-workflow/        # Team Git workflow (constructive) — Conventional Commits, PR conventions, branch strategy, conflict/rebase, husky hooks, CODEOWNERS, branch protection. 4 AI Tells: Garbage Commit, Frankenstein PR, Eternal Branch, History Bomb
+│       └── references/      # branch-strategy.md, commit-conventions.md, pr-conventions.md, conflict-and-rebase.md, team-templates.md
 ├── implementation/
 │   ├── error-handling/       # Error taxonomy, Problem Details (RFC 7807), Error Boundaries, logging, retry/backoff, Sentry
 │   │   └── references/       # patterns.md (hierarchy, filter, Pino, boundary, retry, fetch wrapper)
@@ -429,6 +431,18 @@ Prevents destructive Git operations:
 - Required practices: new commits over rewrites, feature branches, verify before push
 - Emergency protocol: STOP → show status → explain → propose → wait for confirmation
 
+#### git-workflow
+Constructive counterpart of `github-safety` — how a team works WELL in git, with enforcement that runs LOCAL via hooks (zero LLM tokens at runtime). Use for team setup, onboarding, conflict help, audits.
+
+- **4 named AI Tells**: Garbage Commit (`fix`/`wip`/`asdf`), Frankenstein PR (> 1000 LOC, mixed concerns), Eternal Branch (> 7 days), History Bomb (force push to shared branches)
+- **Non-negotiables**: nobody pushes to `main`, PR ≤ 400 LOC, Conventional Commits enforced by `commit-msg` hook, branches live ≤ 7 days, `--no-verify` BANNED, squash by default
+- **Output (lands in user's repo, not this one)**: `CONTRIBUTING.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `.husky/` (pre-commit + commit-msg + pre-push), `commitlint.config.js`, `.gitmessage`, `CODEOWNERS`, branch protection script via `gh api`, minimal `ci.yml`
+- **Decision tree per repo state**: new repo with team / new repo solista / repo viejo sin convención (no rewrites history) / repo con convención propia (audit only) / onboarding only
+
+Reference files: `branch-strategy.md`, `commit-conventions.md`, `pr-conventions.md`, `conflict-and-rebase.md`, `team-templates.md` (all copy-paste-ready).
+
+Pairs with `github-safety` (defensive), `change-safety` (when PR touches prod), `testing-strategy` (`pre-push` hook content).
+
 #### change-safety
 Pre-flight guardrail before any production write. Auto-invokes on signals: `ALTER`, `DROP`, `TRUNCATE`, `RENAME`, `UPDATE`/`DELETE` without `WHERE`, mass batches, deploy to prod, store/CMS catalog or pricing or inventory edit, env/secret rotation, DNS change, TLS swap, IAM/security group change, infra parameter change.
 
@@ -492,6 +506,7 @@ When using skills in other projects, load the SKILL.md and relevant reference fi
 - **Polish-last**: `premium-frontend-design` is polish — run after `product-ux-advisor` and `frontend-foundation`
 - **Security-pre-ship**: `infra-security` runs before any production deploy
 - **Change-safety pre-write**: `change-safety` runs as a mandatory gate BEFORE any production write. Auto-invokes on `ALTER`/`DROP`/`TRUNCATE`/`RENAME`, `UPDATE`/`DELETE` without `WHERE`, mass batch operations, deploy to prod, store/CMS catalog or pricing or inventory edits, env/secret rotation, DNS change, TLS swap, IAM/security group change. Forces snapshot + rollback plan + comms + in-flight check + change window + approver before execution. Pairs with `database-architect` (zero-downtime migrations) and `github-safety` (non-destructive git). NOT a code generator — a gate that returns Go/No-Go.
+- **Git workflow for teams**: `git-workflow` is the constructive complement of `github-safety` (defensive). Invoke on team setup, onboarding new devs, conflict resolution help, or repo audits. Generates LOCAL enforcement (husky hooks, commitlint, branch protection, PR template, CODEOWNERS, CONTRIBUTING.md) so day-to-day rules cost ZERO LLM tokens. 4 named AI Tells: Garbage Commit, Frankenstein PR, Eternal Branch, History Bomb. PR tope: 400 LOC (warn at 400, hard limit 1000). Default merge: squash.
 - **SDD for substantial changes**: `sdd-workflow` activates on triggers or when changes touch ≥ 3 files / architecture
 - **Performance audit after frontend**: `react-performance` runs as a non-destructive review gate after any frontend implementation skill (`frontend-foundation`, `premium-frontend-design`, `forms-and-validation`, `product-tour`, `landing-page-architect`) produces React code. Conditional: fires only if new components, `useEffect`, data fetching, render loops, or > 2 components touched. Skip on trivial edits, copy-only changes, or style-only tweaks.
 - **Performance audit after backend**: `backend-performance` runs as a non-destructive review gate after any backend implementation skill (`api-architect`, `hexagonal-architect`, `database-architect`, `auth-architect`) produces code. Conditional: fires on new endpoint/handler, new DB query, async/IO work, loop with awaits, large payloads, or > 2 backend files touched. Skip on config-only, doc-only, or type-only changes.

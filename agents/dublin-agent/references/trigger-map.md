@@ -29,6 +29,7 @@ Inline in the agent prompt: the top 10-15 most-used. Full table here.
 | "BIND", "banco industrial", "CVU", "CBU", "DEBIN", "eCheq" | `bind-api` |
 | "systems thinking", "feedback loops", "stocks flows", "leverage points" | `systems-thinking` |
 | "git force push", "rebase pushed", "reset --hard", "destructive git" | `github-safety` |
+| "git workflow", "commit convention", "Conventional Commits", "commitlint", "husky", "pre-commit hook", "PR template", "CONTRIBUTING.md", "branch strategy", "branch protection", "CODEOWNERS", "merge conflict", "stacked PRs", "team git setup" | `git-workflow` |
 | "ALTER", "DROP", "TRUNCATE", "UPDATE/DELETE without WHERE", "deploy a prod", "shopify catalog", "rollback plan", "production change" | `change-safety` |
 | "CLAUDE.md drift", "update CLAUDE.md", "CLAUDE.md stale" | `claude-md-keeper` |
 | "SESSION.md", "session handoff", "continuity across sessions" | `session-bridge` |
