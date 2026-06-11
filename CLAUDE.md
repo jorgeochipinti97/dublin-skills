@@ -14,6 +14,7 @@ agents/
 env/                          # Team environment installed by `./install.sh team` (on top of skills + agent)
 ├── rules/TEAM-RULES.md       # Team working rules → CLAUDE.md (Claude) / AGENTS.md (others), merged between markers
 ├── OPERATING-MODEL.md        # Human onboarding doc (roles + flow) → <project>/OPERATING-MODEL.md
+├── CHEATSHEET.md             # Bilingual ES/EN usage cheatsheet (triggers, big-vs-small) → <project>/CHEATSHEET.md
 ├── templates/                # Scaffold templates for `install.sh new` (SESSION.md, TASKS.md, gitignore)
 ├── memory/                   # Pre-seeded shared team memories → <project>/.claude/team-memory/
 ├── hooks/settings.json       # Hook wiring → <project>/.claude/settings.json (merged with jq)

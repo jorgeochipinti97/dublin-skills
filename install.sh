@@ -532,15 +532,18 @@ install_rules() {
     fi
 }
 
-# Copy the human-readable operating model doc to the project root.
+# Copy the human-readable docs (operating model + cheatsheet) to the project root.
 install_operating_model() {
     local base="$1"
-    local src="$ENV_SOURCE/OPERATING-MODEL.md"
-    local dest="$base/OPERATING-MODEL.md"
-    [[ -f "$src" ]] || return 0
-    [[ -f "$dest" ]] && backup_file "$dest"
-    cp "$src" "$dest"
-    echo "${GREEN}  ✓ OPERATING-MODEL.md → $dest${NC}"
+    local f
+    for f in OPERATING-MODEL.md CHEATSHEET.md; do
+        local src="$ENV_SOURCE/$f"
+        local dest="$base/$f"
+        [[ -f "$src" ]] || continue
+        [[ -f "$dest" ]] && backup_file "$dest"
+        cp "$src" "$dest"
+        echo "${GREEN}  ✓ $f → $dest${NC}"
+    done
 }
 
 # Copy pre-seeded shared memories.

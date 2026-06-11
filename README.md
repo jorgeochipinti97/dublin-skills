@@ -41,6 +41,25 @@ exists.
 dublin-skills is the **model/source** — your team clones it and installs the
 environment **into their own working repos**; they don't work inside this repo.
 
+## Commands
+
+`./install.sh <command>` (alias `ds` once on PATH — see [Global command](#global-command-recommended)).
+
+| Command | What it does |
+|---|---|
+| `ds new <path>` | **Scaffold a new project** from scratch: `git init` + `SESSION.md` + `TASKS.md` + `.gitignore` + full environment |
+| `ds team [<path>]` | Install **or upgrade** the full environment on an existing project (no path = current dir) |
+| `ds doctor [<path>]` | Report which projects are **up to date vs outdated** (scans subfolders of a projects dir) |
+| `ds agent` | Install just the **dublin-agent** (asks tool) |
+| `ds <path> --all` | Install just the **skills** (no rules/env) |
+| `ds list` | List available skills |
+| `ds update <path>` | Update only the skills already installed in `<path>` |
+| `ds --help` | Full usage |
+
+**Flags** (for `team`): `--tool=claude\|opencode\|codex\|universal` · `--scope=project\|user` · `--force` (refresh rules even if unchanged).
+
+**You'll mostly use two:** `ds new` to start a project, `ds team` to add/upgrade the env on an existing one.
+
 See [`env/README.md`](env/README.md) for exactly what lands where.
 
 ---
