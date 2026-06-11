@@ -1,0 +1,14 @@
+# Private personal tasks — never commit
+*.local.md
+
+# OS
+.DS_Store
+
+# Dependencies / build (uncomment per stack)
+# node_modules/
+# dist/
+# .next/
+
+# Secrets
+.env
+.env.local

@@ -13,6 +13,8 @@ agents/
 └── dublin-agent.md           # Senior-architect mentor agent (installed to ~/.claude/agents/ via install.sh agent)
 env/                          # Team environment installed by `./install.sh team` (on top of skills + agent)
 ├── rules/TEAM-RULES.md       # Team working rules → CLAUDE.md (Claude) / AGENTS.md (others), merged between markers
+├── OPERATING-MODEL.md        # Human onboarding doc (roles + flow) → <project>/OPERATING-MODEL.md
+├── templates/                # Scaffold templates for `install.sh new` (SESSION.md, TASKS.md, gitignore)
 ├── memory/                   # Pre-seeded shared team memories → <project>/.claude/team-memory/
 ├── hooks/settings.json       # Hook wiring → <project>/.claude/settings.json (merged with jq)
 ├── hooks/change-safety-guard.sh  # Bash PreToolUse guard — blocks DROP/TRUNCATE/UPDATE-no-WHERE/force-push (no LLM tokens)
@@ -109,11 +111,15 @@ skills/
 
 ## Team Environment (`env/` + `./install.sh team`)
 
-The repo is not just a skills library — `./install.sh team` installs a complete, ready-to-use AI agent environment for the whole team in **two commands** (`git clone … && cd dublin-skills && ./install.sh team`). It asks tool + scope, then installs, in order:
+This repo is the **model/source**, not where the team works: they clone it and install the environment **into their own working repos** (`SESSION.md`/`TASKS.md` live in those projects, not here). Two entry points:
+- **`./install.sh new <path>`** — scaffold a fresh project: `git init` + `SESSION.md` + `TASKS.md` + `.gitignore` + `OPERATING-MODEL.md` (from `env/templates/`, with `__PROJECT__`/`__DATE__` filled), then the full environment.
+- **`./install.sh team [<path>]`** — layer the environment onto an existing project.
+
+`./install.sh team` installs a complete, ready-to-use AI agent environment for the whole team in **two commands** (`git clone … && cd dublin-skills && ./install.sh team`). It asks tool + scope, then installs, in order:
 
 1. **All 40 skills** (reuses `install_all`)
 2. **dublin-agent** (claude/opencode; both for `universal`)
-3. **Team rules** — `env/rules/TEAM-RULES.md` → `CLAUDE.md` (Claude) or `AGENTS.md` (OpenCode/Codex/Universal). Six sections: (1) hard rules, (2) frontend conventions, (3) forbidden AI Tells, (4) process, (5) technical defaults, (6) agent operating discipline (work routing / delegation contract / TDD evidence / model routing — adopted from gentle-ai, no infra). Merged between `<!-- DUBLIN-TEAM-RULES:START/END -->` markers so hand edits outside the block survive. Idempotent; `--force` refreshes the block.
+3. **Team rules** — `env/rules/TEAM-RULES.md` → `CLAUDE.md` (Claude) or `AGENTS.md` (OpenCode/Codex/Universal). Eight sections: (1) hard rules, (2) frontend conventions, (3) forbidden AI Tells, (4) process, (5) technical defaults, (6) agent operating discipline (work routing / delegation contract / TDD evidence / model routing — adopted from gentle-ai, no infra), (7) project tracking (file-based `SESSION.md` status + `TASKS.md` shared backlog with Client-pains/Backlog/Doing/Done/Future buckets + `TASKS.<you>.local.md` private gitignored, plus mandatory context upkeep — tick task + update SESSION.md + save decision to engram at the end of every unit of work), (8) roles & operating model (Tech Lead = the agent, Approver = owner, Dev = team incl. non-technical; one flow; agent prioritizes/builds order when none exists). Companion: `env/OPERATING-MODEL.md` (human onboarding doc) → installed to project root. Merged between `<!-- DUBLIN-TEAM-RULES:START/END -->` markers so hand edits outside the block survive. Idempotent; `--force` refreshes the block.
 4. **Shared memory** — `env/memory/*` → `<project>/.claude/team-memory/` (5 pre-seeded team facts: zero-hallucinations, finish-now, change-safety, foundation-first-frontend, forbidden-ai-tells)
 5. **Hooks** — `change-safety-guard.sh` (Bash `PreToolUse`, blocks `DROP`/`TRUNCATE`/`UPDATE`-without-`WHERE`/force-push/`reset --hard`/`--no-verify` with exit 2, zero LLM tokens) + `settings.json` merged into the project's settings with `jq`. Claude Code only — skipped with a notice for other tools.
 6. **engram (persistent memory)** — wires [engram](https://github.com/Gentleman-Programming/engram) as an MCP server by writing/merging `<project>/.mcp.json` (`{"command":"engram","args":["mcp"]}`). engram is a standalone Go binary (SQLite, 19 MCP tools: `mem_save`, `mem_search`, `mem_session_start`…) giving the agent real cross-session memory. The config is written automatically; the **binary is per-machine** — the installer detects it and prints `brew install gentleman-programming/tap/engram` rather than installing silently. Adopted from the Gentleman ecosystem (the one genuinely-missing piece vs. static `team-memory/`); the rest of gentle-ai/gentle-pi is intentionally NOT adopted (Claude Code is the team runtime, never Pi).

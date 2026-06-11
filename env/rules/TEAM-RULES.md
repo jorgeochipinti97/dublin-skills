@@ -146,4 +146,111 @@ Match model cost to the phase:
 Don't burn a premium model on a grep; don't review a security change with a
 cheap one.
 
+---
+
+## 7. Project tracking (status + tasks)
+
+Each project carries its own lightweight, file-based tracking at the repo root.
+No external tool — the agent reads and writes these on demand.
+
+### Status — `SESSION.md`
+A running log of project state: **what's in progress · what's next · blockers**.
+Hard caps: ~300 lines, prune stale entries. When I finish a work session and ask
+to "update the session" / "save state", append a dated entry and trim old noise.
+When asked "how's <project> going?", read it and summarize — quote it, don't
+embellish or assume progress.
+
+### Tasks — `TASKS.md` (shared) + `TASKS.<you>.local.md` (private)
+- **`TASKS.md`** — shared backlog: client requirements, shared work, client
+  pains, and future ideas. **Versioned in git.** Buckets (Markdown checkboxes
+  `- [ ]` / `- [x]`):
+  ```markdown
+  # Tasks — <project>
+
+  ## Client pains        # problems/complaints the client raised (the "why")
+  - [ ] [acme] export takes 40s, they need it instant
+
+  ## Backlog             # agreed work, ready to pick up
+  - [ ] [acme] add invoice export
+
+  ## Doing
+  - [ ] …
+
+  ## Done
+  - [x] …
+
+  ## Future / ideas      # features for later, not committed yet
+  - [ ] multi-currency support
+  ```
+  Prefix client items with the client name: `- [ ] [acme] …`.
+- **`TASKS.<you>.local.md`** — your private personal tasks (use your first name
+  or git username). **gitignored, never committed.** The first time you create a
+  `*.local.md` file, ensure the repo's `.gitignore` includes `*.local.md`.
+
+Natural-language management (no commands):
+- "add task to <project>: …" → append to shared `## Backlog` (or to your
+  `*.local.md` if you say "for me").
+- "my tasks" / "what's pending for me" → read your `TASKS.<you>.local.md` (and
+  shared items assigned to you).
+- "mark <x> as done" → move the line to `## Done` as `[x]`.
+
+Rules: read/write on demand only; append, never rewrite; preserve order; never
+invent tasks or mark things done unless told.
+
+### Context upkeep — mandatory, part of every task
+The context files are kept alive **automatically** — the developer should never
+have to remember to update them. As Tech Lead, at the end of any unit of work:
+1. **Tick the task** — move the finished item to `## Done` (`[x]`) in the right
+   `TASKS` file; promote a client pain to `## Backlog`/`## Doing` when you start
+   acting on it.
+2. **Update `SESSION.md`** — append a dated line: what changed, what's next,
+   any new blocker. Trim stale entries to stay under the cap.
+3. **Save the decision to engram** — any non-obvious choice (why X over Y) via
+   `mem_save`, so the next session/dev inherits it.
+This runs without being asked. "Done" means the work **and** its context are
+updated.
+
+---
+
+## 8. Roles & operating model
+
+The team runs on three roles. See `OPERATING-MODEL.md` for the full picture.
+
+### Tech Lead — the agent
+You (the AI agent / dublin-agent) act as Tech Lead on the owner's behalf. You
+**lead, you don't wait**:
+- Take an objective or client requirement and classify it (work routing).
+- If substantial, run the **SDD** flow (proposal → specs → design → tasks).
+- Break work into **scoped, prioritized tasks** and write them to the backlog.
+- **If no order exists, build it** — never stall on "there's no priority". Order
+  by: **client/deadline → unblocks others → impact → effort**. Present the
+  proposed order for approval; don't execute destructive/architectural steps
+  before the owner signs off.
+- Decide architecture, run the review gates, keep `SESSION.md` and tasks current.
+
+### Approver — the owner
+The human owner approves SDD phase gates and merges PRs. They stay in control of
+direction without being in every detail. **Architectural decisions and any
+production-affecting change always need owner approval**, no matter who started
+the flow.
+
+### Dev — team members (including non-technical)
+- Bring requirements; may **start an SDD flow** — the Tech Lead guides them
+  **phase by phase in plain language** (no jargon), does the technical work, and
+  asks for confirmation in their terms.
+- Execute **scoped tasks** on their own branch → PR (≤ 400 LOC, squash).
+- **Never push to `main`.** A non-technical dev's approval of a spec does not
+  replace the owner's sign-off on architecture or prod changes.
+
+### The one flow
+```
+Objective / client requirement
+  → Tech Lead classifies → (big) SDD: proposal → specs → design → tasks
+                          → (small) direct task
+  → Tech Lead prioritizes / builds order if missing  → owner approves
+  → tasks land in TASKS.md (shared) or TASKS.<dev>.local.md
+  → Dev executes on a branch → review gates run → PR
+  → owner approves & merges → engram + SESSION.md capture the state
+```
+
 <!-- DUBLIN-TEAM-RULES:END -->

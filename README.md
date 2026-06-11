@@ -19,10 +19,19 @@ before it's touched; rules merge between markers so hand edits survive. Re-run
 with `--force` to pull updated rules.
 
 ```bash
-./install.sh team ~/my-project              # into a specific project
+./install.sh new ~/my-project               # scaffold a NEW project from scratch (git + SESSION/TASKS + env)
+./install.sh team ~/my-project              # add the env to an EXISTING project
 ./install.sh team --tool=claude --scope=project   # non-interactive
 ./install.sh team --force                   # refresh the team-rules block
 ```
+
+**`new` vs `team`:** `new` scaffolds a fresh project (runs `git init`, drops in
+`SESSION.md` / `TASKS.md` / `.gitignore` / `OPERATING-MODEL.md`) then installs
+the full environment. `team` layers the environment onto a project that already
+exists.
+
+dublin-skills is the **model/source** — your team clones it and installs the
+environment **into their own working repos**; they don't work inside this repo.
 
 See [`env/README.md`](env/README.md) for exactly what lands where.
 

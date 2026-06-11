@@ -118,7 +118,8 @@ print_header() {
 print_usage() {
     cat <<USAGE
 ${L_USAGE}:
-  ds team                               # install FULL team environment (asks tool + scope)
+  ds new <project-path>                 # scaffold a NEW project (git + SESSION/TASKS) + full env
+  ds team                               # install FULL team environment into existing project (asks tool + scope)
   ds team <project-path>                # full environment into a project
   ds team --tool=claude --scope=project # non-interactive
   ds team --force                       # refresh team rules block in CLAUDE.md
@@ -527,6 +528,17 @@ install_rules() {
     fi
 }
 
+# Copy the human-readable operating model doc to the project root.
+install_operating_model() {
+    local base="$1"
+    local src="$ENV_SOURCE/OPERATING-MODEL.md"
+    local dest="$base/OPERATING-MODEL.md"
+    [[ -f "$src" ]] || return 0
+    [[ -f "$dest" ]] && backup_file "$dest"
+    cp "$src" "$dest"
+    echo "${GREEN}  ✓ OPERATING-MODEL.md → $dest${NC}"
+}
+
 # Copy pre-seeded shared memories.
 install_memory() {
     local tool="$1" scope="$2" base="$3"
@@ -631,6 +643,7 @@ install_team() {
 
     echo "${BLUE}3/6 Installing team rules…${NC}"
     install_rules "$tool" "$scope" "$base"
+    install_operating_model "$base"
     echo ""
 
     echo "${BLUE}4/6 Installing shared memory…${NC}"
@@ -643,6 +656,44 @@ install_team() {
 
     echo "${BLUE}6/6 Wiring engram (persistent memory)…${NC}"
     install_engram "$tool" "$scope" "$base"
+}
+
+# Scaffold a brand-new project with the context structure already in place,
+# then layer the full team environment on top.
+scaffold_new() {
+    local base="$1"
+    mkdir -p "$base"
+    base="$(cd "$base" && pwd)"
+    local project date
+    project="$(basename "$base")"
+    date="$(date +%Y-%m-%d)"
+
+    echo "${BLUE}Scaffolding new project: ${project}${NC}"
+
+    if [[ ! -d "$base/.git" ]]; then
+        (cd "$base" && git init -q) && echo "${GREEN}  ✓ git init${NC}"
+    fi
+
+    if [[ ! -f "$base/SESSION.md" ]]; then
+        sed -e "s/__PROJECT__/$project/g" -e "s/__DATE__/$date/g" \
+            "$ENV_SOURCE/templates/SESSION.md" > "$base/SESSION.md"
+        echo "${GREEN}  ✓ SESSION.md${NC}"
+    fi
+
+    if [[ ! -f "$base/TASKS.md" ]]; then
+        sed -e "s/__PROJECT__/$project/g" \
+            "$ENV_SOURCE/templates/TASKS.md" > "$base/TASKS.md"
+        echo "${GREEN}  ✓ TASKS.md${NC}"
+    fi
+
+    if [[ ! -f "$base/.gitignore" ]]; then
+        cp "$ENV_SOURCE/templates/gitignore" "$base/.gitignore"
+        echo "${GREEN}  ✓ .gitignore${NC}"
+    elif ! grep -q '\*\.local\.md' "$base/.gitignore"; then
+        printf '\n# Private personal tasks\n*.local.md\n' >> "$base/.gitignore"
+        echo "${GREEN}  ✓ .gitignore (added *.local.md)${NC}"
+    fi
+    echo ""
 }
 
 # --- Argument parsing ---------------------------------------------------------
@@ -666,7 +717,7 @@ parse_args() {
             --all|-a) INSTALL_ALL_FLAG=1 ;;
             --force|-f) FORCE_FLAG=1 ;;
             --help|-h) print_usage; exit 0 ;;
-            agent|update|list|team)
+            agent|update|list|team|new)
                 if [[ -z "$COMMAND" ]]; then
                     COMMAND="$arg"
                 else
@@ -745,6 +796,25 @@ main() {
             exit 1
         }
         update_skills "$target_dir"
+        exit 0
+    fi
+
+    # --- Subcommand: new (scaffold a fresh project + full environment) ---
+    if [[ "$COMMAND" == "new" ]]; then
+        if [[ ${#POSITIONAL[@]} -lt 1 ]]; then
+            echo "${RED}Usage: ds new <project-path>${NC}"
+            exit 1
+        fi
+        local new_path="${POSITIONAL[1]}"
+        [[ -z "$TOOL" ]] && select_tool_interactive
+        [[ -z "$SCOPE" ]] && SCOPE="project"
+
+        scaffold_new "$new_path"
+        local new_base
+        new_base="$(cd "$new_path" && pwd)"
+        install_team "$TOOL" "$SCOPE" "$new_base"
+        echo ""
+        echo "${GREEN}✓ New project scaffolded with the Dublin operating model: $new_base${NC}"
         exit 0
     fi
 

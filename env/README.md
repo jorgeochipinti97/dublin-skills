@@ -13,10 +13,23 @@ cd dublin-skills && ./install.sh team
 | Path | What it is | Installed to (Claude Code, project scope) |
 |---|---|---|
 | `rules/TEAM-RULES.md` | Team working rules (priority over agent defaults) | `<project>/CLAUDE.md` (merged, marker-delimited) |
+| `OPERATING-MODEL.md` | Human onboarding doc — roles + flow | `<project>/OPERATING-MODEL.md` |
+| `templates/` | Scaffold for `new`: `SESSION.md`, `TASKS.md`, `gitignore` | project root (via `install.sh new`) |
 | `memory/` | Pre-seeded shared team memories | `<project>/.claude/team-memory/` |
 | `hooks/settings.json` | Hook wiring (no LLM tokens at runtime) | `<project>/.claude/settings.json` (merged) |
 | `hooks/change-safety-guard.sh` | Bash PreToolUse guard — blocks destructive ops | `<project>/.claude/hooks/` |
 | `mcp/mcp.json` | engram persistent-memory MCP server | `<project>/.mcp.json` (merged) |
+
+## Two ways in
+
+- **`./install.sh new <path>`** — scaffold a brand-new project: `git init`,
+  drop in `SESSION.md` / `TASKS.md` / `.gitignore` (from `templates/`, with
+  `__PROJECT__` / `__DATE__` filled), then install the full environment.
+- **`./install.sh team [<path>]`** — layer the environment onto a project that
+  already exists.
+
+dublin-skills is the **model/source**: the team installs the environment into
+their own working repos and works there, not inside this repo.
 
 ## engram (persistent memory)
 
