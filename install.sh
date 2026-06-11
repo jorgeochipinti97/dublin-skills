@@ -12,6 +12,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 SKILLS_SOURCE="$SCRIPT_DIR/skills"
 AGENTS_SOURCE="$SCRIPT_DIR/agents"
+ENV_SOURCE="$SCRIPT_DIR/env"
 
 # Colors
 RED='\033[0;31m'
@@ -117,7 +118,11 @@ print_header() {
 print_usage() {
     cat <<USAGE
 ${L_USAGE}:
-  ds                                    # interactive wizard
+  ds team                               # install FULL team environment (asks tool + scope)
+  ds team <project-path>                # full environment into a project
+  ds team --tool=claude --scope=project # non-interactive
+  ds team --force                       # refresh team rules block in CLAUDE.md
+  ds                                    # interactive wizard (skills only)
   ds <project-path>                     # interactive, project scope
   ds <project-path> --all               # all skills, project scope (Claude default)
   ds <project-path> skill1 skill2       # specific skills
@@ -126,6 +131,9 @@ ${L_USAGE}:
   ds agent --tool=<tool>                # install dublin-agent for specific tool
   ds update <path>                      # update installed skills
   ds list                               # list available skills
+
+Team environment (ds team) installs: all skills + dublin-agent + team rules
+(CLAUDE.md / AGENTS.md) + shared memory + change-safety hook (Claude Code).
 
 Tools:    claude | opencode | codex | universal
 Scopes:   user | project
@@ -437,11 +445,212 @@ select_agent_tool_interactive() {
     echo ""
 }
 
+# --- Team environment ---------------------------------------------------------
+
+# Instructions file (team rules) target for a given tool + scope.
+resolve_rules_path() {
+    local tool="$1" scope="$2" base="${3:-$PWD}"
+    case "$tool" in
+        claude)
+            [[ "$scope" == "user" ]] && echo "$HOME/.claude/CLAUDE.md" || echo "$base/CLAUDE.md" ;;
+        opencode|codex|universal)
+            [[ "$scope" == "user" ]] && echo "$HOME/.agents/AGENTS.md" || echo "$base/AGENTS.md" ;;
+        *) return 1 ;;
+    esac
+}
+
+# Base config dir (where .claude / .agents live) for memory + hooks.
+resolve_config_dir() {
+    local tool="$1" scope="$2" base="${3:-$PWD}"
+    case "$tool" in
+        claude)
+            [[ "$scope" == "user" ]] && echo "$HOME/.claude" || echo "$base/.claude" ;;
+        opencode)
+            [[ "$scope" == "user" ]] && echo "$HOME/.config/opencode" || echo "$base/.opencode" ;;
+        codex|universal)
+            [[ "$scope" == "user" ]] && echo "$HOME/.agents" || echo "$base/.agents" ;;
+        *) return 1 ;;
+    esac
+}
+
+backup_file() {
+    local f="$1"
+    if [[ -f "$f" ]]; then
+        local b="$f.bak.$(date +%Y%m%d-%H%M%S)"
+        cp "$f" "$b"
+        echo "${YELLOW}  ↳ backup: $b${NC}"
+    fi
+}
+
+# Install team rules into the instructions file, merged between markers.
+install_rules() {
+    local tool="$1" scope="$2" base="$3"
+    local src="$ENV_SOURCE/rules/TEAM-RULES.md"
+    local dest
+    dest="$(resolve_rules_path "$tool" "$scope" "$base")" || return 1
+
+    [[ -f "$src" ]] || { echo "${RED}  ✗ TEAM-RULES.md not found${NC}"; return 1; }
+    mkdir -p "$(dirname "$dest")"
+
+    local START="<!-- DUBLIN-TEAM-RULES:START -->"
+    local END="<!-- DUBLIN-TEAM-RULES:END -->"
+
+    if [[ ! -f "$dest" ]]; then
+        cp "$src" "$dest"
+        echo "${GREEN}  ✓ rules → $dest${NC}"
+        return 0
+    fi
+
+    if grep -qF "$START" "$dest"; then
+        if [[ $FORCE_FLAG -eq 0 ]]; then
+            echo "${YELLOW}  • rules already present in $dest (use --force to refresh)${NC}"
+            return 0
+        fi
+        backup_file "$dest"
+        # Drop the existing managed block, then re-append the fresh one.
+        awk -v s="$START" -v e="$END" '
+            $0 ~ s {skip=1}
+            skip==0 {print}
+            $0 ~ e {skip=0}
+        ' "$dest" > "$dest.tmp"
+        # Trim trailing blank lines, then append fresh rules.
+        awk 'BEGIN{RS="";ORS="\n"} {print}' "$dest.tmp" > "$dest" 2>/dev/null || mv "$dest.tmp" "$dest"
+        rm -f "$dest.tmp"
+        printf '\n' >> "$dest"
+        cat "$src" >> "$dest"
+        echo "${GREEN}  ✓ rules refreshed → $dest${NC}"
+    else
+        backup_file "$dest"
+        printf '\n\n' >> "$dest"
+        cat "$src" >> "$dest"
+        echo "${GREEN}  ✓ rules appended → $dest${NC}"
+    fi
+}
+
+# Copy pre-seeded shared memories.
+install_memory() {
+    local tool="$1" scope="$2" base="$3"
+    local src="$ENV_SOURCE/memory"
+    local cfg
+    cfg="$(resolve_config_dir "$tool" "$scope" "$base")" || return 1
+    local dest="$cfg/team-memory"
+
+    [[ -d "$src" ]] || { echo "${YELLOW}  • no team-memory to install${NC}"; return 0; }
+    mkdir -p "$dest"
+    rsync -av --exclude='.DS_Store' "$src/" "$dest/" > /dev/null 2>&1
+    echo "${GREEN}  ✓ team-memory → $dest${NC}"
+}
+
+# Install change-safety hook + merge settings.json (Claude Code only).
+install_hooks() {
+    local tool="$1" scope="$2" base="$3"
+    if [[ "$tool" != "claude" ]]; then
+        echo "${YELLOW}  • hooks are Claude Code-only — skipped for $tool${NC}"
+        return 0
+    fi
+    local cfg
+    cfg="$(resolve_config_dir "$tool" "$scope" "$base")" || return 1
+    local hooks_dir="$cfg/hooks"
+    local guard_src="$ENV_SOURCE/hooks/change-safety-guard.sh"
+    local settings_src="$ENV_SOURCE/hooks/settings.json"
+    local settings_dest="$cfg/settings.json"
+
+    mkdir -p "$hooks_dir"
+    cp "$guard_src" "$hooks_dir/change-safety-guard.sh"
+    chmod +x "$hooks_dir/change-safety-guard.sh"
+    echo "${GREEN}  ✓ change-safety-guard.sh → $hooks_dir${NC}"
+
+    if [[ ! -f "$settings_dest" ]]; then
+        cp "$settings_src" "$settings_dest"
+        echo "${GREEN}  ✓ settings.json → $settings_dest${NC}"
+    elif command -v jq >/dev/null 2>&1; then
+        backup_file "$settings_dest"
+        jq -s '.[0] * .[1]' "$settings_dest" "$settings_src" > "$settings_dest.tmp" \
+            && mv "$settings_dest.tmp" "$settings_dest"
+        echo "${GREEN}  ✓ settings.json merged → $settings_dest${NC}"
+    else
+        echo "${YELLOW}  • settings.json exists and jq is not installed — merge manually:${NC}"
+        echo "${DIM}    add the PreToolUse hook from $settings_src${NC}"
+    fi
+}
+
+# Wire engram (persistent memory) as an MCP server for Claude Code.
+# Writes/merges <project>/.mcp.json. The binary itself is per-machine: we detect
+# it and print the install command rather than installing it silently.
+install_engram() {
+    local tool="$1" scope="$2" base="$3"
+    local src="$ENV_SOURCE/mcp/mcp.json"
+
+    if [[ "$tool" != "claude" ]]; then
+        echo "${YELLOW}  • engram MCP wiring targets Claude Code — configure manually for $tool${NC}"
+        return 0
+    fi
+
+    local dest="$base/.mcp.json"
+    if [[ ! -f "$dest" ]]; then
+        cp "$src" "$dest"
+        echo "${GREEN}  ✓ engram MCP → $dest${NC}"
+    elif command -v jq >/dev/null 2>&1; then
+        backup_file "$dest"
+        jq -s '.[0] * .[1] | .mcpServers = ((.[0].mcpServers // {}) + (.[1].mcpServers // {}))' \
+            "$dest" "$src" 2>/dev/null > "$dest.tmp" \
+            && mv "$dest.tmp" "$dest" \
+            || { jq -s '.[0].mcpServers.engram = .[1].mcpServers.engram | .[0]' "$dest" "$src" > "$dest.tmp" && mv "$dest.tmp" "$dest"; }
+        echo "${GREEN}  ✓ engram MCP merged → $dest${NC}"
+    else
+        echo "${YELLOW}  • .mcp.json exists and jq is missing — add the engram block from $src manually${NC}"
+    fi
+
+    if command -v engram >/dev/null 2>&1; then
+        echo "${GREEN}  ✓ engram binary found ($(command -v engram))${NC}"
+    else
+        echo "${YELLOW}  ! engram binary not installed. Each developer runs once:${NC}"
+        echo "${DIM}      brew install gentleman-programming/tap/engram${NC}"
+        echo "${DIM}      (or: claude plugin marketplace add Gentleman-Programming/engram && claude plugin install engram)${NC}"
+    fi
+}
+
+install_team() {
+    local tool="$1" scope="$2" base="$3"
+
+    echo "${BLUE}1/6 Installing all skills…${NC}"
+    local skills_dir
+    skills_dir="$(resolve_skills_path "$tool" "$scope" "$base")"
+    mkdir -p "$skills_dir"
+    install_all "$skills_dir"
+    echo ""
+
+    echo "${BLUE}2/6 Installing dublin-agent…${NC}"
+    if [[ "$tool" == "universal" ]]; then
+        install_agent_for "claude" "$scope" "$base"
+        install_agent_for "opencode" "$scope" "$base"
+    else
+        install_agent_for "$tool" "$scope" "$base"
+    fi
+    echo ""
+
+    echo "${BLUE}3/6 Installing team rules…${NC}"
+    install_rules "$tool" "$scope" "$base"
+    echo ""
+
+    echo "${BLUE}4/6 Installing shared memory…${NC}"
+    install_memory "$tool" "$scope" "$base"
+    echo ""
+
+    echo "${BLUE}5/6 Installing hooks…${NC}"
+    install_hooks "$tool" "$scope" "$base"
+    echo ""
+
+    echo "${BLUE}6/6 Wiring engram (persistent memory)…${NC}"
+    install_engram "$tool" "$scope" "$base"
+}
+
 # --- Argument parsing ---------------------------------------------------------
 
 TOOL=""
 SCOPE=""
 INSTALL_ALL_FLAG=0
+FORCE_FLAG=0
 COMMAND=""
 POSITIONAL=()
 SKILL_NAMES=()
@@ -455,8 +664,9 @@ parse_args() {
             --tool=*) TOOL="${arg#--tool=}" ;;
             --scope=*) SCOPE="${arg#--scope=}" ;;
             --all|-a) INSTALL_ALL_FLAG=1 ;;
+            --force|-f) FORCE_FLAG=1 ;;
             --help|-h) print_usage; exit 0 ;;
-            agent|update|list)
+            agent|update|list|team)
                 if [[ -z "$COMMAND" ]]; then
                     COMMAND="$arg"
                 else
@@ -535,6 +745,28 @@ main() {
             exit 1
         }
         update_skills "$target_dir"
+        exit 0
+    fi
+
+    # --- Subcommand: team (full environment) ---
+    if [[ "$COMMAND" == "team" ]]; then
+        local team_base="$PWD"
+        if [[ ${#POSITIONAL[@]} -ge 1 ]]; then
+            team_base="$(cd "${POSITIONAL[1]}" 2>/dev/null && pwd)" || {
+                echo "${RED}${L_DIR_NOT_FOUND}: ${POSITIONAL[1]}${NC}"
+                exit 1
+            }
+        fi
+        [[ -z "$TOOL" ]] && select_tool_interactive
+        [[ -z "$SCOPE" ]] && select_scope_interactive
+
+        echo "${L_TOOL_LABEL}:   ${BLUE}$TOOL${NC}"
+        echo "${L_SCOPE_LABEL}:  ${BLUE}$SCOPE${NC}"
+        echo "${L_TARGET_PATH}:  ${BLUE}$team_base${NC}"
+        echo ""
+        install_team "$TOOL" "$SCOPE" "$team_base"
+        echo ""
+        echo "${GREEN}✓ Dublin team environment installed.${NC}"
         exit 0
     fi
 

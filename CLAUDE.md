@@ -11,6 +11,12 @@ This is a **Claude Code skills library** — a collection of specialized prompts
 ```
 agents/
 └── dublin-agent.md           # Senior-architect mentor agent (installed to ~/.claude/agents/ via install.sh agent)
+env/                          # Team environment installed by `./install.sh team` (on top of skills + agent)
+├── rules/TEAM-RULES.md       # Team working rules → CLAUDE.md (Claude) / AGENTS.md (others), merged between markers
+├── memory/                   # Pre-seeded shared team memories → <project>/.claude/team-memory/
+├── hooks/settings.json       # Hook wiring → <project>/.claude/settings.json (merged with jq)
+├── hooks/change-safety-guard.sh  # Bash PreToolUse guard — blocks DROP/TRUNCATE/UPDATE-no-WHERE/force-push (no LLM tokens)
+└── mcp/mcp.json             # engram persistent-memory MCP server → <project>/.mcp.json (merged)
 skills/
 ├── architecture/
 │   ├── api-architect/        # Scalable/reliable/secure API design or audit (REST/GraphQL/gRPC)
@@ -100,6 +106,19 @@ skills/
 └── skill-creator/            # Guide for creating new skills
     └── references/           # design-philosophy.md, creation-process.md, output-patterns.md, workflows.md
 ```
+
+## Team Environment (`env/` + `./install.sh team`)
+
+The repo is not just a skills library — `./install.sh team` installs a complete, ready-to-use AI agent environment for the whole team in **two commands** (`git clone … && cd dublin-skills && ./install.sh team`). It asks tool + scope, then installs, in order:
+
+1. **All 40 skills** (reuses `install_all`)
+2. **dublin-agent** (claude/opencode; both for `universal`)
+3. **Team rules** — `env/rules/TEAM-RULES.md` → `CLAUDE.md` (Claude) or `AGENTS.md` (OpenCode/Codex/Universal). Six sections: (1) hard rules, (2) frontend conventions, (3) forbidden AI Tells, (4) process, (5) technical defaults, (6) agent operating discipline (work routing / delegation contract / TDD evidence / model routing — adopted from gentle-ai, no infra). Merged between `<!-- DUBLIN-TEAM-RULES:START/END -->` markers so hand edits outside the block survive. Idempotent; `--force` refreshes the block.
+4. **Shared memory** — `env/memory/*` → `<project>/.claude/team-memory/` (5 pre-seeded team facts: zero-hallucinations, finish-now, change-safety, foundation-first-frontend, forbidden-ai-tells)
+5. **Hooks** — `change-safety-guard.sh` (Bash `PreToolUse`, blocks `DROP`/`TRUNCATE`/`UPDATE`-without-`WHERE`/force-push/`reset --hard`/`--no-verify` with exit 2, zero LLM tokens) + `settings.json` merged into the project's settings with `jq`. Claude Code only — skipped with a notice for other tools.
+6. **engram (persistent memory)** — wires [engram](https://github.com/Gentleman-Programming/engram) as an MCP server by writing/merging `<project>/.mcp.json` (`{"command":"engram","args":["mcp"]}`). engram is a standalone Go binary (SQLite, 19 MCP tools: `mem_save`, `mem_search`, `mem_session_start`…) giving the agent real cross-session memory. The config is written automatically; the **binary is per-machine** — the installer detects it and prints `brew install gentleman-programming/tap/engram` rather than installing silently. Adopted from the Gentleman ecosystem (the one genuinely-missing piece vs. static `team-memory/`); the rest of gentle-ai/gentle-pi is intentionally NOT adopted (Claude Code is the team runtime, never Pi).
+
+Safety: every existing file is backed up (`*.bak.<timestamp>`) before being touched. The team rules are **new team-scope rules**, deliberately separate from any individual's personal preferences (which stay in user-scope config). To change them: edit `env/rules/TEAM-RULES.md`, commit, and have the team re-run `./install.sh team --force`. Reference: `env/README.md`.
 
 ## Companion Assets (outside `skills/`)
 

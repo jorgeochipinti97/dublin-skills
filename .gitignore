@@ -2,3 +2,6 @@
 .claude/
 __pycache__/
 *.pyc
+
+# Session bridge — ephemeral, personal context, not for others
+.context/

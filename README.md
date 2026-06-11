@@ -4,10 +4,33 @@ A collection of skills for [Claude Code](https://claude.ai/code) that extend its
 
 ## Quick Start
 
+**Whole team environment in two commands:**
+
 ```bash
 git clone https://github.com/jorgeochipinti97/dublin-skills.git
-cd dublin-skills
+cd dublin-skills && ./install.sh team
+```
 
+`./install.sh team` asks tool + scope, then installs **everything**: all 40
+skills + the dublin-agent + team rules (`CLAUDE.md` / `AGENTS.md`) + pre-seeded
+shared memory + a change-safety git/SQL guard hook (Claude Code) + **engram**
+persistent memory wired as an MCP server. Every existing file is backed up
+before it's touched; rules merge between markers so hand edits survive. Re-run
+with `--force` to pull updated rules.
+
+```bash
+./install.sh team ~/my-project              # into a specific project
+./install.sh team --tool=claude --scope=project   # non-interactive
+./install.sh team --force                   # refresh the team-rules block
+```
+
+See [`env/README.md`](env/README.md) for exactly what lands where.
+
+---
+
+**Just skills / just the agent:**
+
+```bash
 # Install the dublin-agent (asks which tool: Claude / OpenCode / both)
 ./install.sh agent
 
@@ -27,6 +50,148 @@ mkdir -p ~/.claude/agents && curl -fsSL \
 ```
 
 Then invoke it from Claude Code via `Task(subagent_type: 'dublin-agent')`.
+
+---
+
+## 🇪🇸 Cómo sacarle el jugo al máximo
+
+El entorno (`./install.sh team`) no es solo skills: es un **harness de trabajo
+para Claude Code** pensado para un equipo. Esto es lo que te da y cómo usarlo.
+
+### 1. Activá la memoria real (engram)
+
+Las skills y reglas vienen solas. Lo único que cada dev instala **una vez** en su
+máquina es el binario de [engram](https://github.com/Gentleman-Programming/engram)
+— la memoria persistente que hace que el agente **recuerde decisiones entre
+sesiones** (no las notas fijas, memoria viva):
+
+```bash
+brew install gentleman-programming/tap/engram
+# o como plugin de Claude Code:
+claude plugin marketplace add Gentleman-Programming/engram && claude plugin install engram
+```
+
+El `.mcp.json` ya queda escrito por el instalador. Comandos útiles:
+
+```bash
+engram tui                 # explorás la memoria del proyecto en una UI
+engram search "auth"       # buscás decisiones pasadas
+engram save "titulo" "qué decidimos y por qué"
+```
+
+Dentro de Claude el agente usa las 19 tools de engram (`mem_save`, `mem_search`,
+`mem_session_start`…) solo. Vos no hacés nada — recuerda por su cuenta.
+
+### 2. Dejá que el agente rutee el trabajo (work routing)
+
+La regla está en `CLAUDE.md`. No le pidas "codeá esto" para todo:
+
+- **Cambio chico y claro** → lo hace inline, sin vueltas.
+- **Exploración / mucho contexto** → lo delega a un subagente para no ensuciar el hilo.
+- **Grande / ambiguo / arquitectónico** (≥ 3 archivos o una decisión de diseño)
+  → arranca el flujo **SDD** (`sdd new <nombre>` → proposal → specs → design →
+  tasks → apply → verify).
+
+### 3. Aprovechá los review gates
+
+Después de implementar, el entorno corre **gates no destructivos** solo:
+- Frontend → `react-performance` + `frontend-output-validator`
+- Backend → `backend-performance`
+
+No tenés que pedirlos: las reglas los disparan según lo que tocaste.
+
+### 4. El guard de change-safety te cuida
+
+Antes de cualquier `DROP` / `TRUNCATE` / `UPDATE` sin `WHERE` / force-push, el
+hook **bloquea** el comando y te pide el protocolo (snapshot + rollback + comms).
+Cero tokens de IA — corre local. Si es seguro (dev/throwaway), lo re-corrés
+aclarándolo.
+
+### 5. Ahorrá con model routing
+
+Usá modelo barato para explorar/buscar/editar mecánico; **Opus** para diseño,
+arquitectura y review. La regla está escrita — el agente la sigue.
+
+### 6. Mantené las reglas vivas
+
+Las reglas de equipo viven en `env/rules/TEAM-RULES.md`. Las cambiás, commiteás,
+y el equipo corre `./install.sh team --force` para bajar la versión nueva (se
+mergea entre markers, no te pisa tus ediciones locales).
+
+> **Flujo ideal de una feature:** describís qué querés → el agente rutea (chico
+> o SDD) → si es SDD, aprobás cada fase → implementa con TDD evidence → corren
+> los gates → engram guarda las decisiones → próximo dev arranca con contexto.
+
+---
+
+## 🇬🇧 Getting the most out of it
+
+The environment (`./install.sh team`) isn't just skills — it's a **working
+harness for Claude Code** built for a team. Here's what it gives you and how to
+use it.
+
+### 1. Turn on real memory (engram)
+
+Skills and rules install on their own. The one thing each developer installs
+**once** per machine is the [engram](https://github.com/Gentleman-Programming/engram)
+binary — persistent memory that makes the agent **remember decisions across
+sessions** (not static notes, live memory):
+
+```bash
+brew install gentleman-programming/tap/engram
+# or as a Claude Code plugin:
+claude plugin marketplace add Gentleman-Programming/engram && claude plugin install engram
+```
+
+The installer already wrote `.mcp.json`. Handy commands:
+
+```bash
+engram tui                 # browse the project's memory in a UI
+engram search "auth"       # find past decisions
+engram save "title" "what we decided and why"
+```
+
+Inside Claude the agent uses engram's 19 tools (`mem_save`, `mem_search`,
+`mem_session_start`…) on its own. You do nothing — it remembers by itself.
+
+### 2. Let the agent route the work
+
+The rule lives in `CLAUDE.md`. Don't say "code this" for everything:
+
+- **Small, clear change** → done inline, no ceremony.
+- **Exploration / heavy context** → delegated to a subagent to keep the thread clean.
+- **Large / ambiguous / architectural** (≥ 3 files or a design decision) → kicks
+  off the **SDD** flow (`sdd new <name>` → proposal → specs → design → tasks →
+  apply → verify).
+
+### 3. Lean on the review gates
+
+After implementation, the environment runs **non-destructive gates** by itself:
+- Frontend → `react-performance` + `frontend-output-validator`
+- Backend → `backend-performance`
+
+You don't request them — the rules trigger them based on what changed.
+
+### 4. The change-safety guard has your back
+
+Before any `DROP` / `TRUNCATE` / `UPDATE` without `WHERE` / force-push, the hook
+**blocks** the command and asks for the protocol (snapshot + rollback + comms).
+Zero AI tokens — it runs locally. If it's safe (dev/throwaway), re-run noting so.
+
+### 5. Save money with model routing
+
+Use a cheap model for exploration/search/mechanical edits; **Opus** for design,
+architecture, and review. The rule is written — the agent follows it.
+
+### 6. Keep the rules alive
+
+Team rules live in `env/rules/TEAM-RULES.md`. Change them, commit, and the team
+runs `./install.sh team --force` to pull the new version (merged between markers,
+your local edits outside the block survive).
+
+> **Ideal feature flow:** describe what you want → the agent routes it (small or
+> SDD) → if SDD, you approve each phase → it implements with TDD evidence → the
+> gates run → engram stores the decisions → the next dev starts with context.
 
 ## Multi-tool support
 
