@@ -705,7 +705,7 @@ doctor_check_one() {
     if [[ "$proj_sha" == "$cur_sha" ]]; then
         echo "${GREEN}  ✓ up to date ($proj_sha)  —  $(basename "$p")${NC}"
     else
-        echo "${YELLOW}  ! outdated: project=$proj_sha  model=$cur_sha  —  $(basename "$p")  (run: ds team \"$p\")${NC}"
+        echo "${YELLOW}  ! outdated: project=$proj_sha  model=$cur_sha  —  $(basename "$p")  (run: ds install \"$p\")${NC}"
     fi
     return 0
 }
