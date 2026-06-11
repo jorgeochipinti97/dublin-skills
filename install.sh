@@ -933,6 +933,21 @@ main() {
         exit 0
     fi
 
+    # --- Catch mistyped commands early (e.g. `ds nw foo`) ---
+    if [[ -z "$COMMAND" && ${#POSITIONAL[@]} -ge 1 ]]; then
+        local first="${POSITIONAL[1]}"
+        if [[ ! -d "$first" && "$first" != /* && "$first" != .* && "$first" != "." && -z "${SKILLS[$first]}" ]]; then
+            echo "${RED}Unknown command: '$first'${NC}"
+            echo "${YELLOW}Did you mean one of these?${NC}"
+            echo "  ds new <name>        # create a new project here"
+            echo "  ds install <path>    # install/upgrade the env in a project"
+            echo "  ds doctor <path>     # check which projects are up to date"
+            echo "  ds list              # list available skills"
+            echo "${DIM}(run 'ds --help' for everything)${NC}"
+            exit 1
+        fi
+    fi
+
     # --- Default: install skills ---
 
     # Resolve tool + scope (interactive if not provided)
