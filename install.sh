@@ -122,7 +122,8 @@ ${L_USAGE}:
   ds team                               # install FULL team environment into existing project (asks tool + scope)
   ds team <project-path>                # full environment into a project
   ds team --tool=claude --scope=project # non-interactive
-  ds team --force                       # refresh team rules block in CLAUDE.md
+  ds team --force                       # force-refresh team rules even if unchanged
+  ds doctor <path>                      # check if a project (or folder of projects) is up to date
   ds                                    # interactive wizard (skills only)
   ds <project-path>                     # interactive, project scope
   ds <project-path> --all               # all skills, project scope (Claude default)
@@ -502,22 +503,25 @@ install_rules() {
         return 0
     fi
 
+    # Extract the managed block (markers inclusive) from a file.
+    _extract_block() {
+        awk -v s="$START" -v e="$END" '$0~s{f=1} f{print} $0~e{f=0}' "$1"
+    }
+
     if grep -qF "$START" "$dest"; then
-        if [[ $FORCE_FLAG -eq 0 ]]; then
-            echo "${YELLOW}  • rules already present in $dest (use --force to refresh)${NC}"
+        # Refresh by default — but only touch the file if the block actually
+        # changed (no noise, no needless backups). --force ignores the check.
+        if [[ $FORCE_FLAG -eq 0 ]] && diff -q <(_extract_block "$dest") <(_extract_block "$src") >/dev/null 2>&1; then
+            echo "${GREEN}  ✓ rules up to date → $dest${NC}"
             return 0
         fi
         backup_file "$dest"
-        # Drop the existing managed block, then re-append the fresh one.
-        awk -v s="$START" -v e="$END" '
-            $0 ~ s {skip=1}
-            skip==0 {print}
-            $0 ~ e {skip=0}
-        ' "$dest" > "$dest.tmp"
-        # Trim trailing blank lines, then append fresh rules.
-        awk 'BEGIN{RS="";ORS="\n"} {print}' "$dest.tmp" > "$dest" 2>/dev/null || mv "$dest.tmp" "$dest"
+        # Drop the old managed block.
+        awk -v s="$START" -v e="$END" '$0~s{skip=1} skip==0{print} $0~e{skip=0}' "$dest" > "$dest.tmp"
+        # Strip trailing blank lines, then append the fresh block.
+        awk 'NF{p=NR} {a[NR]=$0} END{for(i=1;i<=p;i++) print a[i]}' "$dest.tmp" > "$dest"
         rm -f "$dest.tmp"
-        printf '\n' >> "$dest"
+        printf '\n\n' >> "$dest"
         cat "$src" >> "$dest"
         echo "${GREEN}  ✓ rules refreshed → $dest${NC}"
     else
@@ -622,6 +626,32 @@ install_engram() {
     fi
 }
 
+# Remove skill folders no longer in the model (moved to a hidden backup dir,
+# which Claude Code ignores since it starts with a dot).
+prune_orphan_skills() {
+    local skills_dir="$1"
+    [[ -d "$skills_dir" ]] || return 0
+    for d in "$skills_dir"/*/; do
+        [[ -d "$d" ]] || continue
+        local name="$(basename "$d")"
+        [[ "$name" == .* ]] && continue
+        if [[ -z "${SKILLS[$name]}" ]]; then
+            local bakdir="$skills_dir/.dublin-orphans"
+            mkdir -p "$bakdir"
+            mv "$d" "$bakdir/$name-$(date +%Y%m%d-%H%M%S)"
+            echo "${YELLOW}  ↳ pruned orphan skill: $name (backup in .dublin-orphans/)${NC}"
+        fi
+    done
+}
+
+# Stamp the install with the model's git SHA so `doctor` can flag stale ones.
+write_env_version() {
+    local base="$1"
+    local sha
+    sha="$(git -C "$SCRIPT_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+    printf 'model_sha=%s\ninstalled=%s\n' "$sha" "$(date +%Y-%m-%d)" > "$base/.dublin-env"
+}
+
 install_team() {
     local tool="$1" scope="$2" base="$3"
 
@@ -630,6 +660,7 @@ install_team() {
     skills_dir="$(resolve_skills_path "$tool" "$scope" "$base")"
     mkdir -p "$skills_dir"
     install_all "$skills_dir"
+    prune_orphan_skills "$skills_dir"
     echo ""
 
     echo "${BLUE}2/6 Installing dublin-agent…${NC}"
@@ -656,6 +687,44 @@ install_team() {
 
     echo "${BLUE}6/6 Wiring engram (persistent memory)…${NC}"
     install_engram "$tool" "$scope" "$base"
+
+    write_env_version "$base"
+}
+
+# Report whether a project's env matches the current model SHA.
+doctor_check_one() {
+    local p="$1"
+    [[ -f "$p/.dublin-env" ]] || return 1
+    local proj_sha cur_sha
+    proj_sha="$(grep '^model_sha=' "$p/.dublin-env" | cut -d= -f2)"
+    cur_sha="$(git -C "$SCRIPT_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+    if [[ "$proj_sha" == "$cur_sha" ]]; then
+        echo "${GREEN}  ✓ up to date ($proj_sha)  —  $(basename "$p")${NC}"
+    else
+        echo "${YELLOW}  ! outdated: project=$proj_sha  model=$cur_sha  —  $(basename "$p")  (run: ds team \"$p\")${NC}"
+    fi
+    return 0
+}
+
+# `ds doctor [path]` — check one project or scan a folder of projects.
+run_doctor() {
+    local target="${1:-$PWD}"
+    target="$(cd "$target" 2>/dev/null && pwd)" || {
+        echo "${RED}${L_DIR_NOT_FOUND}: $1${NC}"; exit 1
+    }
+    local cur_sha
+    cur_sha="$(git -C "$SCRIPT_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)"
+    echo "${BLUE}Dublin env doctor — model @ $cur_sha${NC}"
+    echo ""
+    if doctor_check_one "$target"; then
+        return 0
+    fi
+    local found=0
+    for d in "$target"/*/; do
+        [[ -d "$d" ]] || continue
+        doctor_check_one "${d%/}" && found=1
+    done
+    [[ $found -eq 0 ]] && echo "${YELLOW}  no Dublin environment found in $target${NC}"
 }
 
 # Scaffold a brand-new project with the context structure already in place,
@@ -717,7 +786,7 @@ parse_args() {
             --all|-a) INSTALL_ALL_FLAG=1 ;;
             --force|-f) FORCE_FLAG=1 ;;
             --help|-h) print_usage; exit 0 ;;
-            agent|update|list|team|new)
+            agent|update|list|team|new|doctor)
                 if [[ -z "$COMMAND" ]]; then
                     COMMAND="$arg"
                 else
@@ -796,6 +865,12 @@ main() {
             exit 1
         }
         update_skills "$target_dir"
+        exit 0
+    fi
+
+    # --- Subcommand: doctor (check install freshness) ---
+    if [[ "$COMMAND" == "doctor" ]]; then
+        run_doctor "${POSITIONAL[1]:-$PWD}"
         exit 0
     fi
 

@@ -20,10 +20,18 @@ with `--force` to pull updated rules.
 
 ```bash
 ./install.sh new ~/my-project               # scaffold a NEW project from scratch (git + SESSION/TASKS + env)
-./install.sh team ~/my-project              # add the env to an EXISTING project
+./install.sh team ~/my-project              # add (or upgrade) the env on an EXISTING project
 ./install.sh team --tool=claude --scope=project   # non-interactive
-./install.sh team --force                   # refresh the team-rules block
+./install.sh team --force                   # force-refresh rules even if unchanged
+./install.sh doctor ~/my-projects           # check which projects are out of date
 ```
+
+**Re-running is a safe upgrade.** `team` refreshes the rules block only if it
+changed (no backup noise), backs up before touching any file, merges
+`settings.json` / `.mcp.json`, prunes skills removed from the model (moved to
+`.dublin-orphans/`), and never overwrites your `SESSION.md` / `TASKS.md`. Each
+install stamps `.dublin-env` with the model's git SHA so `doctor` can flag stale
+projects.
 
 **`new` vs `team`:** `new` scaffolds a fresh project (runs `git init`, drops in
 `SESSION.md` / `TASKS.md` / `.gitignore` / `OPERATING-MODEL.md`) then installs
