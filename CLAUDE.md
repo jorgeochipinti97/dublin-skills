@@ -11,7 +11,7 @@ This is a **Claude Code skills library** — a collection of specialized prompts
 ```
 agents/
 └── dublin-agent.md           # Senior-architect mentor agent (installed to ~/.claude/agents/ via install.sh agent)
-env/                          # Team environment installed by `./install.sh team` (on top of skills + agent)
+env/                          # Team environment installed by `./install.sh install` (on top of skills + agent)
 ├── rules/TEAM-RULES.md       # Team working rules → CLAUDE.md (Claude) / AGENTS.md (others), merged between markers
 ├── OPERATING-MODEL.md        # Human onboarding doc (roles + flow) → <project>/OPERATING-MODEL.md
 ├── CHEATSHEET.md             # Bilingual ES/EN usage cheatsheet (triggers, big-vs-small) → <project>/CHEATSHEET.md
@@ -110,13 +110,13 @@ skills/
     └── references/           # design-philosophy.md, creation-process.md, output-patterns.md, workflows.md
 ```
 
-## Team Environment (`env/` + `./install.sh team`)
+## Team Environment (`env/` + `./install.sh install`)
 
 This repo is the **model/source**, not where the team works: they clone it and install the environment **into their own working repos** (`SESSION.md`/`TASKS.md` live in those projects, not here). Two entry points:
 - **`./install.sh new <path>`** — scaffold a fresh project: `git init` + `SESSION.md` + `TASKS.md` + `.gitignore` + `OPERATING-MODEL.md` (from `env/templates/`, with `__PROJECT__`/`__DATE__` filled), then the full environment.
-- **`./install.sh team [<path>]`** — layer the environment onto an existing project.
+- **`./install.sh install [<path>]`** — layer the environment onto an existing project.
 
-`./install.sh team` installs a complete, ready-to-use AI agent environment for the whole team in **two commands** (`git clone … && cd dublin-skills && ./install.sh team`). It asks tool + scope, then installs, in order:
+`./install.sh install` installs a complete, ready-to-use AI agent environment for the whole team in **two commands** (`git clone … && cd dublin-skills && ./install.sh install`). It asks tool + scope, then installs, in order:
 
 1. **All 40 skills** (reuses `install_all`)
 2. **dublin-agent** (claude/opencode; both for `universal`)
@@ -125,9 +125,9 @@ This repo is the **model/source**, not where the team works: they clone it and i
 5. **Hooks** — `change-safety-guard.sh` (Bash `PreToolUse`, blocks `DROP`/`TRUNCATE`/`UPDATE`-without-`WHERE`/force-push/`reset --hard`/`--no-verify` with exit 2, zero LLM tokens) + `settings.json` merged into the project's settings with `jq`. Claude Code only — skipped with a notice for other tools.
 6. **engram (persistent memory)** — wires [engram](https://github.com/Gentleman-Programming/engram) as an MCP server by writing/merging `<project>/.mcp.json` (`{"command":"engram","args":["mcp"]}`). engram is a standalone Go binary (SQLite, 19 MCP tools: `mem_save`, `mem_search`, `mem_session_start`…) giving the agent real cross-session memory. The config is written automatically; the **binary is per-machine** — the installer detects it and prints `brew install gentleman-programming/tap/engram` rather than installing silently. Adopted from the Gentleman ecosystem (the one genuinely-missing piece vs. static `team-memory/`); the rest of gentle-ai/gentle-pi is intentionally NOT adopted (Claude Code is the team runtime, never Pi).
 
-**Re-running `team` is a safe upgrade**, not a clobber: rules refresh only when the managed block actually changed (diff-checked — no backup noise; `--force` overrides), every touched file is backed up first, `settings.json`/`.mcp.json` merge, skills dropped from the model are pruned to `<skills>/.dublin-orphans/`, and `SESSION.md`/`TASKS.md` are never overwritten. Each install stamps `<project>/.dublin-env` with the model's git short SHA; **`./install.sh doctor <path>`** reads it and reports up-to-date vs outdated (scans subfolders when given a projects directory).
+**Re-running `install` is a safe upgrade**, not a clobber: rules refresh only when the managed block actually changed (diff-checked — no backup noise; `--force` overrides), every touched file is backed up first, `settings.json`/`.mcp.json` merge, skills dropped from the model are pruned to `<skills>/.dublin-orphans/`, and `SESSION.md`/`TASKS.md` are never overwritten. Each install stamps `<project>/.dublin-env` with the model's git short SHA; **`./install.sh doctor <path>`** reads it and reports up-to-date vs outdated (scans subfolders when given a projects directory).
 
-Safety: every existing file is backed up (`*.bak.<timestamp>`) before being touched. The team rules are **new team-scope rules**, deliberately separate from any individual's personal preferences (which stay in user-scope config). To change them: edit `env/rules/TEAM-RULES.md`, commit, and have the team re-run `./install.sh team --force`. Reference: `env/README.md`.
+Safety: every existing file is backed up (`*.bak.<timestamp>`) before being touched. The team rules are **new team-scope rules**, deliberately separate from any individual's personal preferences (which stay in user-scope config). To change them: edit `env/rules/TEAM-RULES.md`, commit, and have the team re-run `./install.sh install --force`. Reference: `env/README.md`.
 
 ## Companion Assets (outside `skills/`)
 

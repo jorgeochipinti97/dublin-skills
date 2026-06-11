@@ -1,11 +1,11 @@
 # `env/` — Dublin Team Environment
 
-Everything `./install.sh team` installs **on top of** the skills + dublin-agent,
+Everything `./install.sh install` installs **on top of** the skills + dublin-agent,
 so a new developer is productive after two commands:
 
 ```bash
 git clone https://github.com/jorgeochipinti97/dublin-skills.git
-cd dublin-skills && ./install.sh team
+cd dublin-skills && ./install.sh install
 ```
 
 ## Contents
@@ -25,7 +25,7 @@ cd dublin-skills && ./install.sh team
 - **`./install.sh new <path>`** — scaffold a brand-new project: `git init`,
   drop in `SESSION.md` / `TASKS.md` / `.gitignore` (from `templates/`, with
   `__PROJECT__` / `__DATE__` filled), then install the full environment.
-- **`./install.sh team [<path>]`** — layer the environment onto a project that
+- **`./install.sh install [<path>]`** — layer the environment onto a project that
   already exists.
 
 dublin-skills is the **model/source**: the team installs the environment into
@@ -33,7 +33,7 @@ their own working repos and works there, not inside this repo.
 
 ## engram (persistent memory)
 
-`ds team` wires [engram](https://github.com/Gentleman-Programming/engram) — a
+`ds install` wires [engram](https://github.com/Gentleman-Programming/engram) — a
 standalone Go binary (SQLite-backed) that gives the agent real cross-session
 memory (19 MCP tools: `mem_save`, `mem_search`, `mem_session_start`, …). The
 `.mcp.json` config is written/merged automatically; the **binary is
@@ -58,4 +58,4 @@ default; `engram serve` (HTTP API) can later back a shared team memory.
   guard script) are Claude Code-specific and are skipped for other tools with a
   notice.
 - **Editing the rules**: change `rules/TEAM-RULES.md` here, commit, and have the
-  team re-run `./install.sh team --force` to pull the update.
+  team re-run `./install.sh install --force` to pull the update.

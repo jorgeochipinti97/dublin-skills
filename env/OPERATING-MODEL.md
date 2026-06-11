@@ -1,7 +1,7 @@
 # Operating Model
 
 How this team ships work with an AI agent. One flow, three roles, context that
-stays alive on its own. Installed by `./install.sh team`.
+stays alive on its own. Installed by `./install.sh install`.
 
 ## Roles
 

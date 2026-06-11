@@ -8,10 +8,10 @@ A collection of skills for [Claude Code](https://claude.ai/code) that extend its
 
 ```bash
 git clone https://github.com/jorgeochipinti97/dublin-skills.git
-cd dublin-skills && ./install.sh team
+cd dublin-skills && ./install.sh install
 ```
 
-`./install.sh team` asks tool + scope, then installs **everything**: all 40
+`./install.sh install` asks tool + scope, then installs **everything**: all 40
 skills + the dublin-agent + team rules (`CLAUDE.md` / `AGENTS.md`) + pre-seeded
 shared memory + a change-safety git/SQL guard hook (Claude Code) + **engram**
 persistent memory wired as an MCP server. Every existing file is backed up
@@ -20,22 +20,22 @@ with `--force` to pull updated rules.
 
 ```bash
 ./install.sh new ~/my-project               # scaffold a NEW project from scratch (git + SESSION/TASKS + env)
-./install.sh team ~/my-project              # add (or upgrade) the env on an EXISTING project
-./install.sh team --tool=claude --scope=project   # non-interactive
-./install.sh team --force                   # force-refresh rules even if unchanged
+./install.sh install ~/my-project              # add (or upgrade) the env on an EXISTING project
+./install.sh install --tool=claude --scope=project   # non-interactive
+./install.sh install --force                   # force-refresh rules even if unchanged
 ./install.sh doctor ~/my-projects           # check which projects are out of date
 ```
 
-**Re-running is a safe upgrade.** `team` refreshes the rules block only if it
+**Re-running is a safe upgrade.** `install` refreshes the rules block only if it
 changed (no backup noise), backs up before touching any file, merges
 `settings.json` / `.mcp.json`, prunes skills removed from the model (moved to
 `.dublin-orphans/`), and never overwrites your `SESSION.md` / `TASKS.md`. Each
 install stamps `.dublin-env` with the model's git SHA so `doctor` can flag stale
 projects.
 
-**`new` vs `team`:** `new` scaffolds a fresh project (runs `git init`, drops in
+**`new` vs `install`:** `new` scaffolds a fresh project (runs `git init`, drops in
 `SESSION.md` / `TASKS.md` / `.gitignore` / `OPERATING-MODEL.md`) then installs
-the full environment. `team` layers the environment onto a project that already
+the full environment. `install` layers the environment onto a project that already
 exists.
 
 dublin-skills is the **model/source** — your team clones it and installs the
@@ -48,7 +48,7 @@ environment **into their own working repos**; they don't work inside this repo.
 | Command | What it does |
 |---|---|
 | `ds new <path>` | **Scaffold a new project** from scratch: `git init` + `SESSION.md` + `TASKS.md` + `.gitignore` + full environment |
-| `ds team [<path>]` | Install **or upgrade** the full environment on an existing project (no path = current dir) |
+| `ds install [<path>]` | Install **or upgrade** the full environment on an existing project (no path = current dir) |
 | `ds doctor [<path>]` | Report which projects are **up to date vs outdated** (scans subfolders of a projects dir) |
 | `ds agent` | Install just the **dublin-agent** (asks tool) |
 | `ds <path> --all` | Install just the **skills** (no rules/env) |
@@ -56,9 +56,9 @@ environment **into their own working repos**; they don't work inside this repo.
 | `ds update <path>` | Update only the skills already installed in `<path>` |
 | `ds --help` | Full usage |
 
-**Flags** (for `team`): `--tool=claude\|opencode\|codex\|universal` · `--scope=project\|user` · `--force` (refresh rules even if unchanged).
+**Flags** (for `install`): `--tool=claude\|opencode\|codex\|universal` · `--scope=project\|user` · `--force` (refresh rules even if unchanged).
 
-**You'll mostly use two:** `ds new` to start a project, `ds team` to add/upgrade the env on an existing one.
+**You'll mostly use two:** `ds new` to start a project, `ds install` to add/upgrade the env on an existing one.
 
 See [`env/README.md`](env/README.md) for exactly what lands where.
 
@@ -91,7 +91,7 @@ Then invoke it from Claude Code via `Task(subagent_type: 'dublin-agent')`.
 
 ## 🇪🇸 Cómo sacarle el jugo al máximo
 
-El entorno (`./install.sh team`) no es solo skills: es un **harness de trabajo
+El entorno (`./install.sh install`) no es solo skills: es un **harness de trabajo
 para Claude Code** pensado para un equipo. Esto es lo que te da y cómo usarlo.
 
 ### 1. Activá la memoria real (engram)
@@ -151,7 +151,7 @@ arquitectura y review. La regla está escrita — el agente la sigue.
 ### 6. Mantené las reglas vivas
 
 Las reglas de equipo viven en `env/rules/TEAM-RULES.md`. Las cambiás, commiteás,
-y el equipo corre `./install.sh team --force` para bajar la versión nueva (se
+y el equipo corre `./install.sh install --force` para bajar la versión nueva (se
 mergea entre markers, no te pisa tus ediciones locales).
 
 > **Flujo ideal de una feature:** describís qué querés → el agente rutea (chico
@@ -162,7 +162,7 @@ mergea entre markers, no te pisa tus ediciones locales).
 
 ## 🇬🇧 Getting the most out of it
 
-The environment (`./install.sh team`) isn't just skills — it's a **working
+The environment (`./install.sh install`) isn't just skills — it's a **working
 harness for Claude Code** built for a team. Here's what it gives you and how to
 use it.
 
@@ -222,7 +222,7 @@ architecture, and review. The rule is written — the agent follows it.
 ### 6. Keep the rules alive
 
 Team rules live in `env/rules/TEAM-RULES.md`. Change them, commit, and the team
-runs `./install.sh team --force` to pull the new version (merged between markers,
+runs `./install.sh install --force` to pull the new version (merged between markers,
 your local edits outside the block survive).
 
 > **Ideal feature flow:** describe what you want → the agent routes it (small or

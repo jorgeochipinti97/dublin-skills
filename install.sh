@@ -119,11 +119,12 @@ print_usage() {
     cat <<USAGE
 ${L_USAGE}:
   ds new <project-path>                 # scaffold a NEW project (git + SESSION/TASKS) + full env
-  ds team                               # install FULL team environment into existing project (asks tool + scope)
-  ds team <project-path>                # full environment into a project
-  ds team --tool=claude --scope=project # non-interactive
-  ds team --force                       # force-refresh team rules even if unchanged
+  ds install                            # install/upgrade the FULL environment in existing project (asks tool + scope)
+  ds install <project-path>             # full environment into a project
+  ds install --tool=claude --scope=project # non-interactive
+  ds install --force                    # force-refresh rules even if unchanged
   ds doctor <path>                      # check if a project (or folder of projects) is up to date
+  (alias: 'ds team' still works — same as 'ds install')
   ds                                    # interactive wizard (skills only)
   ds <project-path>                     # interactive, project scope
   ds <project-path> --all               # all skills, project scope (Claude default)
@@ -789,7 +790,7 @@ parse_args() {
             --all|-a) INSTALL_ALL_FLAG=1 ;;
             --force|-f) FORCE_FLAG=1 ;;
             --help|-h) print_usage; exit 0 ;;
-            agent|update|list|team|new|doctor)
+            agent|update|list|team|install|new|doctor)
                 if [[ -z "$COMMAND" ]]; then
                     COMMAND="$arg"
                 else
@@ -896,8 +897,8 @@ main() {
         exit 0
     fi
 
-    # --- Subcommand: team (full environment) ---
-    if [[ "$COMMAND" == "team" ]]; then
+    # --- Subcommand: install (full environment) — alias: team (legacy) ---
+    if [[ "$COMMAND" == "install" || "$COMMAND" == "team" ]]; then
         local team_base="$PWD"
         if [[ ${#POSITIONAL[@]} -ge 1 ]]; then
             team_base="$(cd "${POSITIONAL[1]}" 2>/dev/null && pwd)" || {
@@ -914,7 +915,7 @@ main() {
         echo ""
         install_team "$TOOL" "$SCOPE" "$team_base"
         echo ""
-        echo "${GREEN}✓ Dublin team environment installed.${NC}"
+        echo "${GREEN}✓ Dublin environment installed.${NC}"
         exit 0
     fi
 

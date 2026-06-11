@@ -11,7 +11,7 @@ skills, rules, Tech Lead behavior, and memory activate on their own.
 ```bash
 git clone git@github.com:jorgeochipinti97/dublin-skills.git && cd dublin-skills
 ./install.sh new ~/mi-proyecto      # proyecto nuevo de cero
-./install.sh team ~/mi-proyecto     # proyecto que ya existe
+./install.sh install ~/mi-proyecto     # proyecto que ya existe
 brew install gentleman-programming/tap/engram   # 1 vez por máquina (memoria)
 ```
 Después abrís Claude Code **dentro de tu proyecto** y listo.
@@ -57,7 +57,7 @@ Hablá normal. Solo recordá: `sdd new <x>` para lo grande, `"daily"` / `"add ta
 ```bash
 git clone git@github.com:jorgeochipinti97/dublin-skills.git && cd dublin-skills
 ./install.sh new ~/my-project       # new project from scratch
-./install.sh team ~/my-project      # existing project
+./install.sh install ~/my-project      # existing project
 brew install gentleman-programming/tap/engram   # once per machine (memory)
 ```
 Then open Claude Code **inside your project**.
