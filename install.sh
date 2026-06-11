@@ -881,10 +881,24 @@ main() {
     # --- Subcommand: new (scaffold a fresh project + full environment) ---
     if [[ "$COMMAND" == "new" ]]; then
         if [[ ${#POSITIONAL[@]} -lt 1 ]]; then
-            echo "${RED}Usage: ds new <project-path>${NC}"
+            echo "${RED}Usage: ds new <name>   (creates ./<name> here, like 'nest new')${NC}"
             exit 1
         fi
         local new_path="${POSITIONAL[1]}"
+        # Bare name → create in the current directory (like `nest new <name>`).
+        [[ "$new_path" != /* ]] && new_path="$PWD/$new_path"
+
+        # Fail fast (before asking anything) if we can't create here.
+        local new_parent
+        new_parent="$(dirname "$new_path")"
+        if [[ ! -d "$new_path" && ! -w "$new_parent" ]]; then
+            echo "${RED}Can't create '$(basename "$new_path")' here — '$new_parent' is read-only.${NC}"
+            echo "${YELLOW}Move into a folder of yours first, then run it again:${NC}"
+            echo "${DIM}  cd ~/Desktop/main/proyectos${NC}"
+            echo "${DIM}  ds new $(basename "$new_path")${NC}"
+            exit 1
+        fi
+
         [[ -z "$TOOL" ]] && select_tool_interactive
         [[ -z "$SCOPE" ]] && SCOPE="project"
 
