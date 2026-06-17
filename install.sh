@@ -119,6 +119,7 @@ print_usage() {
     cat <<USAGE
 ${L_USAGE}:
   ds new <project-path>                 # scaffold a NEW project (git + SESSION/TASKS) + full env
+  ds daily <path> [--projects=<dir>]    # scaffold a cockpit / daily driver (task-breakdown + daily rollup)
   ds install                            # install/upgrade the FULL environment in existing project (asks tool + scope)
   ds install <project-path>             # full environment into a project
   ds install --tool=claude --scope=project # non-interactive
@@ -789,6 +790,79 @@ scaffold_new() {
     echo ""
 }
 
+# Ask which folder the cockpit aggregates (default: the cockpit's parent dir).
+# Honors --projects=<path>; only prompts when interactive.
+select_projects_root() {
+    local cockpit="$1"
+    local default_root
+    default_root="$(dirname "$cockpit")"
+    if [[ -z "$PROJECTS_ROOT" ]]; then
+        if [[ -t 0 ]]; then
+            printf "${YELLOW}¿En qué carpeta viven los proyectos que el daily va a agregar?${NC} [${default_root}]: "
+            local ans; read -r ans
+            PROJECTS_ROOT="${ans:-$default_root}"
+        else
+            PROJECTS_ROOT="$default_root"
+        fi
+    fi
+    PROJECTS_ROOT="${PROJECTS_ROOT/#\~/$HOME}"   # expand a leading ~
+}
+
+# Scaffold a cockpit: git init + cockpit-flavored SESSION/TASKS + .gitignore.
+scaffold_cockpit() {
+    local base="$1" projects_root="$2"
+    mkdir -p "$base"; base="$(cd "$base" && pwd)"
+    local project date user
+    project="$(basename "$base")"
+    date="$(date +%Y-%m-%d)"
+    user="$(git config user.name 2>/dev/null | awk '{print tolower($1)}')"
+    [[ -z "$user" ]] && user="$(whoami)"
+
+    echo "${BLUE}Scaffolding cockpit: ${project}  (agrega: ${projects_root})${NC}"
+    [[ -d "$base/.git" ]] || { (cd "$base" && git init -q) && echo "${GREEN}  ✓ git init${NC}"; }
+
+    # sed with '#' delimiter so paths with '/' don't clash.
+    local -a sub=(-e "s#__PROJECT__#${project}#g" -e "s#__DATE__#${date}#g" \
+                  -e "s#__PROJECTS_ROOT__#${projects_root}#g" -e "s#__USER__#${user}#g")
+    if [[ ! -f "$base/SESSION.md" ]]; then
+        sed "${sub[@]}" "$ENV_SOURCE/cockpit/SESSION.md" > "$base/SESSION.md"
+        echo "${GREEN}  ✓ SESSION.md${NC}"
+    fi
+    if [[ ! -f "$base/TASKS.md" ]]; then
+        sed "${sub[@]}" "$ENV_SOURCE/cockpit/TASKS.md" > "$base/TASKS.md"
+        echo "${GREEN}  ✓ TASKS.md${NC}"
+    fi
+    if [[ ! -f "$base/.gitignore" ]]; then
+        cp "$ENV_SOURCE/templates/gitignore" "$base/.gitignore"
+        echo "${GREEN}  ✓ .gitignore${NC}"
+    fi
+    echo ""
+}
+
+# Append (or refresh) the cockpit instructions block in the instructions file,
+# OUTSIDE the team-rules managed block. Idempotent via COCKPIT markers.
+install_cockpit_instructions() {
+    local tool="$1" scope="$2" base="$3" projects_root="$4"
+    local dest user
+    dest="$(resolve_rules_path "$tool" "$scope" "$base")" || return 1
+    user="$(git config user.name 2>/dev/null | awk '{print tolower($1)}')"
+    [[ -z "$user" ]] && user="$(whoami)"
+
+    local START="<!-- DUBLIN-COCKPIT:START -->"
+    local END="<!-- DUBLIN-COCKPIT:END -->"
+    local block
+    block="$(sed -e "s#__PROJECTS_ROOT__#${projects_root}#g" -e "s#__USER__#${user}#g" \
+        "$ENV_SOURCE/cockpit/COCKPIT.md")"
+
+    if [[ -f "$dest" ]] && grep -qF "$START" "$dest"; then
+        backup_file "$dest"
+        awk -v s="$START" -v e="$END" '$0~s{skip=1} skip==0{print} $0~e{skip=0}' "$dest" > "$dest.tmp"
+        mv "$dest.tmp" "$dest"
+    fi
+    printf '\n%s\n' "$block" >> "$dest"
+    echo "${GREEN}  ✓ cockpit instructions → $dest${NC}"
+}
+
 # --- Argument parsing ---------------------------------------------------------
 
 TOOL=""
@@ -796,6 +870,7 @@ SCOPE=""
 INSTALL_ALL_FLAG=0
 FORCE_FLAG=0
 COMMAND=""
+PROJECTS_ROOT=""
 POSITIONAL=()
 SKILL_NAMES=()
 
@@ -807,10 +882,11 @@ parse_args() {
         case "$arg" in
             --tool=*) TOOL="${arg#--tool=}" ;;
             --scope=*) SCOPE="${arg#--scope=}" ;;
+            --projects=*) PROJECTS_ROOT="${arg#--projects=}" ;;
             --all|-a) INSTALL_ALL_FLAG=1 ;;
             --force|-f) FORCE_FLAG=1 ;;
             --help|-h) print_usage; exit 0 ;;
-            agent|update|list|team|install|new|doctor)
+            agent|update|list|team|install|new|daily|doctor)
                 if [[ -z "$COMMAND" ]]; then
                     COMMAND="$arg"
                 else
@@ -931,6 +1007,39 @@ main() {
         exit 0
     fi
 
+    # --- Subcommand: daily (scaffold a cockpit / daily driver + full env) ---
+    if [[ "$COMMAND" == "daily" ]]; then
+        if [[ ${#POSITIONAL[@]} -lt 1 ]]; then
+            echo "${RED}Usage: ds daily <path> [--projects=<dir>]   (your daily cockpit)${NC}"
+            exit 1
+        fi
+        local cp_path="${POSITIONAL[1]}"
+        [[ "$cp_path" != /* ]] && cp_path="$PWD/$cp_path"
+
+        local cp_parent
+        cp_parent="$(dirname "$cp_path")"
+        if [[ ! -d "$cp_path" && ! -w "$cp_parent" ]]; then
+            echo "${RED}Can't create '$(basename "$cp_path")' here — '$cp_parent' is read-only.${NC}"
+            exit 1
+        fi
+
+        [[ -z "$TOOL" ]] && select_tool_interactive
+        [[ -z "$SCOPE" ]] && SCOPE="project"
+        select_projects_root "$cp_path"
+
+        scaffold_cockpit "$cp_path" "$PROJECTS_ROOT"
+        local cp_base
+        cp_base="$(cd "$cp_path" && pwd)"
+        install_team "$TOOL" "$SCOPE" "$cp_base"
+        echo ""
+        echo "${BLUE}Installing cockpit instructions…${NC}"
+        install_cockpit_instructions "$TOOL" "$SCOPE" "$cp_base" "$PROJECTS_ROOT"
+        echo ""
+        echo "${GREEN}✓ Cockpit ready: $cp_base${NC}"
+        echo "${DIM}  Abrí tu agente acá y decí 'daily' o 'task: <algo>'.${NC}"
+        exit 0
+    fi
+
     # --- Subcommand: install (full environment) — alias: team (legacy) ---
     if [[ "$COMMAND" == "install" || "$COMMAND" == "team" ]]; then
         local team_base="$PWD"
@@ -960,6 +1069,7 @@ main() {
             echo "${RED}Unknown command: '$first'${NC}"
             echo "${YELLOW}Did you mean one of these?${NC}"
             echo "  ds new <name>        # create a new project here"
+            echo "  ds daily <path>      # scaffold a cockpit / daily driver"
             echo "  ds install <path>    # install/upgrade the env in a project"
             echo "  ds doctor <path>     # check which projects are up to date"
             echo "  ds list              # list available skills"

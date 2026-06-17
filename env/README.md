@@ -15,6 +15,7 @@ cd dublin-skills && ./install.sh install
 | `rules/TEAM-RULES.md` | Team working rules (priority over agent defaults) | `<project>/CLAUDE.md` (merged, marker-delimited) |
 | `OPERATING-MODEL.md` | Human onboarding doc — roles + flow | `<project>/OPERATING-MODEL.md` |
 | `templates/` | Scaffold for `new`: `SESSION.md`, `TASKS.md`, `gitignore` | project root (via `install.sh new`) |
+| `cockpit/` | Scaffold for `daily`: `COCKPIT.md` instructions + cockpit `SESSION.md`/`TASKS.md` | project root + instructions file (via `install.sh daily`) |
 | `memory/` | Pre-seeded shared team memories | `<project>/.claude/team-memory/` |
 | `hooks/settings.json` | Hook wiring (no LLM tokens at runtime) | `<project>/.claude/settings.json` (merged) |
 | `hooks/change-safety-guard.sh` | Bash PreToolUse guard — blocks destructive ops | `<project>/.claude/hooks/` |
