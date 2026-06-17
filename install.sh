@@ -573,6 +573,7 @@ install_hooks() {
     local hooks_dir="$cfg/hooks"
     local guard_src="$ENV_SOURCE/hooks/change-safety-guard.sh"
     local loader_src="$ENV_SOURCE/hooks/session-context-loader.sh"
+    local nudge_src="$ENV_SOURCE/hooks/context-upkeep-nudge.sh"
     local settings_src="$ENV_SOURCE/hooks/settings.json"
     local settings_dest="$cfg/settings.json"
 
@@ -583,6 +584,9 @@ install_hooks() {
     cp "$loader_src" "$hooks_dir/session-context-loader.sh"
     chmod +x "$hooks_dir/session-context-loader.sh"
     echo "${GREEN}  ✓ session-context-loader.sh → $hooks_dir${NC}"
+    cp "$nudge_src" "$hooks_dir/context-upkeep-nudge.sh"
+    chmod +x "$hooks_dir/context-upkeep-nudge.sh"
+    echo "${GREEN}  ✓ context-upkeep-nudge.sh → $hooks_dir${NC}"
 
     if [[ ! -f "$settings_dest" ]]; then
         cp "$settings_src" "$settings_dest"
