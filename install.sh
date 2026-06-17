@@ -572,6 +572,7 @@ install_hooks() {
     cfg="$(resolve_config_dir "$tool" "$scope" "$base")" || return 1
     local hooks_dir="$cfg/hooks"
     local guard_src="$ENV_SOURCE/hooks/change-safety-guard.sh"
+    local loader_src="$ENV_SOURCE/hooks/session-context-loader.sh"
     local settings_src="$ENV_SOURCE/hooks/settings.json"
     local settings_dest="$cfg/settings.json"
 
@@ -579,6 +580,9 @@ install_hooks() {
     cp "$guard_src" "$hooks_dir/change-safety-guard.sh"
     chmod +x "$hooks_dir/change-safety-guard.sh"
     echo "${GREEN}  ✓ change-safety-guard.sh → $hooks_dir${NC}"
+    cp "$loader_src" "$hooks_dir/session-context-loader.sh"
+    chmod +x "$hooks_dir/session-context-loader.sh"
+    echo "${GREEN}  ✓ session-context-loader.sh → $hooks_dir${NC}"
 
     if [[ ! -f "$settings_dest" ]]; then
         cp "$settings_src" "$settings_dest"
@@ -720,6 +724,18 @@ run_doctor() {
     cur_sha="$(git -C "$SCRIPT_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)"
     echo "${BLUE}Dublin env doctor — model @ $cur_sha${NC}"
     echo ""
+
+    # Per-machine check: engram powers persistent memory. If the binary is
+    # missing, mem_save/mem_search fail silently — the #1 memory-loss cause.
+    if command -v engram >/dev/null 2>&1; then
+        echo "${GREEN}  ✓ engram binary found ($(command -v engram)) — persistent memory live${NC}"
+    else
+        echo "${RED}  🔴 engram NOT installed — persistent memory is DEAD on this machine.${NC}"
+        echo "${YELLOW}     mem_save/mem_search silently no-op. Install once:${NC}"
+        echo "${DIM}       brew install gentleman-programming/tap/engram${NC}"
+    fi
+    echo ""
+
     if doctor_check_one "$target"; then
         return 0
     fi

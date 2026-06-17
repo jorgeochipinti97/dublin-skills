@@ -18,6 +18,7 @@ cd dublin-skills && ./install.sh install
 | `memory/` | Pre-seeded shared team memories | `<project>/.claude/team-memory/` |
 | `hooks/settings.json` | Hook wiring (no LLM tokens at runtime) | `<project>/.claude/settings.json` (merged) |
 | `hooks/change-safety-guard.sh` | Bash PreToolUse guard — blocks destructive ops | `<project>/.claude/hooks/` |
+| `hooks/session-context-loader.sh` | SessionStart hook — injects team-memory + SESSION.md every session, warns if engram is missing | `<project>/.claude/hooks/` |
 | `mcp/mcp.json` | engram persistent-memory MCP server | `<project>/.mcp.json` (merged) |
 
 ## Two ways in
