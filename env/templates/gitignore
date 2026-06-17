@@ -1,8 +1,9 @@
 # Private personal tasks — never commit
 *.local.md
 
-# Dublin env: pruned-skill backups (local only)
+# Dublin env: pruned-skill backups + install backups (local only)
 .dublin-orphans/
+*.bak.*
 
 # OS
 .DS_Store
