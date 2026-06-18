@@ -122,7 +122,7 @@ ${L_USAGE}:
   ds daily <path> [--projects=<dir>]    # scaffold a cockpit / daily driver (task-breakdown + daily rollup)
   ds team-init <path>                   # scaffold the TEAM hub (roster + registry + board + members)
   ds team-add <proyecto> <git-url>      # register a shared repo in the hub (run inside the hub)
-  ds team-board                         # regenerate BOARD.md + members/ from each repo's TASKS.md
+  ds team-board [--pull]                # regenerate BOARD.md + members/ (--pull: git pull --ff-only each repo first)
   ds assign "<texto>" @handle [en <proyecto>]  # assign a task to a teammate in the right TASKS.md
   ds install                            # install/upgrade the FULL environment in existing project (asks tool + scope)
   ds install <project-path>             # full environment into a project
@@ -982,6 +982,14 @@ run_team_board() {
             missing+="  - ${p} (sin mapear/clonar o sin TASKS.md)"$'\n'
             continue
         fi
+        # --pull: traer lo último (ff-only, nunca pisa trabajo local) antes de agregar.
+        if [[ $PULL_FLAG -eq 1 ]]; then
+            if git -C "$path" pull --ff-only >/dev/null 2>&1; then
+                echo "${DIM}  ↳ ${p}: pulled${NC}"
+            else
+                echo "${YELLOW}  ↳ ${p}: pull saltado (sin upstream, sucio, o no fast-forward)${NC}"
+            fi
+        fi
         bucket=""
         while IFS= read -r line || [[ -n "$line" ]]; do
             case "$line" in
@@ -1095,6 +1103,7 @@ TOOL=""
 SCOPE=""
 INSTALL_ALL_FLAG=0
 FORCE_FLAG=0
+PULL_FLAG=0
 COMMAND=""
 PROJECTS_ROOT=""
 POSITIONAL=()
@@ -1111,6 +1120,7 @@ parse_args() {
             --projects=*) PROJECTS_ROOT="${arg#--projects=}" ;;
             --all|-a) INSTALL_ALL_FLAG=1 ;;
             --force|-f) FORCE_FLAG=1 ;;
+            --pull) PULL_FLAG=1 ;;
             --help|-h) print_usage; exit 0 ;;
             agent|update|list|team|install|new|daily|team-init|team-add|team-board|assign|doctor)
                 if [[ -z "$COMMAND" ]]; then
