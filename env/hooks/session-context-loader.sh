@@ -57,6 +57,16 @@ if [ -f "$SESSION" ]; then
   body+="## SESSION.md — estado actual del proyecto${nl}${nl}$(cat "$SESSION")${nl}"
 fi
 
+# 4. "Tus tasks en este repo" — incomplete tasks tagged with your @handle.
+if [ -f "$PROJECT_DIR/TASKS.md" ]; then
+  handle="$(git -C "$PROJECT_DIR" config user.name 2>/dev/null | awk '{print tolower($1)}')"
+  [ -z "$handle" ] && handle="$(whoami)"
+  mine="$(grep -E '^[ ]*- \[ \]' "$PROJECT_DIR/TASKS.md" 2>/dev/null | grep -F "@${handle}" || true)"
+  if [ -n "$mine" ]; then
+    body+="${nl}## Tus tasks pendientes en este repo (@${handle})${nl}${nl}${mine}${nl}"
+  fi
+fi
+
 [ -z "$body" ] && exit 0
 
 # Emit as SessionStart additionalContext. jq does safe JSON escaping; if jq is

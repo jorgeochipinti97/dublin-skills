@@ -197,6 +197,19 @@ Natural-language management (no commands):
 Rules: read/write on demand only; append, never rewrite; preserve order; never
 invent tasks or mark things done unless told.
 
+### Assignment + team coordination (`@handle`)
+- A task is assigned to a teammate with a **`@handle`** tag inside the repo's
+  `TASKS.md`: `- [ ] [acme] @nahuel add invoice export`. No tag = unassigned.
+- The handle is the one in the team hub's `TEAM.md`. `ds assign "<texto>" @handle
+  [en <proyecto>]` writes the tag into the right `TASKS.md` for you.
+- **Team hub** (`ds team-init`): a separate git repo all clone — `REGISTRY.md`
+  (shared repos), `TEAM.md` (roster), and the **generated** `BOARD.md` +
+  `members/<handle>.md`. The **source of truth for every task is the project's
+  `TASKS.md`**, never the board. Regenerate with `ds team-board`.
+- "Ver el estado del equipo" = the **last `git pull`** of each repo — there is no
+  server, so it is **not real-time**. If a repo isn't cloned/pulled, say so; never
+  invent its state. `team.local.md` (per-machine paths) is gitignored.
+
 ### Context upkeep — mandatory, part of every task
 The context files are kept alive **automatically** — the developer should never
 have to remember to update them. As Tech Lead, at the end of any unit of work:

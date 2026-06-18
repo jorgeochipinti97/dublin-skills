@@ -120,6 +120,10 @@ print_usage() {
 ${L_USAGE}:
   ds new <project-path>                 # scaffold a NEW project (git + SESSION/TASKS) + full env
   ds daily <path> [--projects=<dir>]    # scaffold a cockpit / daily driver (task-breakdown + daily rollup)
+  ds team-init <path>                   # scaffold the TEAM hub (roster + registry + board + members)
+  ds team-add <proyecto> <git-url>      # register a shared repo in the hub (run inside the hub)
+  ds team-board                         # regenerate BOARD.md + members/ from each repo's TASKS.md
+  ds assign "<texto>" @handle [en <proyecto>]  # assign a task to a teammate in the right TASKS.md
   ds install                            # install/upgrade the FULL environment in existing project (asks tool + scope)
   ds install <project-path>             # full environment into a project
   ds install --tool=claude --scope=project # non-interactive
@@ -863,6 +867,228 @@ install_cockpit_instructions() {
     echo "${GREEN}  ✓ cockpit instructions → $dest${NC}"
 }
 
+# ---- Team hub ---------------------------------------------------------------
+
+# Look up a project's local path from the hub's team.local.md (proyecto=path).
+# Builtins only (read/case/printf) — no external command, robust to PATH quirks.
+_teamhub_local_path() {
+    local hub="$1" proj="$2" line
+    [[ -f "$hub/team.local.md" ]] || return 1
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        case "$line" in
+            "${proj}="*) printf '%s\n' "${line#${proj}=}"; return 0 ;;
+        esac
+    done < "$hub/team.local.md"
+    return 1
+}
+
+# Scaffold a team-hub: git init + TEAM/REGISTRY/BOARD + members/ + local map.
+scaffold_teamhub() {
+    local base="$1" team="$2"
+    mkdir -p "$base/members"; base="$(cd "$base" && pwd)"
+    local date user
+    date="$(date +%Y-%m-%d)"
+    user="$(git config user.name 2>/dev/null | awk '{print tolower($1)}')"
+    [[ -z "$user" ]] && user="$(whoami)"
+
+    echo "${BLUE}Scaffolding team hub: ${team}${NC}"
+    [[ -d "$base/.git" ]] || { (cd "$base" && git init -q) && echo "${GREEN}  ✓ git init${NC}"; }
+
+    local -a sub=(-e "s#__TEAM__#${team}#g" -e "s#__DATE__#${date}#g" -e "s#__USER__#${user}#g")
+    local f
+    for f in TEAM.md REGISTRY.md BOARD.md; do
+        [[ -f "$base/$f" ]] && continue
+        sed "${sub[@]}" "$ENV_SOURCE/teamhub/$f" > "$base/$f"
+        echo "${GREEN}  ✓ $f${NC}"
+    done
+    [[ -f "$base/.gitignore" ]] || cp "$ENV_SOURCE/teamhub/gitignore" "$base/.gitignore"
+    [[ -f "$base/team.local.md" ]] || sed "${sub[@]}" "$ENV_SOURCE/teamhub/team.local.md" > "$base/team.local.md"
+    : > "$base/members/.gitkeep"
+    echo "${GREEN}  ✓ team.local.md (gitignored) + members/${NC}"
+    echo ""
+}
+
+# Append (or refresh) the team-hub instructions block, outside the managed block.
+install_teamhub_instructions() {
+    local tool="$1" scope="$2" base="$3" team="$4"
+    local dest
+    dest="$(resolve_rules_path "$tool" "$scope" "$base")" || return 1
+    local START="<!-- DUBLIN-TEAMHUB:START -->"
+    local END="<!-- DUBLIN-TEAMHUB:END -->"
+    local block
+    block="$(sed -e "s#__TEAM__#${team}#g" "$ENV_SOURCE/teamhub/TEAMHUB.md")"
+    if [[ -f "$dest" ]] && grep -qF "$START" "$dest"; then
+        backup_file "$dest"
+        awk -v s="$START" -v e="$END" '$0~s{skip=1} skip==0{print} $0~e{skip=0}' "$dest" > "$dest.tmp"
+        mv "$dest.tmp" "$dest"
+    fi
+    printf '\n%s\n' "$block" >> "$dest"
+    echo "${GREEN}  ✓ team-hub instructions → $dest${NC}"
+}
+
+# `ds team-add <proyecto> <git-url>` — register a shared repo + map its local path.
+run_team_add() {
+    local proj="$1" url="$2" hub="$PWD"
+    [[ -f "$hub/REGISTRY.md" ]] || { echo "${RED}No es un team-hub (falta REGISTRY.md). Entrá al hub o corré 'ds team-init'.${NC}"; exit 1; }
+    [[ -n "$proj" && -n "$url" ]] || { echo "${RED}Usage: ds team-add <proyecto> <git-url>${NC}"; exit 1; }
+
+    if grep -qE "^\| *${proj} " "$hub/REGISTRY.md"; then
+        echo "${YELLOW}  • '${proj}' ya está en el REGISTRY.${NC}"
+    else
+        printf '| %s | %s | activo |\n' "$proj" "$url" >> "$hub/REGISTRY.md"
+        echo "${GREEN}  ✓ ${proj} → REGISTRY.md${NC}"
+    fi
+
+    local def ans; def="$(dirname "$hub")/$proj"
+    if [[ -z "$PROJECTS_ROOT" && -t 0 ]]; then
+        printf "${YELLOW}Path local de '${proj}' en esta máquina${NC} [${def}]: "
+        read -r ans
+    fi
+    [[ -n "$PROJECTS_ROOT" ]] && ans="$PROJECTS_ROOT/$proj"
+    ans="${ans:-$def}"; ans="${ans/#\~/$HOME}"
+    if grep -qE "^${proj}=" "$hub/team.local.md" 2>/dev/null; then
+        echo "${DIM}  (ya mapeado en team.local.md)${NC}"
+    else
+        printf '%s=%s\n' "$proj" "$ans" >> "$hub/team.local.md"
+        echo "${GREEN}  ✓ ${proj} → ${ans}  (team.local.md, local)${NC}"
+    fi
+}
+
+# `ds team-board` — regenerate BOARD.md + members/<handle>.md from each TASKS.md.
+# Pure zsh builtins (read/case/printf/expansion) — no awk/mktemp/grep/sed, so it
+# works regardless of PATH/coreutils quirks.
+run_team_board() {
+    setopt local_options extended_glob
+    local hub="$PWD"
+    [[ -f "$hub/REGISTRY.md" ]] || { echo "${RED}No es un team-hub (falta REGISTRY.md).${NC}"; exit 1; }
+    local date; date="$(date +%Y-%m-%d)"
+    local TAB=$'\t'
+    local -a rows projects
+    local line name rest path bucket p
+
+    # 1. Project names = column 1 of the REGISTRY table (skip header + separator).
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ "$line" == '|'* ]] || continue
+        rest="${line#|}"; name="${rest%%|*}"; name="${name// /}"
+        [[ -z "$name" || "$name" == "proyecto" || "$name" == -* ]] && continue
+        projects+=("$name")
+    done < "$hub/REGISTRY.md"
+
+    # 2. Collect actionable task lines (Doing/Backlog) as "bucket<TAB>proj<TAB>line".
+    local missing=""
+    for p in "${projects[@]}"; do
+        path="$(_teamhub_local_path "$hub" "$p")"
+        if [[ -z "$path" || ! -f "$path/TASKS.md" ]]; then
+            missing+="  - ${p} (sin mapear/clonar o sin TASKS.md)"$'\n'
+            continue
+        fi
+        bucket=""
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            case "$line" in
+                '## '*) bucket="${line#\#\# }"; bucket="${bucket%% }" ;;
+                *'- ['*) [[ "$bucket" == "Doing" || "$bucket" == "Backlog" ]] && rows+=("${bucket}${TAB}${p}${TAB}${line}") ;;
+            esac
+        done < "$path/TASKS.md"
+    done
+
+    # 3. BOARD.md
+    local bk r rb rrest rp rl
+    {
+        echo "# Board del equipo"
+        echo ""
+        echo "> Generado por \`ds team-board\` el ${date}. NO editar a mano."
+        echo "> Refleja el último \`git pull\` de cada repo clonado (no es tiempo real)."
+        echo ""
+        for bk in Doing Backlog; do
+            echo "## ${bk}"
+            for r in "${rows[@]}"; do
+                rb="${r%%$TAB*}"; rrest="${r#*$TAB}"; rp="${rrest%%$TAB*}"; rl="${rrest#*$TAB}"
+                [[ "$rb" == "$bk" ]] && printf '%s  · %s\n' "$rl" "$rp"
+            done
+            echo ""
+        done
+        if [[ -n "$missing" ]]; then
+            echo "## Repos no visibles (no clonados/mapeados en esta máquina)"
+            printf '%s' "$missing"
+            echo ""
+        fi
+    } > "$hub/BOARD.md"
+    echo "${GREEN}  ✓ BOARD.md regenerado${NC}"
+
+    # 4. members/<handle>.md — collect handles (@token in any task line).
+    [[ -d "$hub/members" ]] || mkdir -p "$hub/members"
+    local mf; for mf in "$hub/members"/*.md(N); do rm -f "$mf"; done
+    local -A handles
+    local w
+    for r in "${rows[@]}"; do
+        rl="${r##*$TAB}"
+        for w in ${(z)rl}; do
+            case "$w" in @[A-Za-z0-9_-]##) handles[${w#@}]=1 ;; esac
+        done
+    done
+    local h wrote
+    for h in "${(k)handles[@]}"; do
+        {
+            echo "# Tasks de @${h}  (generado por ds team-board, ${date})"
+            echo ""
+            for bk in Doing Backlog; do
+                wrote=0
+                for r in "${rows[@]}"; do
+                    rb="${r%%$TAB*}"; rrest="${r#*$TAB}"; rp="${rrest%%$TAB*}"; rl="${rrest#*$TAB}"
+                    [[ "$rb" == "$bk" && "$rl" == *"@${h}"* ]] || continue
+                    [[ $wrote -eq 0 ]] && { echo "## ${bk}"; wrote=1; }
+                    printf '%s  · %s\n' "$rl" "$rp"
+                done
+                [[ $wrote -eq 1 ]] && echo ""
+            done
+        } > "$hub/members/${h}.md"
+        echo "${GREEN}  ✓ members/${h}.md${NC}"
+    done
+    : > "$hub/members/.gitkeep"
+}
+
+# `ds assign "<texto>" @handle [en <proyecto>]` — tag a task in the right TASKS.md.
+run_assign() {
+    local text="$1" handle="$2" kw="${3:-}" proj4="${4:-}"
+    [[ -n "$text" && -n "$handle" ]] || { echo "${RED}Usage: ds assign \"<texto>\" @handle [en <proyecto>]${NC}"; exit 1; }
+    [[ "$handle" == @* ]] || handle="@${handle}"
+
+    setopt local_options extended_glob
+    local proj="" tasks="" path
+    [[ "$kw" == "en" && -n "$proj4" ]] && proj="$proj4"
+    if [[ -n "$proj" ]]; then
+        path="$(_teamhub_local_path "$PWD" "$proj")"
+        [[ -n "$path" && -f "$path/TASKS.md" ]] || { echo "${RED}No encuentro el TASKS.md de '${proj}' (¿mapeado en team.local.md y clonado?).${NC}"; exit 1; }
+        tasks="$path/TASKS.md"
+    else
+        [[ -f "$PWD/TASKS.md" ]] || { echo "${RED}No hay TASKS.md acá. Usá 'en <proyecto>' desde el hub, o entrá al repo.${NC}"; exit 1; }
+        tasks="$PWD/TASKS.md"
+    fi
+
+    # Find the first incomplete task containing <texto>; (re)tag it with @handle.
+    # Read into an array, edit, write back with `print -rl` — zero external commands.
+    local -a out
+    local line found=0 stripped pre post
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        if [[ $found -eq 0 && "$line" == *'- [ ]'* && "$line" == *"$text"* ]]; then
+            stripped="${line//@[A-Za-z0-9_-]##[ ]/}"     # drop any existing @handle
+            pre="${stripped%%- \[ \] *}"
+            post="${stripped#*- \[ \] }"
+            out+=("${pre}- [ ] ${handle} ${post}")
+            found=1
+        else
+            out+=("$line")
+        fi
+    done < "$tasks"
+
+    if [[ $found -eq 0 ]]; then
+        echo "${RED}No encontré una task pendiente que contenga: \"${text}\"${NC}"; exit 1
+    fi
+    print -rl -- "${out[@]}" > "$tasks"
+    echo "${GREEN}  ✓ '${text}' → ${handle}  en ${tasks}${NC}"
+    echo "${DIM}  Regenerá el board desde el hub: ds team-board${NC}"
+}
+
 # --- Argument parsing ---------------------------------------------------------
 
 TOOL=""
@@ -886,7 +1112,7 @@ parse_args() {
             --all|-a) INSTALL_ALL_FLAG=1 ;;
             --force|-f) FORCE_FLAG=1 ;;
             --help|-h) print_usage; exit 0 ;;
-            agent|update|list|team|install|new|daily|doctor)
+            agent|update|list|team|install|new|daily|team-init|team-add|team-board|assign|doctor)
                 if [[ -z "$COMMAND" ]]; then
                     COMMAND="$arg"
                 else
@@ -1038,6 +1264,49 @@ main() {
         echo "${GREEN}✓ Cockpit ready: $cp_base${NC}"
         echo "${DIM}  Abrí tu agente acá y decí 'daily' o 'task: <algo>'.${NC}"
         exit 0
+    fi
+
+    # --- Subcommand: team-init (scaffold the team coordination hub) ---
+    if [[ "$COMMAND" == "team-init" ]]; then
+        if [[ ${#POSITIONAL[@]} -lt 1 ]]; then
+            echo "${RED}Usage: ds team-init <path>   (the team coordination hub)${NC}"
+            exit 1
+        fi
+        local th_path="${POSITIONAL[1]}"
+        [[ "$th_path" != /* ]] && th_path="$PWD/$th_path"
+        local th_parent; th_parent="$(dirname "$th_path")"
+        if [[ ! -d "$th_path" && ! -w "$th_parent" ]]; then
+            echo "${RED}Can't create '$(basename "$th_path")' here — '$th_parent' is read-only.${NC}"
+            exit 1
+        fi
+        [[ -z "$TOOL" ]] && select_tool_interactive
+        [[ -z "$SCOPE" ]] && SCOPE="project"
+        local team; team="$(basename "$th_path")"
+        if [[ -t 0 ]]; then
+            printf "${YELLOW}Nombre del equipo${NC} [${team}]: "
+            local tn; read -r tn; team="${tn:-$team}"
+        fi
+        scaffold_teamhub "$th_path" "$team"
+        local th_base; th_base="$(cd "$th_path" && pwd)"
+        install_team "$TOOL" "$SCOPE" "$th_base"
+        echo ""
+        echo "${BLUE}Installing team-hub instructions…${NC}"
+        install_teamhub_instructions "$TOOL" "$SCOPE" "$th_base" "$team"
+        echo ""
+        echo "${GREEN}✓ Team hub listo: $th_base${NC}"
+        echo "${DIM}  cd \"$th_base\"  &&  ds team-add <proyecto> <git-url>  →  ds team-board${NC}"
+        exit 0
+    fi
+
+    # --- Subcommand: team-add / team-board / assign (run inside the hub or a repo) ---
+    if [[ "$COMMAND" == "team-add" ]]; then
+        run_team_add "${POSITIONAL[1]:-}" "${POSITIONAL[2]:-}"; exit 0
+    fi
+    if [[ "$COMMAND" == "team-board" ]]; then
+        run_team_board; exit 0
+    fi
+    if [[ "$COMMAND" == "assign" ]]; then
+        run_assign "${POSITIONAL[1]:-}" "${POSITIONAL[2]:-}" "${POSITIONAL[3]:-}" "${POSITIONAL[4]:-}"; exit 0
     fi
 
     # --- Subcommand: install (full environment) — alias: team (legacy) ---

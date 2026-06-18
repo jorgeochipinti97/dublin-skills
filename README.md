@@ -49,6 +49,10 @@ environment **into their own working repos**; they don't work inside this repo.
 |---|---|
 | `ds new <path>` | **Scaffold a new project** from scratch: `git init` + `SESSION.md` + `TASKS.md` + `.gitignore` + full environment |
 | `ds daily <path> [--projects=<dir>]` | **Scaffold a cockpit / daily driver**: `task: <x>` splits work into sub-tasks, `daily` rolls up all projects in `<dir>` (asked, default = parent dir) |
+| `ds team-init <path>` | **Scaffold the team hub** (roster + registry + generated board + members) — a repo all clone |
+| `ds team-add <proyecto> <git-url>` | Register a shared repo in the hub (+ map its local path) |
+| `ds team-board` | Regenerate `BOARD.md` + `members/` from each cloned repo's `TASKS.md` |
+| `ds assign "<texto>" @handle [en <proyecto>]` | Assign a task to a teammate (`@handle` tag in the right `TASKS.md`) |
 | `ds install [<path>]` | Install **or upgrade** the full environment on an existing project (no path = current dir) |
 | `ds doctor [<path>]` | Report which projects are **up to date vs outdated** (scans subfolders of a projects dir) |
 | `ds agent` | Install just the **dublin-agent** (asks tool) |

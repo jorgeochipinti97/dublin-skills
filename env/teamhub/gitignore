@@ -1,0 +1,8 @@
+# Per-machine local path map — never commit
+team.local.md
+*.local.md
+
+# OS
+.DS_Store
+
+# NOTE: .engram/ is NOT ignored on purpose — team memory chunks travel via git.

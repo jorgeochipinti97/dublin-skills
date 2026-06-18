@@ -16,6 +16,7 @@ cd dublin-skills && ./install.sh install
 | `OPERATING-MODEL.md` | Human onboarding doc — roles + flow | `<project>/OPERATING-MODEL.md` |
 | `templates/` | Scaffold for `new`: `SESSION.md`, `TASKS.md`, `gitignore` | project root (via `install.sh new`) |
 | `cockpit/` | Scaffold for `daily`: `COCKPIT.md` instructions + cockpit `SESSION.md`/`TASKS.md` | project root + instructions file (via `install.sh daily`) |
+| `teamhub/` | Scaffold for `team-init`: `TEAM.md`, `REGISTRY.md`, `BOARD.md`, `TEAMHUB.md`, `team.local.md`, gitignore | team-hub root + instructions file (via `install.sh team-init`) |
 | `memory/` | Pre-seeded shared team memories | `<project>/.claude/team-memory/` |
 | `hooks/settings.json` | Hook wiring (no LLM tokens at runtime) | `<project>/.claude/settings.json` (merged) |
 | `hooks/change-safety-guard.sh` | Bash PreToolUse guard — blocks destructive ops | `<project>/.claude/hooks/` |
