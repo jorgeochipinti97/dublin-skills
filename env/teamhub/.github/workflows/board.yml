@@ -1,0 +1,62 @@
+# Team board — regenerates BOARD.md + members/ on every push, in the PRIVATE hub repo.
+# This file ships as a template in the public dublin-skills repo under env/teamhub/;
+# it only RUNS once `ds team-init --ci` installs it at <hub>/.github/workflows/board.yml.
+#
+# ── One-time setup in the hub repo (Settings → Secrets and variables → Actions) ──
+#   • Secret  TEAM_REPOS_TOKEN : a PAT (or fine-grained token) with READ access to every
+#                                repo in REGISTRY.md, and the default GITHUB_TOKEN needs
+#                                write access to this hub (Settings → Actions → Workflow
+#                                permissions → Read and write).
+#   • Variable DUBLIN_SKILLS_URL (optional): clone URL of dublin-skills.
+#     Defaults to the public repo below — edit if you forked it.
+name: team-board
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - 'BOARD.md'
+      - 'members/**'
+  workflow_dispatch:
+
+concurrency:
+  group: team-board
+  cancel-in-progress: true
+
+jobs:
+  board:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout hub
+        uses: actions/checkout@v4
+
+      - name: Install zsh
+        run: sudo apt-get update && sudo apt-get install -y zsh
+
+      - name: Fetch dublin-skills (for `ds`)
+        env:
+          DUBLIN_SKILLS_URL: ${{ vars.DUBLIN_SKILLS_URL || 'https://github.com/jorgeochipinti97/dublin-skills.git' }}
+        run: git clone --depth 1 "$DUBLIN_SKILLS_URL" .dublin-skills
+
+      - name: Auth for private team repos
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.TEAM_REPOS_TOKEN }}@github.com/".insteadOf "git@github.com:"
+          git config --global url."https://x-access-token:${{ secrets.TEAM_REPOS_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
+      - name: Build board
+        run: DS="$PWD/.dublin-skills/install.sh" zsh .dublin-skills/env/teamhub/scripts/build-board-ci.sh "$PWD"
+
+      - name: Commit if changed
+        run: |
+          rm -rf .dublin-skills
+          git config user.name "team-board-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add BOARD.md members/
+          if git diff --cached --quiet; then
+            echo "board unchanged"
+          else
+            git commit -m "chore: regenerate team board [skip ci]"
+            git push
+          fi

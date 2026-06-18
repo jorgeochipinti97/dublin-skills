@@ -17,6 +17,7 @@ cd dublin-skills && ./install.sh install
 | `templates/` | Scaffold for `new`: `SESSION.md`, `TASKS.md`, `gitignore` | project root (via `install.sh new`) |
 | `cockpit/` | Scaffold for `daily`: `COCKPIT.md` instructions + cockpit `SESSION.md`/`TASKS.md` | project root + instructions file (via `install.sh daily`) |
 | `teamhub/` | Scaffold for `team-init`: `TEAM.md`, `REGISTRY.md`, `BOARD.md`, `TEAMHUB.md`, `team.local.md`, gitignore | team-hub root + instructions file (via `install.sh team-init`) |
+| `teamhub/.github/`, `teamhub/scripts/` | CI auto-board: workflow + `build-board-ci.sh` (installed by `team-init --ci`; runs only in a private hub) | `<hub>/.github/workflows/` |
 | `memory/` | Pre-seeded shared team memories | `<project>/.claude/team-memory/` |
 | `hooks/settings.json` | Hook wiring (no LLM tokens at runtime) | `<project>/.claude/settings.json` (merged) |
 | `hooks/change-safety-guard.sh` | Bash PreToolUse guard — blocks destructive ops | `<project>/.claude/hooks/` |

@@ -120,7 +120,7 @@ print_usage() {
 ${L_USAGE}:
   ds new <project-path>                 # scaffold a NEW project (git + SESSION/TASKS) + full env
   ds daily <path> [--projects=<dir>]    # scaffold a cockpit / daily driver (task-breakdown + daily rollup)
-  ds team-init <path>                   # scaffold the TEAM hub (roster + registry + board + members)
+  ds team-init <path> [--ci]            # scaffold the TEAM hub (roster + registry + board + members; --ci adds the auto-board workflow)
   ds team-add <proyecto> <git-url>      # register a shared repo in the hub (run inside the hub)
   ds team-board [--pull]                # regenerate BOARD.md + members/ (--pull: git pull --ff-only each repo first)
   ds assign "<texto>" @handle [en <proyecto>]  # assign a task to a teammate in the right TASKS.md
@@ -926,6 +926,19 @@ install_teamhub_instructions() {
     echo "${GREEN}  ✓ team-hub instructions → $dest${NC}"
 }
 
+# Install the GitHub Actions workflow that auto-regenerates the board on push.
+# The workflow fetches dublin-skills in CI and runs build-board-ci.sh from there,
+# so only the YAML lands in the hub.
+install_teamhub_ci() {
+    local base="$1"
+    mkdir -p "$base/.github/workflows"
+    cp "$ENV_SOURCE/teamhub/.github/workflows/board.yml" "$base/.github/workflows/board.yml"
+    echo "${GREEN}  ✓ .github/workflows/board.yml (CI auto-board)${NC}"
+    echo "${YELLOW}  ! Setup 1×: en el hub, Settings → Secrets → Actions:${NC}"
+    echo "${DIM}      • secret TEAM_REPOS_TOKEN = PAT con READ a los repos del REGISTRY${NC}"
+    echo "${DIM}      • Settings → Actions → Workflow permissions → Read and write${NC}"
+}
+
 # `ds team-add <proyecto> <git-url>` — register a shared repo + map its local path.
 run_team_add() {
     local proj="$1" url="$2" hub="$PWD"
@@ -1104,6 +1117,7 @@ SCOPE=""
 INSTALL_ALL_FLAG=0
 FORCE_FLAG=0
 PULL_FLAG=0
+CI_FLAG=0
 COMMAND=""
 PROJECTS_ROOT=""
 POSITIONAL=()
@@ -1121,6 +1135,7 @@ parse_args() {
             --all|-a) INSTALL_ALL_FLAG=1 ;;
             --force|-f) FORCE_FLAG=1 ;;
             --pull) PULL_FLAG=1 ;;
+            --ci) CI_FLAG=1 ;;
             --help|-h) print_usage; exit 0 ;;
             agent|update|list|team|install|new|daily|team-init|team-add|team-board|assign|doctor)
                 if [[ -z "$COMMAND" ]]; then
@@ -1302,6 +1317,11 @@ main() {
         echo ""
         echo "${BLUE}Installing team-hub instructions…${NC}"
         install_teamhub_instructions "$TOOL" "$SCOPE" "$th_base" "$team"
+        if [[ $CI_FLAG -eq 1 ]]; then
+            echo ""
+            echo "${BLUE}Installing CI auto-board workflow…${NC}"
+            install_teamhub_ci "$th_base"
+        fi
         echo ""
         echo "${GREEN}✓ Team hub listo: $th_base${NC}"
         echo "${DIM}  cd \"$th_base\"  &&  ds team-add <proyecto> <git-url>  →  ds team-board${NC}"
