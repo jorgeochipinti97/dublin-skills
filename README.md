@@ -69,6 +69,68 @@ See [`env/README.md`](env/README.md) for exactly what lands where.
 
 ---
 
+## Team workflow — shared tasks across repos
+
+A team coordinates over **markdown + git** — no server, no database. The single
+source of truth for any task is the `TASKS.md` **of its own repo**; a separate
+**hub** repo aggregates them into a board and per-person task lists.
+
+### One-time setup (whoever sets up the team)
+
+```bash
+# 1. Create the hub (a private repo everyone clones). --ci is optional (see below).
+ds team-init ~/work/team-hub
+cd ~/work/team-hub
+
+# 2. Register the shared repos (writes REGISTRY.md + maps your local path).
+ds team-add tienda      git@github.com:acme/tienda.git
+ds team-add dashboard   git@github.com:acme/dashboard.git
+
+# 3. Fill the roster handles in TEAM.md (handle = the @tag used to assign).
+#    | jorge | Jorge | owner | * |  /  | nahuel | Nahuel | dev | tienda |
+
+git add -A && git commit -m "init team hub" && git push   # share REGISTRY/TEAM
+```
+
+Each teammate then clones the hub, clones the project repos they work on, and runs
+`ds team-add <proyecto> <git-url>` once so their machine knows where each repo lives
+(the local path map lives in `team.local.md`, which is **gitignored** — per-machine).
+
+### Day to day
+
+```bash
+# Assign work — writes a @handle tag into the right repo's TASKS.md:
+ds assign "add invoice export"  @nahuel  en tienda
+ds assign "fix login redirect"  @sol               # no "en" → current repo's TASKS.md
+
+# See the whole team's board (regenerates from each cloned repo's TASKS.md):
+ds team-board            # reads what you have locally
+ds team-board --pull     # git pull --ff-only each repo first, then aggregate
+```
+
+This produces, in the hub:
+- **`BOARD.md`** — every Doing/Backlog task across all repos, with assignee + project.
+- **`members/<handle>.md`** — one file per person with just their tasks (cross-project).
+
+Inside any repo, the agent also injects **"your tasks here"** (your `@handle` lines
+from that repo's `TASKS.md`) at the start of each session, and assigning is plain
+markdown — `- [ ] @nahuel ...` — so it works even without the CLI.
+
+### Keeping the board fresh (pick your tier)
+
+| Tier | How | What it costs |
+|---|---|---|
+| **Local** | `ds team-board` when you want to look | nothing — just `git` + `zsh` |
+| **On-demand fresh** | `ds team-board --pull` | nothing — pulls then aggregates |
+| **Automatic** | `ds team-init --ci` → GitHub Action regenerates the board on every push | runs on GitHub's runners (no server you operate); needs a read-only `TEAM_REPOS_TOKEN` secret in the hub |
+
+**Honest limit:** with no server, "the team's state" = the **last `git pull`** of each
+repo. If someone assigns a task and doesn't push, you won't see it yet — same as any
+git workflow. The CI tier keeps the hub's board fresh on every push; a real-time
+server (engram cloud / Postgres) was deliberately **not** adopted to avoid infra to operate.
+
+---
+
 **Just skills / just the agent:**
 
 ```bash
