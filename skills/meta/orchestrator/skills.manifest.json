@@ -1,6 +1,6 @@
 {
-  "version": "1.4.0",
-  "updated": "2026-04-28",
+  "version": "1.5.0",
+  "updated": "2026-08-10",
   "description": "Machine-readable index of all skills in this repository. Used by the orchestrator skill (and dublin-agent) to plan without parsing every SKILL.md. Keep in sync when adding/modifying skills.",
   "skills": [
     {
@@ -156,6 +156,17 @@
       "unlocks": ["premium-frontend-design", "frontend-output-validator"],
       "cost": "low",
       "value": "high"
+    },
+    {
+      "name": "mobile-app-foundation",
+      "path": "mobile/mobile-app-foundation",
+      "category": "mobile",
+      "tags": ["mobile", "native", "cross-platform", "multiplataforma", "react-native", "react-native-web", "expo", "expo-router", "nativewind", "eas", "app-store", "play-store", "offline", "flashlist", "ota", "ios", "android", "web"],
+      "triggers": ["app mobile", "app nativa", "multiplataforma", "cross-platform", "una sola base de código", "aplicación para celular", "quiero hacer una app", "react native", "react native web", "expo", "expo-router", "eas build", "app store", "play store", "testflight", "apk", "aab", "boilerplate mobile", "nunca hice mobile", "dev build", "expo go", "probar en el celular", "ota", "expo-updates", "export web", "web brain", "scrollview graveyard", "notch blind", "store surprise", "offline amnesia", "one-target tell"],
+      "depends_on": [],
+      "unlocks": ["mobile-design", "forms-and-validation", "auth-architect", "change-safety"],
+      "cost": "medium",
+      "value": "very-high"
     },
     {
       "name": "premium-frontend-design",

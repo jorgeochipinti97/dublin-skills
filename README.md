@@ -362,6 +362,7 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[brand-guidelines](skills/brand-guidelines)** | Anthropic brand colors, typography, and visual styling |
 | **[frontend-foundation](skills/frontend/frontend-foundation)** | Day-0 frontend architecture: dual theme (dark + light), spacing system, mobile-first with content priority, CLS Zero, icon budget, design contract (DESIGN.md), component layer on headless primitives (Base UI/Radix) |
 | **[mobile-design](skills/frontend/mobile-design)** | Mobile as a first-class surface — kills horizontal overflow, picks mobile-native patterns (bottom sheet, FAB, swipe, sticky CTA, segmented control), thumb-zone ergonomics, touch targets, fluid type, mobile form config (inputMode, autoComplete, font-size 16). Defines the Shrunk Desktop AI Tell |
+| **[mobile-app-foundation](skills/mobile/mobile-app-foundation)** | Day-0 architecture for CROSS-PLATFORM apps (React Native + Expo) — one codebase → iOS + Android + web. expo-router structure, NativeWind dual theme, FlashList + offline-first cache, dev builds vs Expo Go, EAS Build, store submission, static web export to a VPS, OTA updates. Documents the modules that fail *silently* on web (`expo-secure-store`, `Alert.alert`). Names the AI Tells (Web Brain, ScrollView Graveyard, Notch Blind, Keyboard Eater, Expo Go Mirage, Version Roulette, Store Surprise, Offline Amnesia, One-Target Tell). Ships a runnable boilerplate |
 | **[premium-frontend-design](skills/frontend/premium-frontend-design)** | Apple/Framer-quality React/Next.js interfaces: glass effects, gradients, micro-interactions, named AI Tells (LILA BAN, Inter Tell, Icon Soup, Mobile Afterthought, Layout Shift Sloppy, Filler Word Index) |
 | **[frontend-output-validator](skills/frontend/frontend-output-validator)** | Review gate AFTER frontend implementation — validates contrast (WCAG), CLS sources, icon budget, touch targets, mobile-first compliance, viewport meta, forbidden AI Tells, DESIGN.md contract drift. Layer 1 static + Layer 2 Lighthouse |
 | **[product-tour](skills/frontend/product-tour)** | Interactive product tours and onboarding flows for Next.js: guided walkthroughs, activation checklists, welcome modals |
@@ -435,7 +436,8 @@ frontend-foundation   frontend-output-validator
 git-workflow          github-safety         hexagonal-architect
 infra-security
 institutional-site-architect                landing-page-architect
-mobile-design         orchestrator          premium-frontend-design
+mobile-app-foundation mobile-design         orchestrator
+premium-frontend-design
 product-planner       product-tour          product-ux-advisor
 react-performance
 remotion-video        sdd-workflow          session-bridge
@@ -523,6 +525,7 @@ prompts/
 ├── infra-security.md
 ├── institutional-site-architect.md
 ├── landing-page-architect.md
+├── mobile-app-foundation.md
 ├── mobile-design.md
 ├── premium-frontend-design.md
 ├── product-planner.md

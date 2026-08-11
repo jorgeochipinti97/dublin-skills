@@ -177,6 +177,7 @@ SKILLS=(
     infra-security "infra-security"
     institutional-site-architect "content/institutional-site-architect"
     landing-page-architect "content/landing-page-architect"
+    mobile-app-foundation "mobile/mobile-app-foundation"
     mobile-design "frontend/mobile-design"
     premium-frontend-design "frontend/premium-frontend-design"
     product-tour "frontend/product-tour"
