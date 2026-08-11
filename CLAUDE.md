@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-This is a **Claude Code skills library** — a collection of specialized prompts, reference materials, and code templates that extend Claude Code's capabilities in specific domains. Currently **40 skills** across 16 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
+A **Claude Code skills library** — specialized prompts, reference materials, and code templates that extend Claude Code in specific domains. Currently **41 skills** across 17 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
 
 ## Structure
 
@@ -31,11 +31,14 @@ skills/
 │   └── backend-performance/  # Backend performance audit — N+1, async/event loop, caching, observability
 │       └── references/       # queries.md, async-and-io.md, caching.md, observability.md
 ├── content/
-│   ├── blog-writer/          # Professional blog posts in English/Spanish (Filler Word Index enforced)
+│   ├── blog-writer/          # Blog posts in EN/ES — 8 post types, SEO-aware, hook engineering, distribution output (LinkedIn, Twitter thread, newsletter)
+│   │   └── references/       # post-types.md, headline-engineering.md, hook-engineering.md, seo-writing.md, distribution.md
+│   ├── presskit/             # Crea y mantiene PRESSKIT.md de marca — rutas a assets (logos, colores, video intro/outro, avatar, música), reglas de voz/tono, QUÉ SÍ/QUÉ NO, compliance, reglas por plataforma. Alimenta Filtro de Guión de video-creativo. 3 modos: crear / actualizar / auditar assets.
+│   │   └── references/       # presskit-template.md (template completo con todas las secciones + tabla de integración con skills)
 │   ├── institutional-site-architect/  # Multi-page corporate / institutional site blueprints
-│   │   └── references/       # information-architecture.md, brand-voice.md, page-anatomy.md, trust-authority.md, org-types.md
+│   │   └── references/       # information-architecture.md, brand-voice.md, page-anatomy.md, trust-authority.md, org-types.md, content-strategy.md
 │   └── landing-page-architect/  # Conversion-optimized landing page blueprints (copy + structure)
-│       └── references/       # copywriting-theory.md, landing-fundamentals.md, conversion-by-goal.md
+│       └── references/       # copywriting-theory.md, landing-fundamentals.md, conversion-by-goal.md, ab-testing-cro.md
 ├── data/
 │   ├── data-viz-architect/   # Dashboard + data viz architect — chart selection with WHY, layout, libraries
 │   │   └── references/       # chart-selection.md, dashboard-design.md, data-from-api.md, libraries.md
@@ -75,6 +78,11 @@ skills/
 ├── methodology/
 │   └── sdd-workflow/         # Spec-Driven Development — triggers, commands, dep graph, artifact store (engram/openspec/none), sub-agent patterns
 │       └── references/       # sub-agent-patterns.md, artifact-policy.md
+├── mobile/
+│   └── mobile-app-foundation/  # Day-0 CROSS-PLATFORM app architecture (React Native + Expo) — one codebase → iOS + Android + web. expo-router, NativeWind dual theme, FlashList + offline-first cache, dev builds, EAS Build, store submission, static web export, OTA. AI Tells (Web Brain, ScrollView Graveyard, Notch Blind, Keyboard Eater, JS Thread Jam, Expo Go Mirage, Ghost Tap, Version Roulette, Store Surprise, Offline Amnesia, pnpm Trap, One-Target Tell, Symmetric Storage Trap). Distinct from mobile-design (responsive CSS for a website)
+│       ├── references/         # cross-platform.md, project-structure.md, styling-and-theming.md, data-and-offline.md, native-gotchas.md, builds-and-distribution.md, testing-on-device.md
+│       ├── templates/          # Runnable Expo boilerplate overlay (src/app routes, tokens, Screen primitive, persisted query cache, DESIGN.md, eas.json)
+│       └── scripts/            # create-mobile-app.sh — create-expo-app + Dublin overlay + expo install
 ├── ops/
 │   └── change-safety/        # Pre-flight guardrail before any prod write — snapshot, rollback, comms, in-flight check, change window
 │       └── references/       # checklist.md, rollback-playbook.md, postmortem-template.md
@@ -94,6 +102,12 @@ skills/
 │   └── auth-architect/       # Authentication + authorization: OAuth, JWT vs sessions, RBAC/ABAC, passkeys, common vulnerabilities
 │       └── references/       # patterns.md (Better-Auth, NestJS + JWT rotation, RBAC guard, CASL, password reset, rate limit)
 ├── ugc/
+│   ├── content-director/     # Orquestador del pipeline de video. El cliente da un brief de 1-2 líneas; el director determina el pipeline, corre los skills en orden, y solo para al cliente en 3 gates (gancho / SMP / guion). El cliente no conoce los skills internos.
+│   │   └── references/       # pipeline-decision-tree.md (árbol + 4 pipelines resultantes), gate-templates.md (formato de los 3 gates + informe de arranque)
+│   ├── gancho-argumental/    # Investigación web sistemática para encontrar tensión, ironía, paradoja o dato oculto que transforma un tema en historia. 11 tipos de gancho clasificados por potencial viral. Output: brief de investigación → alimenta CONCEPTO de video-creativo.
+│   │   └── references/       # hook-taxonomy.md (11 tipos + ranking viral), search-playbook.md (8 dimensiones de búsqueda + queries modelo + verificación)
+│   ├── video-creativo/       # Flujo completo CONCEPTO → IDEA → GUION → ESCENAS — corto (15-90 seg) y largo (3-20 min). Upstream de todo el pipeline UGC.
+│   │   └── references/       # concepto-framework.md, idea-angles.md, guion-estructura.md, escenas-breakdown.md
 │   ├── ugc-scriptwriter/     # UGC video scripts for AI avatar delivery — 10 ad angles, hook engineering, per-platform pacing, ES/EN
 │   │   └── references/       # angles.md (10 angle skeletons + selection heuristics)
 │   ├── ai-avatar-director/   # Vendor-agnostic director brief — casting, wardrobe, setting, framing, voice — for HeyGen/Hedra/Akool/Arcads/Synthesia
@@ -112,37 +126,39 @@ skills/
 
 ## Team Environment (`env/` + `./install.sh install`)
 
-This repo is the **model/source**, not where the team works: they clone it and install the environment **into their own working repos** (`SESSION.md`/`TASKS.md` live in those projects, not here). Two entry points:
-- **`./install.sh new <path>`** — scaffold a fresh project: `git init` + `SESSION.md` + `TASKS.md` + `.gitignore` + `OPERATING-MODEL.md` (from `env/templates/`, with `__PROJECT__`/`__DATE__` filled), then the full environment.
-- **`./install.sh daily <path> [--projects=<dir>]`** — scaffold a **cockpit / daily driver**: a personal control center where `task: <x>` breaks work into actionable sub-tasks and `daily` produces a rollup (In progress · Next · Blockers) across all projects in `<dir>`. Scaffolds cockpit-flavored `SESSION.md`/`TASKS.md` (from `env/cockpit/`), runs the full env, then appends the cockpit instructions block (`env/cockpit/COCKPIT.md`) to the instructions file **outside** the team-rules managed block, between `<!-- DUBLIN-COCKPIT:START/END -->` markers (idempotent — re-running replaces only that block). The aggregated projects-root is per-person: asked interactively (default = the cockpit's parent dir) or passed via `--projects=`; filled into the block as a placeholder. The cockpit is the distributable form of the daily — anyone on the team gets their own with one command.
-- **`./install.sh team-init <path>`** — scaffold the **team coordination hub** (a separate git repo all clone): `TEAM.md` (roster + handles), `REGISTRY.md` (shared repos + git remotes), generated `BOARD.md` + `members/<handle>.md`, and `team.local.md` (per-machine path map, gitignored), plus the full env + a `DUBLIN-TEAMHUB`-marked instructions block (`env/teamhub/`). Companions: **`ds team-add <proyecto> <git-url>`** (register a repo + map its local path), **`ds team-board`** (regenerate `BOARD.md` + `members/` by parsing each cloned repo's `TASKS.md` — pure zsh builtins, no external deps), **`ds assign "<texto>" @handle [en <proyecto>]`** (tag a task in the right `TASKS.md`). Assignment is a `@handle` tag inside the project's `TASKS.md` (single source of truth); the board only aggregates. `ds team-board --pull` does `git pull --ff-only` per repo before aggregating (opt-in freshness; dirty/non-ff repos skipped). **`ds team-init --ci`** also installs `<hub>/.github/workflows/board.yml` — a GitHub Actions workflow that auto-regenerates the board on every push (the "managed server" tier: clones the REGISTRY repos in CI via `env/teamhub/scripts/build-board-ci.sh`, no VPS to operate; needs a `TEAM_REPOS_TOKEN` secret). The workflow ships as a template under `env/teamhub/.github/` so it never runs on the public dublin-skills repo itself — only once installed into a private hub. Decision record: file+git hybrid (team-hub + per-repo `TASKS.md`), engram stays memory-only, full `engram cloud`/Postgres deliberately NOT adopted (would break the no-server premise; CI covers the freshness need without ops).
+This repo is the **model/source**, not where the team works: they clone it and install the environment **into their own working repos** (`SESSION.md`/`TASKS.md` live in those projects, not here). Entry points:
+
+- **`./install.sh new <path>`** — scaffold a fresh project: `git init` + `SESSION.md` + `TASKS.md` + `.gitignore` + `OPERATING-MODEL.md` (from `env/templates/`, `__PROJECT__`/`__DATE__` filled), then the full environment.
+- **`./install.sh app <path>`** — scaffold a **cross-platform app** (React Native + Expo → iOS + Android + web) via `skills/mobile/mobile-app-foundation/scripts/create-mobile-app.sh`, then layer the full environment. Deliberately **generates** rather than cloning a template repo: `create-expo-app` resolves the current SDK and every native version at scaffold time, so new apps never start on a stale SDK (a pinned template contradicts the skill's own mandate #1 and makes every new project begin in debt). The Dublin layer is what stays constant; versions float. Produces `SESSION.md` + `TASKS.md` (mobile-flavored, from the skill's `templates/`) plus `DESIGN.md`, `eas.json`, `.npmrc` (`node-linker=hoisted`).
+- **`./install.sh daily <path> [--projects=<dir>]`** — scaffold a **cockpit / daily driver**: personal control center where `task: <x>` breaks work into sub-tasks and `daily` produces a rollup (In progress · Next · Blockers) across all projects in `<dir>`. Scaffolds cockpit-flavored `SESSION.md`/`TASKS.md` (`env/cockpit/`), runs full env, appends the cockpit block (`env/cockpit/COCKPIT.md`) **outside** the team-rules block, between `<!-- DUBLIN-COCKPIT:START/END -->` markers (idempotent). Projects-root is per-person (asked interactively, default = parent dir, or `--projects=`).
+- **`./install.sh team-init <path>`** — scaffold the **team coordination hub** (separate git repo all clone): `TEAM.md` (roster + handles), `REGISTRY.md` (shared repos + remotes), generated `BOARD.md` + `members/<handle>.md`, `team.local.md` (per-machine path map, gitignored), plus full env + a `DUBLIN-TEAMHUB`-marked block (`env/teamhub/`). Companions: **`ds team-add <proyecto> <git-url>`** (register repo + map local path), **`ds team-board`** (regenerate board by parsing each cloned repo's `TASKS.md` — pure zsh, no deps), **`ds assign "<texto>" @handle [en <proyecto>]`** (tag a task in the right `TASKS.md`). Assignment = a `@handle` tag inside the project's `TASKS.md` (single source of truth); board only aggregates. `ds team-board --pull` does `git pull --ff-only` per repo before aggregating (opt-in; dirty/non-ff skipped). **`ds team-init --ci`** installs `<hub>/.github/workflows/board.yml` (GitHub Actions auto-regenerates board on push — "managed server" tier, clones REGISTRY repos in CI via `env/teamhub/scripts/build-board-ci.sh`, needs a `TEAM_REPOS_TOKEN` secret). Workflow ships as template under `env/teamhub/.github/` so it never runs on the public dublin-skills repo. Decision record: file+git hybrid (team-hub + per-repo `TASKS.md`), engram stays memory-only, full `engram cloud`/Postgres deliberately NOT adopted (would break the no-server premise; CI covers freshness without ops).
 - **`./install.sh install [<path>]`** — layer the environment onto an existing project.
 
-`./install.sh install` installs a complete, ready-to-use AI agent environment for the whole team in **two commands** (`git clone … && cd dublin-skills && ./install.sh install`). It asks tool + scope, then installs, in order:
+`./install.sh install` installs a complete AI agent environment for the team in **two commands** (`git clone … && cd dublin-skills && ./install.sh install`). Asks tool + scope, then installs in order:
 
-1. **All 40 skills** (reuses `install_all`)
+1. **All 41 skills** (reuses `install_all`)
 2. **dublin-agent** (claude/opencode; both for `universal`)
-3. **Team rules** — `env/rules/TEAM-RULES.md` → `CLAUDE.md` (Claude) or `AGENTS.md` (OpenCode/Codex/Universal). Eight sections: (1) hard rules, (2) frontend conventions, (3) forbidden AI Tells, (4) process, (5) technical defaults, (6) agent operating discipline (work routing / delegation contract / TDD evidence / model routing — adopted from gentle-ai, no infra), (7) project tracking (file-based `SESSION.md` status + `TASKS.md` shared backlog with Client-pains/Backlog/Doing/Done/Future buckets + `TASKS.<you>.local.md` private gitignored, plus mandatory context upkeep — tick task + update SESSION.md + save decision to engram at the end of every unit of work), (8) roles & operating model (Tech Lead = the agent, Approver = owner, Dev = team incl. non-technical; one flow; agent prioritizes/builds order when none exists). Companion: `env/OPERATING-MODEL.md` (human onboarding doc) → installed to project root. Merged between `<!-- DUBLIN-TEAM-RULES:START/END -->` markers so hand edits outside the block survive. Idempotent; `--force` refreshes the block.
-4. **Shared memory** — `env/memory/*` → `<project>/.claude/team-memory/` (5 pre-seeded team facts: zero-hallucinations, finish-now, change-safety, foundation-first-frontend, forbidden-ai-tells)
-5. **Hooks** — two scripts + `settings.json` merged into the project's settings with `jq`. Claude Code only — skipped with a notice for other tools.
-   - `change-safety-guard.sh` (Bash `PreToolUse`, blocks `DROP`/`TRUNCATE`/`UPDATE`-without-`WHERE`/force-push/`reset --hard`/`--no-verify` with exit 2, zero LLM tokens).
-   - `session-context-loader.sh` (`SessionStart`) — injects the project's persistent context at session start so the agent never has to *remember* to read it: a HARD RULES banner first (zero-hallucination / no-suposiciones / finish-now / change-safety — anti-hallucination salience), then `.claude/team-memory/*` facts (skips the `MEMORY.md` index) + the project's `SESSION.md` as `additionalContext`, and a LOUD 🔴 warning when the `engram` binary is missing (the #1 silent memory-loss cause). Moves memory from prose-the-model-must-recall → mechanism that fires every session.
-   - `context-upkeep-nudge.sh` (`Stop`) — write-side of context upkeep (TEAM-RULES §7): if the session changed source files but left `SESSION.md` unlogged, exit 2 + stderr forces the agent to update context (tick task → append dated SESSION line → `mem_save` decision) before stopping. Guarded by `stop_hook_active` so it nudges once, never loops; no-op on a clean tree or outside a Dublin git project.
-6. **engram (persistent memory)** — wires [engram](https://github.com/Gentleman-Programming/engram) as an MCP server by writing/merging `<project>/.mcp.json` (`{"command":"engram","args":["mcp"]}`). engram is a standalone Go binary (SQLite, 19 MCP tools: `mem_save`, `mem_search`, `mem_session_start`…) giving the agent real cross-session memory. The config is written automatically; the **binary is per-machine** — the installer detects it and prints `brew install gentleman-programming/tap/engram` rather than installing silently. Adopted from the Gentleman ecosystem (the one genuinely-missing piece vs. static `team-memory/`); the rest of gentle-ai/gentle-pi is intentionally NOT adopted (Claude Code is the team runtime, never Pi).
+3. **Team rules** — `env/rules/TEAM-RULES.md` → `CLAUDE.md` (Claude) or `AGENTS.md` (OpenCode/Codex/Universal). Eight sections: (1) hard rules, (2) frontend conventions, (3) forbidden AI Tells, (4) process, (5) technical defaults, (6) agent operating discipline (work routing / delegation contract / TDD evidence / model routing), (7) project tracking (`SESSION.md` status + `TASKS.md` shared backlog with Client-pains/Backlog/Doing/Done/Future buckets + private gitignored `TASKS.<you>.local.md` + mandatory context upkeep), (8) roles & operating model (Tech Lead = agent, Approver = owner, Dev = team incl. non-technical; agent builds order when none exists). Companion `env/OPERATING-MODEL.md` → project root. Merged between `<!-- DUBLIN-TEAM-RULES:START/END -->` markers (hand edits outside survive). Idempotent; `--force` refreshes.
+4. **Shared memory** — `env/memory/*` → `<project>/.claude/team-memory/` (5 pre-seeded facts: zero-hallucinations, finish-now, change-safety, foundation-first-frontend, forbidden-ai-tells)
+5. **Hooks** — scripts + `settings.json` merged with `jq`. Claude Code only (skipped with notice for other tools):
+   - `change-safety-guard.sh` (`PreToolUse`) — blocks `DROP`/`TRUNCATE`/`UPDATE`-no-`WHERE`/force-push/`reset --hard`/`--no-verify` with exit 2, zero LLM tokens.
+   - `session-context-loader.sh` (`SessionStart`) — injects persistent context: HARD RULES banner (zero-hallucination / no-suposiciones / finish-now / change-safety) first, then `.claude/team-memory/*` facts (skips `MEMORY.md` index) + `SESSION.md` as `additionalContext`, plus a LOUD 🔴 warning when the `engram` binary is missing.
+   - `context-upkeep-nudge.sh` (`Stop`) — write-side of context upkeep (TEAM-RULES §7): if source files changed but `SESSION.md` is unlogged, exit 2 + stderr forces a context update before stopping. Guarded by `stop_hook_active` (nudges once, no loop); no-op on clean tree or outside a Dublin git project.
+6. **engram (persistent memory)** — wires [engram](https://github.com/Gentleman-Programming/engram) as MCP server via `<project>/.mcp.json` (`{"command":"engram","args":["mcp"]}`). Standalone Go binary (SQLite, 19 MCP tools: `mem_save`, `mem_search`, `mem_session_start`…) giving real cross-session memory. Config written automatically; **binary is per-machine** — installer detects it and prints `brew install gentleman-programming/tap/engram` rather than installing silently. The rest of gentle-ai/gentle-pi is intentionally NOT adopted (Claude Code is the team runtime).
 
-**Re-running `install` is a safe upgrade**, not a clobber: rules refresh only when the managed block actually changed (diff-checked — no backup noise; `--force` overrides), every touched file is backed up first, `settings.json`/`.mcp.json` merge, skills dropped from the model are pruned to `<skills>/.dublin-orphans/`, and `SESSION.md`/`TASKS.md` are never overwritten. Each install stamps `<project>/.dublin-env` with the model's git short SHA; **`./install.sh doctor <path>`** reads it and reports up-to-date vs outdated (scans subfolders when given a projects directory) and checks the per-machine `engram` binary (🔴 if missing — the SHA stamp can't catch a per-machine gap).
+**Re-running `install` is a safe upgrade**: rules refresh only when the managed block changed (diff-checked; `--force` overrides), touched files backed up first, `settings.json`/`.mcp.json` merge, dropped skills pruned to `<skills>/.dublin-orphans/`, `SESSION.md`/`TASKS.md` never overwritten. Each install stamps `<project>/.dublin-env` with the model's git short SHA; **`./install.sh doctor <path>`** reports up-to-date vs outdated (scans subfolders) and checks the per-machine `engram` binary (🔴 if missing).
 
-Safety: every existing file is backed up (`*.bak.<timestamp>`) before being touched. The team rules are **new team-scope rules**, deliberately separate from any individual's personal preferences (which stay in user-scope config). To change them: edit `env/rules/TEAM-RULES.md`, commit, and have the team re-run `./install.sh install --force`. Reference: `env/README.md`.
+Safety: every existing file backed up (`*.bak.<timestamp>`) before being touched. Team rules are **team-scope**, separate from individual preferences (which stay user-scope). To change: edit `env/rules/TEAM-RULES.md`, commit, team re-runs `./install.sh install --force`. Reference: `env/README.md`.
 
 ## Companion Assets (outside `skills/`)
 
-- **`agents/dublin-agent.md`** (in this repo) — versioned source of the senior-architect mentor agent. Installed to `~/.claude/agents/dublin-agent.md` via `./install.sh agent` (creates a timestamped backup if a previous version exists). Invoked via `Task(subagent_type: 'dublin-agent')`. Auto-detects this library and delegates to skills. Successor to the historical `gentleman` agent.
-- **`~/.claude/agent-memory/shared/preferences.md`** — universal user preferences (voseo, no emojis, bun, philosophy, Dublin conventions). Read by dublin-agent and any future agent. Stays user-scope, not in this repo.
-- **`~/.claude/agent-memory/dublin-agent/`** — agent-specific operational memory. Stays user-scope.
+- **`agents/dublin-agent.md`** — versioned source of the senior-architect mentor agent. Installed to `~/.claude/agents/dublin-agent.md` via `./install.sh agent` (timestamped backup of any prior version). Invoked via `Task(subagent_type: 'dublin-agent')`. Auto-detects this library and delegates to skills. Successor to the historical `gentleman` agent.
+- **`~/.claude/agent-memory/shared/preferences.md`** — universal user preferences (voseo, no emojis, bun, philosophy, Dublin conventions). Read by dublin-agent. User-scope, not in this repo.
+- **`~/.claude/agent-memory/dublin-agent/`** — agent-specific operational memory. User-scope.
 
 ## Skill File Convention
 
-Each skill has a `SKILL.md` file with YAML frontmatter:
+Each skill has a `SKILL.md` with YAML frontmatter:
 
 ```yaml
 ---
@@ -151,378 +167,90 @@ description: When and how to use this skill
 ---
 ```
 
-The `description` field tells Claude when to invoke the skill. Reference files live in `references/` subdirectory and are loaded on demand.
+The `description` field tells Claude when to invoke the skill (keep it sharp — it's what auto-selection runs on). Reference files live in `references/` and load on demand.
 
-## Key Skills
+## Key Skills — relationships & operating notes
+
+The directory tree above describes each skill and its reference files. This section captures only what the tree does NOT: cross-skill relationships, pipelines, modes, and non-obvious operating rules.
 
 ### Meta — invoke on multi-step tasks
 
-#### orchestrator
-Skill Router / Supervisor Agent. Given a task, it:
-- Reads `skills.manifest.json` (fast) or falls back to per-SKILL.md scan
-- Scores each skill by relevance × value / cost
-- Resolves dependencies (e.g. `frontend-foundation` before `premium-frontend-design`)
-- Emits a phased execution plan and creates `TaskCreate` entries
+- **orchestrator** — Skill Router / Supervisor. Reads `skills.manifest.json` (or falls back to per-`SKILL.md` scan), scores each skill by relevance × value / cost, resolves deps, emits a phased plan + `TaskCreate` entries. Three modes: **A** fresh plan, **B** validate a user plan (kept/added/removed/reordered with rationale), **C** audit (map repo gaps to skills).
+- **claude-md-keeper** — **NEVER** writes CLAUDE.md directly; emits `CLAUDE.md.proposed` for review. On-demand only, never hooked. Three-layer memory awareness (CLAUDE.md project / shared preferences / agent memory).
+- **session-bridge** — three-phase rollout: Phase 1 on-demand (default), Phase 2 opt-in `Stop` hook with `--dry-run`, Phase 3 full-auto Stop hook. Marks promotion candidates for `claude-md-keeper`.
+- **sdd-workflow** — single source of truth for SDD; dublin-agent references it instead of carrying SDD logic inline. Dep graph: proposal → specs + design → tasks → apply → verify → archive. Artifact store: `engram` (recommended) / `openspec` (only when user asks) / `none`. Approval gates by phase; destructive actions always gated.
 
-Three operating modes:
-- **A** — fresh plan from scratch
-- **B** — validate a user-provided plan (kept/added/removed/reordered, with rationale)
-- **C** — audit mode: map repo gaps to skills
+### Architecture / Data / Security
 
-Reference: `scoring.md` (worked examples), `skills.manifest.json` (ground truth).
+- **domain-modeler** → precedes `hexagonal-architect` / `api-architect`.
+- **api-architect** — never writes code; hands implementation to `hexagonal-architect` (NestJS) or the engineer.
+- **database-architect** — precedes `auth-architect` (auth needs user/session tables). Non-negotiables: UUID v7, TIMESTAMPTZ, hard-delete default, FK + indexes; zero-downtime migrations (3-step rename, NOT VALID + VALIDATE, CONCURRENTLY).
+- **data-viz-architect** — outputs a blueprint, hands off to `premium-frontend-design` for implementation.
+- **auth-architect** — web = sessions via httpOnly cookies; refresh-token rotation (reuse = compromise → revoke all). Pairs with `database-architect` + `error-handling`.
 
-#### claude-md-keeper
-Keeps CLAUDE.md aligned with reality via observable drift signals (package.json, filesystem, git log, skills manifest). **NEVER** writes directly — always emits `CLAUDE.md.proposed` for user review. On-demand only, never hooked. Three-layer memory awareness (CLAUDE.md project / shared preferences / agent memory).
+### Frontend (dependency-ordered)
 
-Reference: `drift-detection.md` (signal catalog), `promotion-policy.md` (2-of-3 rule for promoting session decisions).
+`frontend-foundation` (Day-0, 6 Pillars + DESIGN.md contract) → `mobile-design` (mobile-as-medium, overflow killers) → `premium-frontend-design` (polish: 3 dials, named AI Tells) → `forms-and-validation` / `product-tour` / `landing-page-architect`.
 
-#### session-bridge
-Session-to-session continuity via `SESSION.md`. Hard caps (300 lines / 72h TTL). Secret scanner (regex patterns for API keys, tokens, connection strings). Gitignore enforcement for archives. Marks promotion candidates for `claude-md-keeper`.
+- **frontend-foundation** — invoke BEFORE any aesthetic layer. Owns dual theme (View Transitions slow-fast-slow `cubic-bezier(0.65,0,0.35,1)`), spacing scale, headless component system, mobile-first content priority, CLS Zero (< 0.05), icon budget, and the per-project `DESIGN.md`.
+- **mobile-design** — runs AFTER foundation, BEFORE premium polish. New AI Tell: **Shrunk Desktop**. 5 mandates: 360px-first / touch ≥ 44×44 + ≥ 8px / zero horizontal overflow / `100dvh` not `100vh` / safe-area on every fixed bottom element.
+- **premium-frontend-design** — polish only (runs after `product-ux-advisor` + foundation). 3 dials: `DESIGN_VARIANCE` / `MOTION_INTENSITY` / `VISUAL_DENSITY` (1-10). Named AI Tells: LILA BAN, Jane Doe Effect, Acme Slop, 99.99% Problem, Filler Word Index, Pure Black Tell, Inter Tell, Generic 3-Card Row, Icon Soup, Mobile Afterthought, Layout Shift Sloppy. Magnetic buttons via `useMotionValue` (never `useState`).
+- **frontend-output-validator** — design-contract review gate after any frontend skill (pairs with `react-performance` for perf). Layer 1 static (rg/AST), Layer 2 Lighthouse CI (CLS/LCP/contrast/tap-targets, mobile + desktop), Layer 3 optional visual regression. Reads `DESIGN.md` as source of truth. Output: pass/fail with `file:line` + severity. > 5 warnings → suggest `claude-md-keeper`.
+- **react-performance** — perf review gate after frontend skills: useEffect elimination, React Compiler vs manual memo, RSC boundary placement, bundle optimization, data-fetching waterfalls.
+- **product-ux-advisor** — diagnosis only (Critical / Recommended / Polish), SaaS + e-commerce patterns; implementation delegated to `premium-frontend-design`.
 
-Phases:
-- **Phase 1** (default): on-demand only
-- **Phase 2** (after trust): opt-in `Stop` hook with `--dry-run`
-- **Phase 3** (full auto): Stop hook without dry-run
+### Mobile (native apps)
 
-Reference: `session-format.md` (full template, GOOD vs BAD examples).
+- **mobile-app-foundation** — Day-0 for apps that ship to the **App Store / Play Store — and to the web from the same codebase**. Explicitly NOT `mobile-design`: that one is responsive CSS for a website, this one is a compiled binary plus a static web build. Fires the disambiguation question first ("does this need a store, push, or offline?") — if no, it routes back to a web stack.
+  - **Multiplataforma is the Dublin default**, not an upsell: iOS + Android + web, always. Dropping web is an explicit decision. Web ships via `expo export --platform web` (`output: "static"`) → real URLs, SEO, deployable to a VPS with nginx and no Node server (`try_files $uri $uri.html …` — expo-router emits `/settings.html`, so without the `.html` fallback a refresh on a deep route 404s).
+  - **Two modules fail SILENTLY on web** (verified by reading their web builds on SDK 57, not assumed): `expo-secure-store` is `export default {}` → any call throws; `Alert.alert` is `static alert() {}` in react-native-web → the message never appears. A green build proves nothing. Templates ship `src/lib/notify.ts` and `src/lib/session-storage.ts` to close both. Verified OK on web: expo-haptics (navigator.vibrate + iOS Safari fallback), FlashList v2, expo-image, AsyncStorage, netinfo, safe-area-context.
+  - **Never mirror a native token into `localStorage`** to make the code symmetric — that converts a Keychain-protected secret into an XSS-readable one (**Symmetric Storage Trap**). Web sessions belong in an httpOnly cookie.
+  - Stack with rationale: Expo managed (EAS cloud builds, no local Xcode) · expo-router (file-based, deep links near-free) · NativeWind 4 (reuses Tailwind muscle memory) · FlashList 2 (new-arch only, no size estimates) · TanStack Query + AsyncStorage persister (offline-first) · `expo-secure-store` for tokens, never AsyncStorage.
+  - 8 mandates: `npx expo install` never hand-pinned versions · FlashList over ~20 items · safe areas via a `Screen` primitive · dark + light day 0 (`userInterfaceStyle: "automatic"` in `app.json` or the OS pins you to light) · offline behavior defined per data screen · physical-device dev build before "done" · `.npmrc` `node-linker=hoisted` for pnpm · **all three targets bundle before anything is done**.
+  - 13 named AI Tells: Web Brain, ScrollView Graveyard, Notch Blind, Keyboard Eater, JS Thread Jam, Expo Go Mirage, Ghost Tap, Version Roulette, Store Surprise, Offline Amnesia, The pnpm Trap, One-Target Tell, Symmetric Storage Trap.
+  - Ships a **verified** boilerplate: `scripts/create-mobile-app.sh <path>` runs `create-expo-app` (Expo picks the SDK and native versions) then overlays the Dublin layer into `src/` (routes at `src/app/`, alias `@/*`). Verified end-to-end on SDK 57: scaffold → `tsc --noEmit` → `expo export` for **ios, android and web**. The `Screen` primitive caps content width on web so no screen has to remember the third target exists.
+  - Pairs: `mobile-design` (thumb zones / pattern picks translate directly), `forms-and-validation` (RHF + Zod work unchanged), `auth-architect` (sessions + secure storage), `change-safety` (**an OTA update is a production write with no review gate**).
 
-### Methodology
+### Backend / Implementation
 
-#### sdd-workflow
-Spec-Driven Development — single source of truth. The dublin-agent references this skill instead of carrying SDD logic inline:
-- **Triggers**: "sdd init", "sdd new <name>", "sdd ff", "sdd apply", "sdd verify", "sdd archive", or substantial changes (≥ 3 files, architecture)
-- **Dependency graph**: proposal → specs + design → tasks → apply → verify → archive
-- **Artifact store**: `engram` (recommended, via MCP) / `openspec` (project files, only when user asks) / `none` (conversational)
-- **Sub-agent launching templates** with structured output contract
-- **Approval gates** by phase (destructive actions always gated)
+- **backend-performance** — review gate after `api-architect` / `hexagonal-architect` / `database-architect` / `auth-architect`. Audits queries (N+1, indexes), async/IO (event-loop blocking, `p-limit` fan-out), caching (Redis, stampede protection), pooling, payload shape, rate-limiting, observability (OTel + Pino + Prom). Delegates schema/index design to `database-architect`, error taxonomy to `error-handling`.
+- **testing-strategy** — complements `tdd-workflow` (red-green-refactor): WHAT to test at which layer; pyramid ~70/20/10; testcontainers for real Postgres; MSW; Playwright; Pact.
+- **error-handling** — typed hierarchy (DomainError → …), Problem Details (RFC 7807) with `code` + `correlationId`, Pino structured logging, React Error Boundaries, retry+backoff+jitter, circuit breakers, Sentry.
 
-Reference: `sub-agent-patterns.md` (launch templates), `artifact-policy.md` (engram/openspec/none rules).
+### Infra / Ops / Git
 
-### Discovery & Product
-
-#### systems-thinking
-System analysis: feedback loops, leverage points, stocks/flows. Use when domain complexity justifies mapping before planning.
-
-#### product-planner
-PRDs, user stories (Given/When/Then), MVP scoping.
-
-#### product-ux-advisor
-UX consultant that audits products and diagnoses missing patterns:
-- Prioritized diagnosis: Critical / Recommended / Polish
-- SaaS patterns: onboarding, wizards, empty states, activation checklists, command palette
-- E-commerce patterns: PDP (gallery, reviews, variants, notify OOS), PLP, cart, checkout
-- Real-world references: Linear, Vercel, Stripe, Notion, Zara, ASOS, Amazon
-- Pairs with `premium-frontend-design` for implementation
-
-### Architecture
-
-#### domain-modeler
-DDD: Entities (identity matters) vs Value Objects (immutable, defined by attributes), Aggregates (consistency boundaries with a root entity), Domain Events (past tense, immutable records).
-
-#### hexagonal-architect
-Structures NestJS projects: Domain → Application → Infrastructure (dependencies point inward). Reference: `implementation-patterns.md` (ports, use cases, adapters, module wiring, tests).
-
-#### api-architect
-Scalable/reliable/secure API design and audits (REST/GraphQL/gRPC) with rationale per decision. References: `design.md`, `security.md`, `scalability.md`, `reliability.md`, `observability.md`.
-
-### Data
-
-#### database-architect
-Schema, migrations, performance (Postgres-first):
-- Postgres default; when to reach for MySQL/SQLite/Mongo/DynamoDB/Redis
-- ORM choice: Prisma (DX) vs Drizzle (lighter) vs Kysely (SQL-first)
-- Non-negotiables: UUID v7, TIMESTAMPTZ, hard delete default, FK + indexes
-- Zero-downtime migrations (3-step rename, NOT VALID + VALIDATE, CONCURRENTLY)
-- Indexes: B-tree/GIN/BRIN, partial, covering
-- RLS for multi-tenancy, connection pooling (PgBouncer)
-
-#### data-viz-architect
-Chart selection WITH the reason, KPI hierarchy, layout, library choice, data fetching strategy. References: `chart-selection.md`, `dashboard-design.md`, `data-from-api.md`, `libraries.md`.
-
-### Security
-
-#### auth-architect
-Authentication + authorization for web/mobile:
-- Stack decision tree (Better-Auth, Clerk, Supabase Auth, WorkOS, custom NestJS+Passport)
-- JWT vs sessions (web = sessions via httpOnly cookies)
-- Refresh token rotation (reuse = compromise → revoke all sessions)
-- RBAC vs ABAC (CASL), multi-tenancy with RLS
-- Audit checklist against common vulns (session fixation, CSRF, IDOR, mass assignment, token in URL)
-
-### Frontend
-
-#### frontend-foundation
-Day-0 frontend architecture. **6 Pillars** — invoke BEFORE `premium-frontend-design` when starting a new product:
-- **Pillar 1 — Dual theme** (dark + light) from day 0 via semantic CSS variables (next-themes + Tailwind v4). Theme toggle uses View Transitions API with slow-fast-slow ease `cubic-bezier(0.65, 0, 0.35, 1)` (off-main-thread)
-- **Pillar 2 — Spacing system**: one scale, layout primitives own spacing (Stack, Row, Grid, Section, Container), never arbitrary values, `gap` over margin
-- **Pillar 3 — Component system** on headless primitives (Base UI / Radix / React Aria) + branded `ui/` layer with CVA variants. Sidebar collapsible with icon-rail
-- **Pillar 4 — Mobile-First with Content Priority**: design starts at 360px. Content priority worksheet (critical / primary / secondary / tertiary) BEFORE any layout. Touch targets ≥ 44×44 CSS px. `100dvh` not `100vh`. Mobile pattern swaps (sidebar → bottom tab, dropdown → bottom sheet, modal → full-screen sheet)
-- **Pillar 5 — CLS Zero**: target < 0.05. Every image has `width`+`height` or `aspect-ratio`. Iframes wrapped in aspect-ratio container. Web fonts use `font-display: swap` + size-adjust fallback + preload. Banners overlay (`fixed`), never inline. Accordions use `grid-template-rows: 0fr → 1fr`. Skeletons match real content dimensions
-- **Pillar 6 — Icon Budget**: nav ≤ 5, hero ≤ 1, card ≤ 2, button ≤ 1, form field ≤ 1, footer social ≤ 3. One library per project. `currentColor` for inheritance. Decorative `aria-hidden`, functional `aria-label`. Icon Soup forbidden
-- **Cross-cutting mandates**: dependency verification (grep package.json before import), interactive states (loading/empty/error/active), hardware acceleration (transform/opacity only)
-- **Design Contract per project**: `DESIGN.md` at repo root combining YAML tokens (breakpoints, colors, typography, spacing, motion, iconBudget, contentPriority, aiTellsEnforced) with markdown rationale. Format borrows from [Google Labs DESIGN.md](https://github.com/google-labs-code/design.md) and extends with Dublin specifics
-
-Reference files: `theming.md`, `spacing.md`, `component-system.md`, `mobile-first.md` (content priority worksheet, mobile pattern swaps, touch targets, safe-area, container queries, `clamp()`), `cls-zero.md` (BAD/GOOD pairs for every CLS source), `icon-budget.md` (per-region budgets, Icon Soup examples), `design-contract.md` (DESIGN.md template + CI lint script).
-
-#### premium-frontend-design
-Creates luxury React/Next.js interfaces with:
-- **3 dials** tunable per project: `DESIGN_VARIANCE`, `MOTION_INTENSITY`, `VISUAL_DENSITY` (1-10)
-- **AI Tells named** (forbidden patterns with memorable names):
-  - THE LILA BAN (no AI purple/blue)
-  - Jane Doe Effect (no generic names/avatars)
-  - Acme Slop (no generic brand names)
-  - 99.99% Problem (no predictable demo numbers)
-  - Filler Word Index (no Elevate/Unleash/Seamless/Next-gen)
-  - Pure Black Tell (never `#000`)
-  - Inter Tell (distinctive sans only)
-  - Generic 3-Card Row (use zig-zag / bento / scroll instead)
-  - **Icon Soup** (icons everywhere, no budget — enforce `frontend-foundation` Pillar 6)
-  - **Mobile Afterthought** ("responsive later" → mobile becomes shrunk-desktop. Use mobile-first content priority)
-  - **Layout Shift Sloppy** (CLS > 0.05 — premium products do not jump on load)
-- Glass morphism with inner border + tinted shadow
-- Framer Motion spring physics, magnetic buttons via `useMotionValue` (never `useState`)
-- Typography: distinctive font pairings, -0.02em to -0.05em tracking on headlines
-- Mandatory interactive states (loading / empty / error / active with `-translate-y-[1px]`)
-
-Reference files in `references/` contain complete CSS/React code for all effects.
-
-#### mobile-design
-Mobile as a first-class surface, not a desktop scaled down. Pairs with `frontend-foundation` (Pillar 4 owns the baseline) — this skill owns mobile-as-its-own-medium and the killer of horizontal overflow. Run AFTER `frontend-foundation`, BEFORE `premium-frontend-design` polish.
-
-- **New AI Tell — Shrunk Desktop**: mobile UI is the desktop UI compressed into 360px (sidebar squeezed onto a 360px strip, modal centered at 90%, hover dropdowns, top-right CTAs). Sibling to `Mobile Afterthought` from premium-frontend-design.
-- **Overflow killers** — every cause of "se sale de pantalla" with BAD/GOOD pairs: `width: 100vw` (Vee-Vee-Dub Trap), `min-width` on grid children, long unbroken text without `overflow-wrap: anywhere`, images without `max-width: 100%`, tables without scroll wrapper, `<pre>` without `overflow-x: auto`, padding sum > viewport, headlines without `clamp()`, too many columns at 360px. Includes runtime detection snippet and the `* { outline }` debug recipe.
-- **Mobile-native patterns** — bottom tab bar, bottom sheet (Vaul), FAB, swipe actions, pull-to-refresh, sticky bottom CTA, segmented control, full-screen modal sheet, hamburger as anti-pattern. Each with when YES / when NO / minimal snippet.
-- **Touch & type** — Hoo's Map thumb zones (natural / stretch / hard), 44×44 touch targets with hit slop, fluid type with `clamp()`, line-height 1.5-1.6 mobile body, mobile form config (`inputMode` + `autoComplete` + `font-size: 16px`), safe area insets, image strategy (`<picture>`, `srcset`, AVIF→WebP→JPG).
-- **5 non-negotiable mandates**: design starts at 360px / touch ≥ 44×44 with ≥ 8px spacing / zero horizontal overflow / `100dvh` not `100vh` / safe area on every fixed bottom element.
-
-Reference files: `overflow-killers.md`, `mobile-patterns.md`, `touch-and-type.md`.
-
-#### forms-and-validation
-Production forms with React Hook Form + Zod:
-- Shared Zod schema client + server
-- Error UX: inline, aria-invalid, aria-live, focus first error
-- Multi-step wizard with URL state
-- Async validation with TanStack Query + debounce
-- File upload with progress (XHR, direct-to-S3)
-- Server Actions integration
-- Full a11y checklist
-
-#### frontend-output-validator
-Non-destructive review gate that runs AFTER any frontend implementation skill. Pairs with `react-performance` (perf audit) — this audits **design contract compliance**:
-- **Layer 1 — static checks** (rg / AST grep): forbidden tokens (Pure Black Tell, raw hex in components), LILA BAN gradient detection, gradient text on headlines, mixed icon libraries, `100vh` instead of `100dvh`, `<img>` without dimensions, `transition-all` / `transition-[height]`, `addEventListener('scroll')`, viewport meta validation, body text size on inputs (iOS auto-zoom), safe-area on fixed bottom bars, hover-only interactions, Filler Word Index (Elevate / Unleash / Seamless / Next-gen / Revolutionize / etc.), Jane Doe Effect (John Doe / Sarah Chan / Acme / Nexus / Lorem ipsum), Unsplash link rot, 99.99% Problem
-- **Layer 2 — Lighthouse CI**: actual CLS measurement (target < 0.05), LCP, computed contrast (light + dark), `tap-targets` audit, `viewport`, `image-aspect-ratio`, `font-display`. Run mobile (360×800) + desktop separately
-- **Layer 3 — Visual regression** (optional, expensive): Playwright screenshots at 360 / 768 / 1280 viewports
-- **DESIGN.md compliance**: file exists, YAML parses, required keys present (breakpoints, iconBudget, cls.target, aiTellsEnforced), token drift detection (DESIGN.md vs Tailwind config / CSS vars)
-- **Output contract**: pass/fail report with `file:line` references, severity (🔴 fail / 🟡 warn / 🟢 info), grouped by rule. > 5 warnings → suggest `claude-md-keeper` review for systemic drift
-
-Auto-invoke after `frontend-foundation`, `premium-frontend-design`, `forms-and-validation`, `product-tour`, `landing-page-architect`. Conditional: new components/layouts, new images/videos/iframes/fonts/icons, > 1 component touched, hover/focus/active states modified. Skip on copy-only or type-only changes.
-
-Reference files: `check-catalog.md` (every check + example failure), `grep-patterns.md` (exact rg/AST patterns for static checks), `lighthouse-integration.md` (lhci config, GitHub Actions, mobile vs desktop runs). Script: `scripts/validate-frontend.ts` (Layer 1 starting implementation).
-
-#### react-performance
-Audits and optimizes React/Next.js applications:
-- useEffect elimination (derived state, event handlers, key prop reset)
-- React Compiler (React 19+) vs manual memoization strategy
-- Server Components decision tree, 'use client' boundary placement
-- Bundle optimization (dynamic imports, barrel files, tree shaking)
-- Data fetching patterns (React.cache, preloading, waterfall avoidance)
-
-Reference files: `react-patterns.md` (rendering, memoization), `nextjs-patterns.md` (RSC, caching, CWV), `code-examples.md` (BAD/GOOD pairs).
-
-### Backend
-
-#### backend-performance
-Non-destructive review gate after backend implementation skills. Audits Node.js/TypeScript APIs for:
-- **Queries** — N+1, missing indexes, SELECT *, OFFSET on large tables, long transactions, ORM gotchas (Prisma/Drizzle/Kysely)
-- **Async & I/O** — blocking event loop, sync crypto, large JSON, worker threads, sequential vs parallel awaits, `p-limit` for fan-out, timeouts, streaming
-- **Caching** — HTTP headers + CDN, Redis read-through, stampede protection (single-flight), SWR, keyspace discipline, hit-rate metrics
-- **Connection pooling** — pool sizing, PgBouncer modes, serverless gotchas
-- **Payload shape** — DTOs vs full entities, compression, NDJSON streaming, Fastify schema-based serialization
-- **Rate limiting & backpressure** — per-user/per-IP limits, circuit breakers, queue depth alarms
-- **Observability** — OpenTelemetry auto-instrumentation, Pino with correlation IDs, Prom metrics (RED + USE), event loop lag, SLOs + error budgets
-
-Auto-invoke after `api-architect`, `hexagonal-architect`, `database-architect`, `auth-architect`. Delegates to `database-architect` for schema/index design and to `error-handling` for error taxonomy/resilience.
-
-Reference files: `queries.md`, `async-and-io.md`, `caching.md`, `observability.md`.
-
-#### product-tour
-Builds interactive product tours and onboarding flows for Next.js:
-- Library selection: Driver.js (recommended, 5KB), NextStep.js (multi-page tours)
-- Guided walkthroughs with DOM element highlighting
-- Onboarding patterns: activation checklists, welcome modals, progress tracking
-- Accessibility: focus management, screen readers, keyboard nav, reduced motion
+- **infra-security** — runs before any production deploy. AWS-first (Bedrock, ECS, Lambda, VPC, IAM), AI-as-a-Service patterns, VPS hardening, OWASP audits, architecture-from-scratch with tiered cost options.
+- **github-safety** (defensive) ↔ **git-workflow** (constructive). git-workflow generates LOCAL enforcement (husky, commitlint, branch protection, PR template, CODEOWNERS, CONTRIBUTING.md) so day-to-day rules cost ZERO LLM tokens. 4 AI Tells: Garbage Commit, Frankenstein PR, Eternal Branch, History Bomb. PR ≤ 400 LOC (hard limit 1000), squash default. Pairs with `change-safety` when a PR touches prod.
+- **change-safety** — pre-flight gate before ANY prod write (NOT a code generator — returns Go/No-Go). Auto-invokes on `ALTER`/`DROP`/`TRUNCATE`/`RENAME`, `UPDATE`/`DELETE` without `WHERE`, mass batches, deploy-to-prod, store/CMS catalog/pricing/inventory edits, env/secret rotation, DNS/TLS/IAM/infra change. Seven-step protocol: (1) one-sentence description, (2) snapshot tested by restore, (3) rollback plan (trigger + procedure + RTO), (4) stakeholder comms, (5) in-flight check (`pg_stat_activity`, queue depth, replication lag), (6) change window, (7) approval gate. Decision trees + per-system rollback playbook + blameless postmortem template. Pairs with `database-architect`, `github-safety`, `infra-security`, `error-handling`.
 
 ### Content & GTM
 
-#### blog-writer
-Professional blog posts in English/Spanish. **Filler Word Index** enforced: banned hype verbs/adjectives/phrases (Elevate, Unleash, Seamless, Next-gen, etc.). Replacement rule: every forbidden word swapped for concrete verb + specific outcome.
-
-#### landing-page-architect
-Conversion-optimized landing page blueprints (copy + structure) — hands off to `product-ux-advisor` + `premium-frontend-design`. Filler Word Index + Data Realism (99.99% Problem, Jane Doe, Acme Slop) enforced in all copy and demo content.
-
-#### institutional-site-architect
-Multi-page corporate / institutional site blueprints — sitemap, IA, brand voice, trust strategy, per-page copy direction for B2B SaaS, agencies, law firms, VC, nonprofits, personal brands.
-
-#### brand-identity
-Brand identity systems: color palettes, typography, spacing, UX principles.
-
-#### brand-guidelines
-Anthropic brand colors, typography, and visual styling.
+- **blog-writer** / **landing-page-architect** / **institutional-site-architect** — Filler Word Index + Data Realism (99.99% Problem, Jane Doe, Acme Slop) enforced. landing-page-architect hands off to `product-ux-advisor` + `premium-frontend-design`.
+- **brand-identity** / **brand-guidelines** — feed `premium-frontend-design` so it doesn't improvise colors/typography.
 
 ### UGC Pipeline
 
-End-to-end AI UGC creation. Two rendering branches share `ugc-scriptwriter` and `ugc-post-production`:
+Two rendering branches share `ugc-scriptwriter` (start) and `ugc-post-production` (end). Never skip either:
+- **Lipsync** (talking head): `ugc-scriptwriter` → `ai-avatar-director` → `ugc-post-production`. For HeyGen / Hedra / Akool / Arcads / Synthesia.
+- **Generative** (Veo 3 / Seedance 2.0): `ugc-scriptwriter` → `ugc-video-prompting` → `ugc-post-production`. For scene-based UGC, B-roll, POV, demo.
+- Hybrid campaigns combine both (lipsync talking head + generative B-roll).
+- Shared vocabulary across branches: Filler Word Index, Jane Doe Effect, Pure Black Tell, Data Realism. `ai-avatar-director` mandates ES-AR voseo voice (not neutral).
 
-- **Lipsync branch** (talking head): `ugc-scriptwriter` → `ai-avatar-director` → `ugc-post-production`. For HeyGen / Hedra / Akool / Arcads / Synthesia.
-- **Generative branch** (Veo 3 / Seedance 2.0): `ugc-scriptwriter` → `ugc-video-prompting` → `ugc-post-production`. For scene-based UGC, B-roll, POV, demo shots.
+### Integration / Media / Meta
 
-The two branches can be combined in one campaign (e.g. lipsync for the talking-head testimonial + generative for B-roll product shots).
-
-Shared vocabulary (Filler Word Index, Jane Doe Effect, Pure Black Tell, Data Realism) consistent with the rest of the ecosystem.
-
-#### ugc-scriptwriter
-Writes shoot-ready UGC scripts for AI avatar delivery:
-- **10 ad angles** with fixed skeletons: testimonial, problem-solution, founder, reaction, demo, before-after, comparison, myth-bust, POV, list
-- **Hook engineering** — 7 formulas (specific result, contrarian, callout, curiosity gap, direct address, visual anomaly, pattern interrupt) + 5 anti-patterns
-- **Per-platform pacing** — TikTok / Reels / Shorts / Meta Feed / YouTube Pre-roll with hook windows, caption density, CTA style
-- **Per-region language** — ES (AR / MX / ES / LATAM neutro) / EN (US / UK)
-- **Multi-variant mode** — same angle different hooks (A/B/C) or different angles for split-test
-- **Output**: timing table (time / spoken line / on-screen text / B-roll) + direction notes + claims used with `⚠️ PLACEHOLDER` flags
-- **Filler Word Index** enforced (ES + EN), Data Realism (messy numbers, no Jane Doe, no Acme Slop)
-
-Reference: `angles.md` (10 angle skeletons + selection heuristics, loaded only when in use).
-
-#### ai-avatar-director
-Translates a script into a vendor-agnostic director brief:
-- **Casting framework** — demographic match × angle archetype × product-category credibility (skincare vs SaaS vs fintech vs luxury etc.)
-- **Wardrobe** by brand voice (premium / friendly / expert / irreverent / clinical / street) × angle overrides, with anti-patterns (busy patterns, logos, Pure Black Tell, stark white)
-- **Setting / background** — home / home office / neutral studio / bedroom / outdoor / office / gym matched to angle, with depth-of-field rules
-- **Framing & movement** — shot size per beat (hook MCU, body alternate, CTA push-in), locked vs handheld feel
-- **Voice direction** — tone × cadence × energy (1-10) per angle, accent by region (ES-AR voseo mandatory, not neutral)
-- **Anti-patterns named**: Jane Doe Effect, Uncanny Valley Triad, Inter Tell of Avatars, Demographic Cosplay, Same-Face Syndrome
-- **Vendor notes** for HeyGen / Hedra / Akool / Arcads / Synthesia, plus a copy-paste vendor-agnostic prompt block
-- **Output**: director brief (casting / wardrobe / setting / framing / voice / do-not) + vendor-agnostic prompt
-
-#### ugc-video-prompting
-Writes text-to-video and image-to-video prompts for **Google Veo 3 / Veo 3.1** and **ByteDance Seedance 2.0** that produce UGC (not cinema):
-- **7-slot anatomy** — Subject / Context / Action / Camera / Lighting / Style / Audio, adapted per model
-- **UGC realism "tells"** — selfie framing, handheld sway, natural light, realistic skin, phone audio feel
-- **UGC anti-tells** — cinematic lighting, 4K, dolly, drone, Dutch angle, perfect skin, cinematic bokeh (all banned for UGC)
-- **Veo 3 specifics** — 5-part formula [Cinematography + Subject + Action + Context + Style], camera in its own sentence, film grammar it understands, dialogue in quotes for sync audio
-- **Seedance 2.0 specifics** — motion-first when I2V (model sees the reference, don't re-describe), multi-asset (talent + product + env), mandatory negative-prompt boilerplate (no logos / no extra fingers / no jump cuts / no whip pans / character consistency / realistic physics)
-- **Angle → prompt matrix** — per ad angle: camera / framing / action template
-- **Character & object consistency pack** — master reference + locked seed + canonical 1-sentence fragment for multi-shot campaigns
-- **Output**: structured prompt + negative prompt + seed/consistency plan + audio lines + validation checklist
-
-Alternative to `ai-avatar-director` when the pipeline uses generative video; complementary when used for B-roll alongside a lipsync talking head.
-
-#### ugc-post-production
-Edit Decision List (EDL) for the final cut — every FX has a stated reason or it gets cut:
-- **Captions** — style per brand voice (karaoke / phrase / sentence bottom), font/weight/color, timing schemes, placement safe zones (avoid bottom-left/right UI bands)
-- **Visual hooks library** with when-to-use / when-NOT-to-use: zoom punch, jump cut, shake, whip pan, flash frame, speed ramp, freeze frame + text, B-roll intercut, PiP
-- **B-roll strategy** — A/B-roll ratio per angle, timing rules (never cut during critical spoken words, min 0.8s hold, max 4s cutaway)
-- **Music & sound design** — genre × brand voice, BPM range, drop alignment to hook/CTA, ducking -12dB under speech, silence-before-CTA pattern
-- **Export specs** — aspect ratio, resolution, codec (H.264 10-12 Mbps), audio (-16 LUFS Meta/TikTok, -14 LUFS YouTube), file naming
-- **Anti-patterns named**: edit-dumping, caption wall (>7 words), music drowning dialogue, B-roll during critical words, Inter Tell captions, Pure Black Tell, default library SFX at full volume
-- **Output**: EDL table (time / beat / cut / FX / caption / B-roll / SFX / music / WHY) + caption plan + music plan + B-roll list + sound design + export specs + missing assets
-
-### Implementation
-
-#### tdd-workflow
-Red (failing test) → Green (minimal code) → Refactor. AAA pattern. Test doubles: Stubs / Mocks / Fakes.
-
-#### testing-strategy
-Complements `tdd-workflow` with WHAT to test and at which layer:
-- Pyramid: ~70% unit / 20% integration / 10% E2E
-- What to test by hexagonal layer (domain/app/infra/http/frontend)
-- Testcontainers for real Postgres integration tests
-- MSW for HTTP mocking, Playwright for E2E, Pact for contract tests
-- Flaky test rules (no sleep, fresh state, independent order)
-
-#### error-handling
-End-to-end error story:
-- Typed error hierarchy (DomainError → ValidationError, NotFoundError, etc.)
-- API responses in Problem Details (RFC 7807) with `code` and `correlationId`
-- Structured JSON logging (Pino) with correlation + user/tenant IDs
-- React Error Boundaries per route + global fallback
-- Retry with backoff + jitter, circuit breaker for external deps
-- Sentry with sourcemaps, PII stripping
-
-### Infra / Ops
-
-#### infra-security
-Senior infrastructure architect + cybersecurity specialist:
-- AWS-first (EC2, ECS, Lambda, Bedrock, VPC, IAM, cost optimization)
-- AI as a Service patterns: agent platforms, vLLM, vector DBs, Bedrock deep dive
-- VPS hardening: nginx, SSL, SSH, Docker, firewall
-- Security audits: OWASP, WAF, IAM policies, incident response
-- Architecture from scratch: tiered cost/complexity options, HA, DR, anti-patterns
-
-#### github-safety
-Prevents destructive Git operations:
-- Absolute prohibitions: force push, rebase on pushed branches, reset --hard, amend pushed commits, --no-verify
-- Required practices: new commits over rewrites, feature branches, verify before push
-- Emergency protocol: STOP → show status → explain → propose → wait for confirmation
-
-#### git-workflow
-Constructive counterpart of `github-safety` — how a team works WELL in git, with enforcement that runs LOCAL via hooks (zero LLM tokens at runtime). Use for team setup, onboarding, conflict help, audits.
-
-- **4 named AI Tells**: Garbage Commit (`fix`/`wip`/`asdf`), Frankenstein PR (> 1000 LOC, mixed concerns), Eternal Branch (> 7 days), History Bomb (force push to shared branches)
-- **Non-negotiables**: nobody pushes to `main`, PR ≤ 400 LOC, Conventional Commits enforced by `commit-msg` hook, branches live ≤ 7 days, `--no-verify` BANNED, squash by default
-- **Output (lands in user's repo, not this one)**: `CONTRIBUTING.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `.husky/` (pre-commit + commit-msg + pre-push), `commitlint.config.js`, `.gitmessage`, `CODEOWNERS`, branch protection script via `gh api`, minimal `ci.yml`
-- **Decision tree per repo state**: new repo with team / new repo solista / repo viejo sin convención (no rewrites history) / repo con convención propia (audit only) / onboarding only
-
-Reference files: `branch-strategy.md`, `commit-conventions.md`, `pr-conventions.md`, `conflict-and-rebase.md`, `team-templates.md` (all copy-paste-ready).
-
-Pairs with `github-safety` (defensive), `change-safety` (when PR touches prod), `testing-strategy` (`pre-push` hook content).
-
-#### change-safety
-Pre-flight guardrail before any production write. Auto-invokes on signals: `ALTER`, `DROP`, `TRUNCATE`, `RENAME`, `UPDATE`/`DELETE` without `WHERE`, mass batches, deploy to prod, store/CMS catalog or pricing or inventory edit, env/secret rotation, DNS change, TLS swap, IAM/security group change, infra parameter change.
-
-Forces seven-step protocol before execution:
-1. One-sentence change description (verb + object + system + window)
-2. Snapshot/backup taken AND tested by restoring to scratch
-3. Rollback plan written (trigger + procedure + RTO) — copy-paste runbook ready
-4. Stakeholder communication (customer T-24h banner + internal + on-call)
-5. In-flight transaction check (`pg_stat_activity`, queue depth, replication lag, active checkouts)
-6. Change window declared (off-peak by audience timezone, hard deadline)
-7. Approval gate (second human for medium+ changes, pair-execute for destructive)
-
-Decision trees by change type: DB schema (3-step rename, lock_timeout, NOT VALID + VALIDATE), DB data (SELECT first, transaction with explicit limit, COPY before DELETE), Store/CMS (export catalog/theme/pages first, draft channel test, bulk-edit history), Deploy (last green SHA, decoupled migration+code, feature flag ramp), Config (diff before/after, nginx -t, DNS TTL pre-lower), Infra (RDS param apply_method, autoscaling cooldown, blue-green resize).
-
-Per-system rollback playbook: Postgres (pg_dump + PITR), MySQL (mysqldump --single-transaction), Mongo (mongodump + Atlas snapshot), Redis (BGSAVE + dump.rdb), Shopify (catalog CSV + theme zip), WooCommerce (wp db export + wp-content tar), Vercel (rollback via SHA), Netlify (rollbackSiteDeploy), S3/R2 (versioning + delete bad version), DNS (lowered TTL + restore values), App config (vault-stored values + redeploy), TLS (ACME automated), IAM (saved JSON re-apply).
-
-Postmortem template included: blameless, timeline, root cause vs trigger, action items with owner+due+priority+type, "what went well / what went poorly / where we got lucky".
-
-Pairs with `database-architect` (zero-downtime migrations), `github-safety` (non-destructive git), `infra-security` (security audits), `error-handling` (rollback trigger detection).
-
-Reference files: `checklist.md` (full pre-flight, copy into runbook), `rollback-playbook.md` (per-system commands), `postmortem-template.md` (template + GOOD/BAD examples).
-
-### Integration & Media
-
-#### bind-api
-Integration with BIND Argentina Open Banking sandbox:
-- OAuth 2.0 Direct Login authentication
-- Endpoints: accounts, transfers, DEBIN, eCheqs, CBU/CVU validation
-- TypeScript client in `scripts/bind_client.ts`
-
-#### remotion-video
-Programmatic video generation from React components with Remotion.
-
-### Meta (self-referential)
-
-#### skill-creator
-Guide for creating new skills. References: `design-philosophy.md`, `creation-process.md`, `output-patterns.md`, `workflows.md`.
+- **bind-api** — BIND Argentina Open Banking sandbox: OAuth 2.0 Direct Login; accounts, transfers, DEBIN, eCheqs, CBU/CVU validation; TS client `scripts/bind_client.ts`.
+- **remotion-video** — programmatic video from React components.
+- **skill-creator** — guide for creating new skills.
 
 ## Working with This Repository
 
 When adding or modifying skills, update ALL of the following (in order):
 
-1. **SKILL.md** — frontmatter (`name`, `description`) + detailed instructions. Keep description sharp — it's what Claude auto-selects on.
-2. **Reference files** in `references/` subdirectory — reusable code/templates, loaded on demand.
-3. **Anti-patterns** — document what NOT to do (as important as the positive guidance).
-4. **Output standards** — specify expected format (complete code, types, specific patterns).
-5. **`install.sh`** — add to the `SKILLS` array (alphabetical order). The installer is multi-tool: Claude Code (`~/.claude/skills/` or `<project>/.claude/skills/`), OpenCode (`~/.config/opencode/skills/` or `<project>/.opencode/skills/`), Codex CLI (`~/.agents/skills/` or `<project>/.agents/skills/`), or Universal mode (writes to `~/.agents/skills/` — read by all 3 tools). Has wizard + flag modes (`--tool`, `--scope`, `--all`). New skills work in all tools automatically as long as `SKILL.md` follows the standard frontmatter (`name`, `description`).
+1. **SKILL.md** — frontmatter (`name`, `description`) + detailed instructions. Description is what Claude auto-selects on — keep it sharp.
+2. **Reference files** in `references/` — reusable code/templates, loaded on demand.
+3. **Anti-patterns** — what NOT to do (as important as the positive guidance).
+4. **Output standards** — expected format (complete code, types, specific patterns).
+5. **`install.sh`** — add to the `SKILLS` array (alphabetical). Installer is multi-tool: Claude Code (`~/.claude/skills/` or `<project>/.claude/skills/`), OpenCode (`~/.config/opencode/skills/` or `<project>/.opencode/skills/`), Codex CLI (`~/.agents/skills/` or `<project>/.agents/skills/`), or Universal (`~/.agents/skills/`, read by all 3). Wizard + flag modes (`--tool`, `--scope`, `--all`). New skills work in all tools as long as `SKILL.md` follows standard frontmatter.
 6. **`skills/meta/orchestrator/skills.manifest.json`** — add entry with tags, triggers, deps, cost, value.
 7. **`README.md`** — table row + "Available skills for installation" list + `prompts/` index.
 8. **`CLAUDE.md`** (this file) — tree + Key Skills entry. Or run `claude-md-keeper` afterwards to catch drift.
@@ -532,25 +260,50 @@ When using skills in other projects, load the SKILL.md and relevant reference fi
 
 ## Conventions (Dublin)
 
+### Dublin v2 — Core Flow (anti-architecture-astronautics)
+
+These four rules override the natural tendency to over-plan. They apply to every session, every skill, every project.
+
+- **SCAN first**: Before any planning, read `SESSION.md` + `TASKS.md ## Doing` + code structure. Determine new vs. existing project. Existing project → adapt to what's there, never redesign from scratch.
+- **ONE THING per session**: Articulate the single deliverable in one sentence before invoking any skill. If it doesn't fit in one sentence, cut scope. No skill, no SDD, no orchestrator runs until ONE THING is clear.
+- **Skeleton-first**: The first output of any task is runnable code (even ugly). No design docs, no specs, no architecture diagrams as first deliverable. Skills run as review gates AFTER the skeleton exists.
+- **Planning timebox**: 20 minutes (or 2 exchanges) max before first line of code. Skills are YAGNI-filtered: "Do I need this TODAY for the skeleton to work?" No → defer it. Anything answered "we'll need it eventually" = not in this session.
+- **SDD threshold (revised)**: SDD activates when ≥ 3 files AND design is genuinely unclear. "I know what to build but it's big" → skeleton first, SDD on second pass if needed.
+
+---
+
+- **VPS-first / lightweight-first**: las apps Dublin se deployan en VPS por default (no Vercel/Netlify como reflejo). Optimizar para menor bundle size, menor build time, menor footprint de servidor.
+  - **Package manager**: `pnpm` siempre (workspaces, hardlinks, disk-efficient, más rápido). Nunca `npm`/`yarn` en proyectos nuevos.
+  - **Frontend**: elegir la opción más liviana que cumpla el requerimiento — Vite + React (SPA/apps), Astro (sitios de contenido/marketing, islands), SvelteKit, o Next.js con Turbopack/SWC cuando se necesita SSR/ISR/RSC. No elegir Next.js por reflejo; justificar si nginx + bundle estático no alcanza.
+  - **Backend**: Hono (ultra-liviano, edge-compatible, corre en Node/Bun/Deno) o Fastify por default. NestJS solo para proyectos enterprise con DI y módulos complejos. Express solo legacy.
+  - **Build**: target ES2022+, tree-shaking agresivo, sin polyfills innecesarios.
+  - **Docker**: imagen Alpine o distroless, multi-stage build, `.dockerignore` en root. Considerar Bun como runtime (más rápido que Node para scripts y APIs).
+  - **Runtime alternativo**: Bun — scripts, APIs nuevas, build pipeline. Node.js para proyectos que necesitan compatibilidad garantizada.
 - **Foundation-first**: `frontend-foundation` precedes `mobile-design` / `premium-frontend-design` / `forms-and-validation` / `product-tour` / `landing-page-architect`
-- **Mobile-as-medium-before-polish**: `mobile-design` runs AFTER `frontend-foundation` (Pillar 4 baseline) and BEFORE `premium-frontend-design` polish. Triggers on user reports of horizontal overflow, mobile UX issues, or any product where mobile traffic > desktop traffic.
+- **Mobile-as-medium-before-polish**: `mobile-design` runs AFTER `frontend-foundation` (Pillar 4 baseline) and BEFORE `premium-frontend-design` polish. Triggers on horizontal overflow reports, mobile UX issues, or any product where mobile traffic > desktop traffic.
+- **Traducción de skills de diseño en proyectos RN**: ninguna skill de frontend de esta librería conoce React Native — todas asumen DOM. Su **criterio** sirve; su **código** no. En un proyecto RN (detectado por `expo` en `app.json`/`app.config.*` o `react-native` en `package.json`), el agente traduce la salida de `premium-frontend-design` / `frontend-foundation` / `mobile-design` / `product-tour` / `data-viz-architect` vía `mobile-app-foundation/references/design-skills-bridge.md` **antes de escribir código**, y dice qué sustituyó. Entregar `backdrop-filter`, Framer Motion o Radix a un codebase RN es un defecto (**Web Code Handoff**) — quien pide una app mobile es el menos capaz de convertirlo. `frontend-output-validator` **no corre** sobre nativo: Lighthouse no perfila un binario y sus greps dan verde sin medir (**False Green**); su rol lo cubre `references/testing-on-device.md`, manual por necesidad.
+- **Multiplataforma por default**: toda app de `mobile-app-foundation` sale a **iOS + Android + web** desde una sola base de código. Bajar web es una decisión explícita, nunca el default. Verificación = los tres targets bundlean (`npx expo export --platform ios|android|web`) **y** una pasada manual, porque `expo-secure-store` (sin build web) y `Alert.alert` (no-op silencioso en react-native-web) fallan sin romper el build. Web sale como export estático → VPS con nginx, alineado con VPS-first.
+- **Native-vs-web first**: `mobile-app-foundation` (React Native + Expo, store binaries) and `mobile-design` (responsive CSS in a browser) are different disciplines. Resolve which one is actually needed BEFORE any work: a native app costs an order of magnitude more to ship and maintain, and is only justified by stores, push, or offline. For a native app, `mobile-app-foundation` runs first; `mobile-design` then contributes pattern picks and thumb-zone ergonomics, which transfer directly.
+- **OTA is a production write**: an `eas update` reaches every installed device with no store review in between. `change-safety` applies — verify on a `preview` branch and a real device first. An OTA whose JS needs native code the installed binary lacks crashes the app on launch for every user; the runtime version policy is the guard.
 - **Data-before-auth**: `database-architect` precedes `auth-architect` (auth needs user/session tables)
 - **Domain-before-architecture**: `domain-modeler` precedes `hexagonal-architect` / `api-architect`
 - **Polish-last**: `premium-frontend-design` is polish — run after `product-ux-advisor` and `frontend-foundation`
 - **Security-pre-ship**: `infra-security` runs before any production deploy
-- **Change-safety pre-write**: `change-safety` runs as a mandatory gate BEFORE any production write. Auto-invokes on `ALTER`/`DROP`/`TRUNCATE`/`RENAME`, `UPDATE`/`DELETE` without `WHERE`, mass batch operations, deploy to prod, store/CMS catalog or pricing or inventory edits, env/secret rotation, DNS change, TLS swap, IAM/security group change. Forces snapshot + rollback plan + comms + in-flight check + change window + approver before execution. Pairs with `database-architect` (zero-downtime migrations) and `github-safety` (non-destructive git). NOT a code generator — a gate that returns Go/No-Go.
-- **Git workflow for teams**: `git-workflow` is the constructive complement of `github-safety` (defensive). Invoke on team setup, onboarding new devs, conflict resolution help, or repo audits. Generates LOCAL enforcement (husky hooks, commitlint, branch protection, PR template, CODEOWNERS, CONTRIBUTING.md) so day-to-day rules cost ZERO LLM tokens. 4 named AI Tells: Garbage Commit, Frankenstein PR, Eternal Branch, History Bomb. PR tope: 400 LOC (warn at 400, hard limit 1000). Default merge: squash.
+- **Change-safety pre-write**: `change-safety` is a mandatory gate BEFORE any production write. Auto-invokes on `ALTER`/`DROP`/`TRUNCATE`/`RENAME`, `UPDATE`/`DELETE` without `WHERE`, mass batches, deploy to prod, store/CMS catalog/pricing/inventory edits, env/secret rotation, DNS change, TLS swap, IAM/security-group change. Forces snapshot + rollback plan + comms + in-flight check + change window + approver. Pairs with `database-architect` and `github-safety`. NOT a code generator — a gate returning Go/No-Go.
+- **Git workflow for teams**: `git-workflow` is the constructive complement of `github-safety` (defensive). Invoke on team setup, onboarding, conflict help, or audits. Generates LOCAL enforcement (husky, commitlint, branch protection, PR template, CODEOWNERS, CONTRIBUTING.md) so day-to-day rules cost ZERO LLM tokens. 4 AI Tells: Garbage Commit, Frankenstein PR, Eternal Branch, History Bomb. PR tope 400 LOC (warn 400, hard limit 1000). Default merge: squash.
 - **SDD for substantial changes**: `sdd-workflow` activates on triggers or when changes touch ≥ 3 files / architecture
-- **Performance audit after frontend**: `react-performance` runs as a non-destructive review gate after any frontend implementation skill (`frontend-foundation`, `premium-frontend-design`, `forms-and-validation`, `product-tour`, `landing-page-architect`) produces React code. Conditional: fires only if new components, `useEffect`, data fetching, render loops, or > 2 components touched. Skip on trivial edits, copy-only changes, or style-only tweaks.
-- **Performance audit after backend**: `backend-performance` runs as a non-destructive review gate after any backend implementation skill (`api-architect`, `hexagonal-architect`, `database-architect`, `auth-architect`) produces code. Conditional: fires on new endpoint/handler, new DB query, async/IO work, loop with awaits, large payloads, or > 2 backend files touched. Skip on config-only, doc-only, or type-only changes.
-- **Design audit after frontend**: `frontend-output-validator` runs as a non-destructive review gate after any frontend implementation skill produces UI. Reads project `DESIGN.md` as source of truth. Validates contrast, CLS, icon budget, touch targets, viewport meta, mobile-first compliance, forbidden AI Tells (Pure Black / LILA BAN / Inter Tell / Icon Soup / Mobile Afterthought / Layout Shift Sloppy / Filler Word Index / Jane Doe Effect / Acme Slop). Conditional: fires on new components/layouts, new images/videos/fonts/icons, > 1 component touched, hover/focus/active states modified. Skip on copy-only or type-only changes. Pairs with `react-performance` (perf vs design contract).
-- **Design contract per project**: every project ships a `DESIGN.md` at repo root combining YAML tokens (breakpoints, colors, typography, spacing, motion, iconBudget, contentPriority, aiTellsEnforced) with markdown rationale. Format borrows from [Google Labs DESIGN.md](https://github.com/google-labs-code/design.md) and extends with Dublin specifics (motion, breakpoints, icon budget, content priority, AI Tells). Agent reads it at start of every session. CI validates with `scripts/validate-design.ts` (Zod schema). Optional: `npx @google/design.md lint` for contrast + token diff.
-- **Mobile-first content priority**: every screen has a `contentPriority` block in `DESIGN.md` (critical / primary / secondary / tertiary). Layouts are designed at 360px first, then scaled up. Mobile pattern swaps mandatory: sidebar → bottom tab bar, dropdown → bottom sheet, modal → full-screen sheet, hover-only → persistent active state.
-- **CLS Zero target**: < 0.05 (Core Web Vitals "Good" is < 0.1). Every image has `width`+`height` or `aspect-ratio`. Web fonts use `font-display: swap` + size-adjust fallback + preload. Banners overlay (`fixed`), never inline. Accordions use `grid-template-rows: 0fr → 1fr`.
+- **Performance audit after frontend**: `react-performance` runs as a non-destructive review gate after any frontend implementation skill produces React code. Conditional: fires on new components, `useEffect`, data fetching, render loops, or > 2 components touched. Skip on trivial/copy-only/style-only changes.
+- **Performance audit after backend**: `backend-performance` runs as a non-destructive review gate after any backend implementation skill (`api-architect`, `hexagonal-architect`, `database-architect`, `auth-architect`) produces code. Conditional: fires on new endpoint/handler, new DB query, async/IO work, loop with awaits, large payloads, or > 2 backend files touched. Skip on config-only/doc-only/type-only changes.
+- **Design audit after frontend**: `frontend-output-validator` runs as a non-destructive review gate after any frontend implementation skill produces UI. Reads project `DESIGN.md` as source of truth. Validates contrast, CLS, icon budget, touch targets, viewport meta, mobile-first, forbidden AI Tells (Pure Black / LILA BAN / Inter Tell / Icon Soup / Mobile Afterthought / Layout Shift Sloppy / Filler Word Index / Jane Doe Effect / Acme Slop). Conditional: fires on new components/layouts, new images/videos/fonts/icons, > 1 component touched, hover/focus/active states modified. Skip on copy-only/type-only changes. Pairs with `react-performance` (perf vs design contract).
+- **Design contract per project**: every project ships a `DESIGN.md` at repo root combining YAML tokens (breakpoints, colors, typography, spacing, motion, iconBudget, contentPriority, aiTellsEnforced) with markdown rationale. Format borrows from [Google Labs DESIGN.md](https://github.com/google-labs-code/design.md) and extends with Dublin specifics. Agent reads it at start of every session. CI validates with `scripts/validate-design.ts` (Zod schema). Optional: `npx @google/design.md lint` for contrast + token diff.
+- **Mobile-first content priority**: every screen has a `contentPriority` block in `DESIGN.md` (critical / primary / secondary / tertiary). Layouts designed at 360px first, then scaled up. Mobile pattern swaps mandatory: sidebar → bottom tab bar, dropdown → bottom sheet, modal → full-screen sheet, hover-only → persistent active state.
+- **CLS Zero target**: < 0.05 (CWV "Good" is < 0.1). Every image has `width`+`height` or `aspect-ratio`. Web fonts use `font-display: swap` + size-adjust fallback + preload. Banners overlay (`fixed`), never inline. Accordions use `grid-template-rows: 0fr → 1fr`.
 - **Icon budget enforcement**: nav ≤ 5, hero ≤ 1, card ≤ 2, button ≤ 1, form field ≤ 1, footer social ≤ 3. One library per project (no mixing). Counted by `frontend-output-validator`, not vibed.
 - **UGC pipeline order**:
-  - Lipsync branch: `ugc-scriptwriter` → `ai-avatar-director` → `ugc-post-production`
-  - Generative branch: `ugc-scriptwriter` → `ugc-video-prompting` → `ugc-post-production`
-  - Hybrid campaigns use both branches (lipsync for talking head, generative for B-roll/scene)
-  - Never skip the scriptwriter — the script drives both casting and prompt engineering
-  - Never skip post-production — generative renders still need captions, music sync, and hook FX
+  - Upstream research (optional): `gancho-argumental` → systematic web search → brief de investigación → alimenta CONCEPTO de video-creativo
+  - Upstream strategy (optional but recommended): `video-creativo` → produces CONCEPTO + IDEA + GUION + ESCENAS before any production skill
+  - Lipsync branch: `video-creativo` (or `ugc-scriptwriter`) → `ai-avatar-director` → `ugc-post-production`
+  - Generative branch: `video-creativo` (or `ugc-scriptwriter`) → `ugc-video-prompting` → `ugc-post-production`
+  - Hybrid campaigns use both branches (lipsync talking head, generative B-roll/scene)
+  - Use `video-creativo` when the comunicación strategic layer (concepto, insight, SMP) is not yet defined. Use `ugc-scriptwriter` directly when the angle and script are the only deliverable.
+  - Never skip post-production (renders still need captions, music sync, hook FX)

@@ -240,9 +240,9 @@ fi
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --ignore-scripts
+RUN corepack enable && pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
-RUN npm run build
+RUN pnpm build
 
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -253,6 +253,31 @@ COPY --from=builder --chown=app:app /app/package.json ./
 USER app
 EXPOSE 3000
 CMD ["node", "dist/main.js"]
+```
+
+#### Variante Bun — más rápido para APIs y scripts
+```dockerfile
+# Variante Bun — más rápido para APIs y scripts
+FROM oven/bun:1-alpine AS deps-bun
+WORKDIR /app
+COPY package.json bun.lockb ./
+RUN bun install --frozen-lockfile --production
+
+FROM oven/bun:1-alpine AS builder-bun
+WORKDIR /app
+COPY package.json bun.lockb ./
+RUN bun install --frozen-lockfile
+COPY . .
+RUN bun run build
+
+FROM oven/bun:1-alpine AS runner-bun
+WORKDIR /app
+COPY --from=deps-bun /app/node_modules ./node_modules
+COPY --from=builder-bun /app/dist ./dist
+COPY package.json .
+USER bun
+EXPOSE 3000
+CMD ["bun", "run", "dist/index.js"]
 ```
 
 ### Monorepo Docker Builds (pnpm/turborepo/nx)

@@ -266,7 +266,7 @@ export default async function ProductPage({ params }) {
 ### Setup
 
 ```bash
-npm install @next/bundle-analyzer
+pnpm add @next/bundle-analyzer
 ```
 
 ```js
@@ -279,7 +279,7 @@ module.exports = withBundleAnalyzer(nextConfig);
 ```
 
 ```bash
-ANALYZE=true npm run build
+ANALYZE=true pnpm build
 ```
 
 ### Common bundle issues

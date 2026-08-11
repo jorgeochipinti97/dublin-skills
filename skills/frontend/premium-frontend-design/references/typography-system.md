@@ -54,7 +54,7 @@ const monoFont = Geist_Mono({
 
 ### Fontsource (Self-hosted, Best Performance)
 ```bash
-npm install @fontsource-variable/plus-jakarta-sans @fontsource/instrument-serif
+pnpm add @fontsource-variable/plus-jakarta-sans @fontsource/instrument-serif
 ```
 
 ```tsx

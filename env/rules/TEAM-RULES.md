@@ -87,17 +87,41 @@ Data Realism: messy numbers, real names, no placeholder brands.
 
 ## 4. How we work (process)
 
-- **SDD for substantial changes**: if it touches ≥ 3 files or architecture, plan
-  before implementing (proposal → specs → design → tasks → apply).
-- **Skill order**:
+### Session start — SCAN first
+Before any planning or coding, always read the project state:
+1. Read `SESSION.md` → what's in progress, what's next, blockers
+2. Read `TASKS.md ## Doing` → what's the active task
+3. Scan code structure (`fd --max-depth=2`) → what already exists
+
+If a project has in-progress code: **adapt to what exists, never redesign from scratch**.
+
+### ONE THING per session
+Before any skill, any plan, any SDD flow — articulate the ONE deliverable this session produces in one sentence. If it doesn't fit in one sentence, cut scope. Planning only proceeds once the ONE THING is clear.
+
+### Skeleton-first mandate
+Every feature starts with a **walking skeleton** — the smallest thing that runs end-to-end, even if ugly. No component systems, no DDD, no abstractions before the skeleton runs. Sequence: skeleton works → review gates → polish.
+
+### Planning timebox
+Planning (SDD, orchestrator, skill sequencing) is capped at **20 minutes** (or 2 exchanges). If no code exists after that, skip to skeleton. Plans are guides, not deliverables.
+
+### YAGNI gate
+Before invoking any skill or making any design decision: "Do I need this TODAY for the skeleton to work?" No → defer it. Skills run as **review gates AFTER code exists**, not as requirement generators before code starts.
+
+### SDD threshold (revised)
+SDD activates when changes touch ≥ 3 files **AND** the design is genuinely unclear. For "I know what to build but it's big" → skeleton first, SDD on the second pass if needed.
+
+### Skill order (dependency chain)
   - `domain-modeler` → `hexagonal-architect` / `api-architect`
   - `database-architect` → `auth-architect`
   - `frontend-foundation` → `mobile-design` → `premium-frontend-design`
   - `infra-security` before any deploy
-- **Non-destructive review gates** after implementing:
+
+### Non-destructive review gates (after code exists)
   - Frontend → `react-performance` + `frontend-output-validator`
   - Backend → `backend-performance`
-- **Conventional Commits** + PR ≤ 400 LOC + squash by default.
+
+### PR discipline
+**Conventional Commits** + PR ≤ 400 LOC + squash by default. If accumulated scope pushes a PR past 400 LOC, it's a signal that the planning phase was too large — split it retroactively.
 
 ---
 

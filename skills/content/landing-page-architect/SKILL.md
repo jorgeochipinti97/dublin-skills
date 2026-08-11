@@ -154,3 +154,4 @@ Replace every instance with a **concrete verb + specific outcome**. If you can't
 - `references/copywriting-theory.md` — headlines, Schwartz awareness/sophistication, frameworks (AIDA/PAS/BAB/FAB/StoryBrand/QUEST/4Ps), CTAs, proof, risk reversal, tone
 - `references/landing-fundamentals.md` — anatomy, above-the-fold, trust, friction, mobile, measurement
 - `references/conversion-by-goal.md` — playbooks per goal (sales / lead gen / waitlist / webinar / app / SaaS trial / newsletter / event / demo)
+- `references/ab-testing-cro.md` — when the page is live: ICE prioritization, hypothesis writing, what to test first by tier, statistical significance, common CRO wins by section (load when page is live and optimization is the goal)

@@ -2,10 +2,62 @@
 
 Ready-to-copy setup for Next.js 15 + Tailwind v4 with dual theme.
 
+## Theme setup por framework
+
+### Next.js (App Router)
+Usar `next-themes` con `ThemeProvider` en el root layout.
+
+### Vite + React / Astro / SvelteKit
+`next-themes` requiere Next.js. Para otros frameworks, usar una implementación propia liviana:
+
+```tsx
+// src/providers/ThemeProvider.tsx
+import { createContext, useContext, useEffect, useState } from 'react'
+
+type Theme = 'light' | 'dark' | 'system'
+
+const ThemeContext = createContext<{
+  theme: Theme
+  setTheme: (t: Theme) => void
+}>({ theme: 'system', setTheme: () => {} })
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setThemeState] = useState<Theme>('system')
+
+  const setTheme = (t: Theme) => {
+    setThemeState(t)
+    localStorage.setItem('theme', t)
+    applyTheme(t)
+  }
+
+  useEffect(() => {
+    const saved = (localStorage.getItem('theme') as Theme) ?? 'system'
+    setThemeState(saved)
+    applyTheme(saved)
+  }, [])
+
+  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>
+}
+
+function applyTheme(t: Theme) {
+  const isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+  document.startViewTransition?.(() => {
+    document.documentElement.classList.toggle('dark', isDark)
+  }) ?? document.documentElement.classList.toggle('dark', isDark)
+}
+
+export const useTheme = () => useContext(ThemeContext)
+```
+
+El `document.startViewTransition` ya aplica la S-curve de Pillar 1. Para Astro, wrappear en un componente con `client:load`.
+
 ## 1. Install dependencies
 
 ```bash
+# Next.js
 pnpm add next-themes
+
+# Vite / Astro / SvelteKit: sin dependencias — usar el ThemeProvider de arriba
 ```
 
 ## 2. Define tokens (`app/globals.css`)

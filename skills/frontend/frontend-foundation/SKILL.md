@@ -360,16 +360,25 @@ Reference: `references/design-contract.md` — full template + how to enforce in
 
 ## Stack Recommendation
 
-**Default stack for a new frontend product:**
+**Default: la opción más liviana que cumpla el requerimiento (VPS-first).**
 
-- Next.js 15 (App Router) + React 19
-- TypeScript (strict)
-- Tailwind CSS v4 (CSS variables native)
-- `next-themes` for theme toggle
-- `@base-ui-components/react` for primitives (or Radix if the team prefers)
-- `class-variance-authority` + `tailwind-merge` + `clsx` for variants
-- `lucide-react` for icons
-- Framer Motion only when a component needs it (not globally)
+| Necesidad | Stack recomendado |
+|---|---|
+| SPA / dashboard / app interna | **Vite + React** — bundle estático, sirve nginx |
+| Sitio de contenido / marketing / mayormente estático | **Astro** — islands, JS mínimo en cliente |
+| Full-stack con SSR real / ISR / RSC / streaming | **Next.js 15 + Turbopack** — App Router, SWC compiler |
+| API ultra-liviana / edge-compatible | **Hono** (corre en Node/Bun/Deno) o **Fastify** |
+
+**Común a todos los proyectos frontend:**
+- TypeScript (strict), Tailwind CSS v4 (CSS variables native)
+- Dual theme desde día 0 — ver Pillar 1 y `theming.md` para la variante correcta según framework
+- `@base-ui-components/react` para primitivos headless (o Radix UI)
+- `class-variance-authority` + `tailwind-merge` + `clsx`
+- `lucide-react` para íconos (una sola librería, budget estricto)
+- Framer Motion solo cuando un componente lo necesita explícitamente
+- **`pnpm` como package manager** — nunca `npm`/`yarn` en proyectos nuevos
+
+**Antes de elegir Next.js:** ¿nginx + bundle estático alcanza? Next.js con Turbopack ya es más liviano que antes, pero sigue siendo más pesado que Vite/Astro. Justificarlo cuando lo elegís.
 
 ---
 

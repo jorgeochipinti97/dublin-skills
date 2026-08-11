@@ -257,3 +257,4 @@ Example:
 - `references/page-anatomy.md` — anatomy of Home / About / Services / Cases / Team / Careers / Contact / Press / Blog / Legal pages (load when designing specific pages)
 - `references/trust-authority.md` — how institutional sites build credibility, proof placement, social proof that works at the brand level (load when mapping proof to sections)
 - `references/org-types.md` — playbooks per org type: B2B SaaS, agency, law firm, VC, enterprise, nonprofit, personal brand, startup, government, professional services (load to find the specific playbook)
+- `references/content-strategy.md` — pillar/cluster model, topical authority, editorial calendar, SEO content strategy, case study cadence, newsletter strategy, content audit methodology (load when the user needs a content plan for the site, not just the site architecture)

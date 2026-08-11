@@ -124,6 +124,14 @@ See `references/observability.md` for OpenTelemetry setup, Pino config, Prom met
 
 ## Framework-Specific Notes
 
+**VPS-first / lightweight-first:** las apps Dublin se deployan en VPS por default. Elegir el framework más liviano que cumpla el requerimiento — Hono o Fastify por default, NestJS solo para enterprise con DI/módulos complejos, Express solo legacy. `pnpm` siempre; considerar Bun como runtime (más rápido que Node para APIs y scripts).
+
+### Hono
+- Ultra-liviano, edge-compatible — corre en Node/Bun/Deno y en runtimes edge (Cloudflare Workers, Vercel Edge)
+- Default para APIs nuevas livianas; menor footprint y arranque más rápido que NestJS/Express
+- `hono/compress`, middleware de cache y rate-limit propios o vía adaptadores; usa `c.json()` con serialización eficiente
+- Combina bien con Bun como runtime para máximo throughput
+
 ### NestJS
 - Interceptors for timing/metrics (don't scatter `performance.now()` in services)
 - Use `@CacheInterceptor` + Redis store, or do it yourself with a `CacheService`

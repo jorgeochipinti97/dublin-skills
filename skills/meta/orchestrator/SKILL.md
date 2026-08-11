@@ -49,6 +49,8 @@ Then assign **opportunity cost** — rough token cost of invoking the skill:
 
 **Decision:** include only skills where `relevance × benefit > cost`. Borderline skills → mention as "optional" in the plan.
 
+**YAGNI filter (always apply, especially on existing projects)**: before including a skill, ask "Is this needed TODAY for the current deliverable to work?" If the answer is "we'll need it eventually" or "it's good practice" — score it 0 and move it to the Deferred section. Only skills that directly unblock the current ONE THING are included in the active plan. This filter is the primary defense against scope creep at the planning stage.
+
 ### Step 3 — Resolve Dependencies
 
 Skills have ordering dependencies. Respect them strictly.
@@ -98,9 +100,13 @@ Output format:
 ```markdown
 ## Plan — {task summary}
 
+### ONE THING
+> {One sentence: the single deliverable this session produces. If it doesn't fit in one sentence, split the session.}
+
 ### Context analysis
 - Goal: {1-line goal}
-- Inferred scope: {key artifacts}
+- Project state: {new / existing — what's already built}
+- Inferred scope: {key artifacts for THIS session only}
 - Red flags / ambiguities: {what's unclear, what to confirm before starting}
 
 ### Selected skills (ranked)
@@ -110,7 +116,14 @@ Output format:
 | 1 | frontend-foundation | Foundation | 9/10 | Must precede any UI work |
 | 2 | ...
 
-### Skipped (and why)
+### Deferred (YAGNI — not needed for this ONE THING)
+
+| Skill | When it becomes relevant |
+|---|---|
+| testing-strategy | After skeleton is running |
+| ...
+
+### Skipped (not applicable)
 
 | Skill | Reason skipped |
 |---|---|
@@ -119,10 +132,13 @@ Output format:
 
 ### Execution order
 
-**Phase 1 — Foundation**
-1. frontend-foundation — set up theme, spacing, component system
+**First output: Walking Skeleton**
+The first artifact produced must be runnable code, even if incomplete or ugly.
+No design doc, no spec, no architecture diagram as a first step — working code first.
 
-**Phase 2 — ...**
+**Phase 1 — ...**
+1. {skill} — {what it produces}
+
 ...
 
 ### Open questions before execution
@@ -134,7 +150,10 @@ Output format:
 - Skills in play: N
 - Phases: N
 - Rough complexity: S / M / L / XL
+- Planning timebox: 20 min max — if this discussion runs longer, skip to skeleton
 ```
+
+**Exit condition**: this plan is ONE gate. User approves → next step is code, not another planning artifact. The plan is a guide, not a deliverable.
 
 ### Step 6 — (Optional) Create TaskList
 
@@ -162,6 +181,29 @@ User provides their own order. Orchestrator:
 User says: "what's missing in this repo?"
 
 → Orchestrator reads the repo, maps it against the installed skill library, and reports gaps ("no error handling layer visible — consider invoking `error-handling`").
+
+### Mode D — Existing project (adapt, don't redesign)
+
+User is working on a project with existing code, SESSION.md, or TASKS.md in progress.
+
+1. **Read first**: `SESSION.md` (## Doing + ## Next) + `TASKS.md` (## Doing + ## Backlog)
+2. **Scan structure**: `fd --max-depth=2 --type f` to map what's already built
+3. **Map the gap**: identify what exists vs. what the current task requires
+4. **Scope to the delta**: only include skills for the part NOT yet built — don't re-plan the whole product
+
+Output includes a "What exists" block BEFORE the selected skills table:
+
+```markdown
+### What exists
+- Auth: ✅ done (Better-Auth, httpOnly sessions)
+- API layer: ✅ done (Hono, /api/*)
+- Frontend foundation: 🟡 in progress (theme done, component system pending)
+- Checkout: ❌ not started → current task scope
+```
+
+Skills are then scoped ONLY to the gap. Anything already built = skip its foundational skills. Never suggest re-running `frontend-foundation` if theming is done; pick up from where it left off.
+
+**Key rule**: an existing project's walking skeleton already runs. The first output is whatever closes the gap identified above — not a new skeleton from scratch.
 
 ## Scoring Heuristics (quick lookup)
 

@@ -74,9 +74,50 @@ NEVER suggest *"seguimos mañana"*, *"continue tomorrow"*, *"let's pause here"*,
 
 When Dublin Skills are detected, NEVER execute domain work inline. ALWAYS invoke the matching skill via the `Skill` tool. Your role as lead: rank, order, gate, summarize. You do NOT write domain code, specs, designs, reviews, or audits — the skills do that.
 
+## Skeleton-First Rule + Planning Timebox
+
+**Planning cap: 20 minutes.** If no code has been written after 20 minutes of planning, STOP. Write the walking skeleton NOW. Skills, architecture, and perfection come after it runs.
+
+**Walking skeleton first**: the smallest thing that runs end-to-end (even if ugly). No component systems, no abstractions, no DDD, no perfect folder structure. It runs → then you refine.
+
+**YAGNI gate before every skill or design decision**: "Do I need this TODAY for the skeleton to work?" No → defer it. Skills are review gates AFTER code exists, not requirement generators BEFORE.
+
+**One sentence scope**: Before invoking any skill or starting any flow, articulate the ONE THING we're doing in this session. If it doesn't fit in one sentence, the scope is too large — cut it.
+
+**Violation signals — STOP if you notice:**
+- Planning loop has run > 2 exchanges without any code
+- More than 1 skill is being invoked before a skeleton exists
+- The current task description grew from 1 sentence to 1 paragraph
+- A skill is recommending work that isn't needed for TODAY's deliverable
+
 ---
 
-# MODE DETECTION (do this first)
+# SCAN PHASE (always first, before mode detection)
+
+On the first message about ANY project task, before doing anything else:
+
+1. Check for `SESSION.md` / `session.md` at project root → if exists, read it (focus on `## Doing` and `## Next`)
+2. Check for `TASKS.md` → read `## Doing` and top of `## Backlog`
+3. Run `fd --max-depth=2 --type f` or `eza --tree --level=2` to map what exists
+4. Determine: **new project** or **existing project with in-progress work**?
+
+**New project** → proceed to mode detection → orchestrator → skeleton.
+
+**Existing project** → announce what's already built + what's in progress + the nearest ONE THING to do next. Adapt the plan to what exists; do NOT redesign from scratch.
+
+Emit one short block before proceeding:
+```
+Estado: [nuevo / existente]
+Ya construido: [bullet list from SESSION.md / code scan]
+En progreso: [from ## Doing]
+Siguiente ONE THING: [one sentence — the smallest step that moves this forward]
+```
+
+Skip SCAN only when: the user is asking a conceptual/explanatory question, or the session has already established project context in this conversation.
+
+---
+
+# MODE DETECTION (do this after SCAN)
 
 On the first substantive message, check the current project for a Dublin Skills library:
 
@@ -134,12 +175,14 @@ If the user asks for a downstream skill without the foundation, say so and offer
 
 | Gate | Policy |
 |---|---|
-| Before first skill launches | ALWAYS — show plan, ask OK |
+| Before first skill launches | ALWAYS — show plan + ONE THING, ask OK |
 | Between skills (non-ff) | ALWAYS — show summary, ask continue |
 | `/sdd-ff` batched phases | ONE gate at the end |
 | Destructive (migrations, refactors > 10 files, deletes, prod writes) | ALWAYS — and invoke `change-safety` first |
 | Additive | Skip unless user asked for manual mode |
 | User said "auto-approve" | Skip intermediate, only stop on failure or destructive |
+
+**Exit condition after approval**: once the user approves a plan, the NEXT step is always CODE — not another planning artifact. If any skill would emit only a design doc without a skeleton implementation, flag it and push for the skeleton first.
 
 ---
 
