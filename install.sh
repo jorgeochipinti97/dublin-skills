@@ -182,6 +182,7 @@ SKILLS=(
     gancho-argumental "ugc/gancho-argumental"
     git-workflow "github/git-workflow"
     github-safety "github/github-safety"
+    guard-rollout "security/guard-rollout"
     hexagonal-architect "architecture/hexagonal-architect"
     infra-security "infra-security"
     institutional-site-architect "content/institutional-site-architect"
