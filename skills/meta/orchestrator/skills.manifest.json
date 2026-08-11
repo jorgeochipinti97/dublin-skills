@@ -1,16 +1,30 @@
 {
-  "version": "1.5.0",
-  "updated": "2026-08-10",
+  "version": "1.6.0",
+  "updated": "2026-08-11",
   "description": "Machine-readable index of all skills in this repository. Used by the orchestrator skill (and dublin-agent) to plan without parsing every SKILL.md. Keep in sync when adding/modifying skills.",
   "skills": [
     {
       "name": "systems-thinking",
       "path": "discovery/systems-thinking",
       "category": "discovery",
-      "tags": ["analysis", "feedback-loops", "leverage-points", "stocks-flows"],
-      "triggers": ["system", "complex domain", "feedback loop", "root cause", "stakeholder map"],
+      "tags": [
+        "analysis",
+        "feedback-loops",
+        "leverage-points",
+        "stocks-flows"
+      ],
+      "triggers": [
+        "system",
+        "complex domain",
+        "feedback loop",
+        "root cause",
+        "stakeholder map"
+      ],
       "depends_on": [],
-      "unlocks": ["product-planner", "domain-modeler"],
+      "unlocks": [
+        "product-planner",
+        "domain-modeler"
+      ],
       "cost": "low",
       "value": "high-when-complex"
     },
@@ -18,10 +32,27 @@
       "name": "product-planner",
       "path": "product/product-planner",
       "category": "product",
-      "tags": ["prd", "mvp", "user-stories", "scoping"],
-      "triggers": ["prd", "mvp", "user story", "scope", "new product", "feature plan"],
+      "tags": [
+        "prd",
+        "mvp",
+        "user-stories",
+        "scoping"
+      ],
+      "triggers": [
+        "prd",
+        "mvp",
+        "user story",
+        "scope",
+        "new product",
+        "feature plan"
+      ],
       "depends_on": [],
-      "unlocks": ["domain-modeler", "database-architect", "auth-architect", "product-ux-advisor"],
+      "unlocks": [
+        "domain-modeler",
+        "database-architect",
+        "auth-architect",
+        "product-ux-advisor"
+      ],
       "cost": "low",
       "value": "very-high"
     },
@@ -29,10 +60,32 @@
       "name": "product-ux-advisor",
       "path": "product/product-ux-advisor",
       "category": "product",
-      "tags": ["ux-audit", "patterns", "onboarding", "wizards", "ecommerce", "empty-states"],
-      "triggers": ["ux", "missing pattern", "onboarding", "wizard", "activation", "empty state", "checkout", "pdp"],
-      "depends_on": ["product-planner"],
-      "unlocks": ["premium-frontend-design", "forms-and-validation", "product-tour"],
+      "tags": [
+        "ux-audit",
+        "patterns",
+        "onboarding",
+        "wizards",
+        "ecommerce",
+        "empty-states"
+      ],
+      "triggers": [
+        "ux",
+        "missing pattern",
+        "onboarding",
+        "wizard",
+        "activation",
+        "empty state",
+        "checkout",
+        "pdp"
+      ],
+      "depends_on": [
+        "product-planner"
+      ],
+      "unlocks": [
+        "premium-frontend-design",
+        "forms-and-validation",
+        "product-tour"
+      ],
       "cost": "medium",
       "value": "high"
     },
@@ -40,10 +93,28 @@
       "name": "domain-modeler",
       "path": "architecture/domain-modeler",
       "category": "architecture",
-      "tags": ["ddd", "entities", "value-objects", "aggregates", "domain-events"],
-      "triggers": ["domain model", "ddd", "aggregate", "entity", "value object", "bounded context"],
-      "depends_on": ["product-planner"],
-      "unlocks": ["hexagonal-architect", "database-architect"],
+      "tags": [
+        "ddd",
+        "entities",
+        "value-objects",
+        "aggregates",
+        "domain-events"
+      ],
+      "triggers": [
+        "domain model",
+        "ddd",
+        "aggregate",
+        "entity",
+        "value object",
+        "bounded context"
+      ],
+      "depends_on": [
+        "product-planner"
+      ],
+      "unlocks": [
+        "hexagonal-architect",
+        "database-architect"
+      ],
       "cost": "low",
       "value": "very-high-non-crud"
     },
@@ -51,10 +122,27 @@
       "name": "hexagonal-architect",
       "path": "architecture/hexagonal-architect",
       "category": "architecture",
-      "tags": ["nestjs", "ports-adapters", "clean-architecture", "layering"],
-      "triggers": ["nestjs", "hexagonal", "ports and adapters", "clean architecture", "backend structure"],
-      "depends_on": ["domain-modeler"],
-      "unlocks": ["api-architect", "testing-strategy", "backend-performance"],
+      "tags": [
+        "nestjs",
+        "ports-adapters",
+        "clean-architecture",
+        "layering"
+      ],
+      "triggers": [
+        "nestjs",
+        "hexagonal",
+        "ports and adapters",
+        "clean architecture",
+        "backend structure"
+      ],
+      "depends_on": [
+        "domain-modeler"
+      ],
+      "unlocks": [
+        "api-architect",
+        "testing-strategy",
+        "backend-performance"
+      ],
       "cost": "low",
       "value": "high"
     },
@@ -62,10 +150,30 @@
       "name": "api-architect",
       "path": "architecture/api-architect",
       "category": "architecture",
-      "tags": ["rest", "graphql", "grpc", "api-design", "security", "scalability", "observability"],
-      "triggers": ["api design", "rest", "graphql", "grpc", "endpoint", "versioning", "rate limit"],
-      "depends_on": ["hexagonal-architect"],
-      "unlocks": ["backend-performance"],
+      "tags": [
+        "rest",
+        "graphql",
+        "grpc",
+        "api-design",
+        "security",
+        "scalability",
+        "observability"
+      ],
+      "triggers": [
+        "api design",
+        "rest",
+        "graphql",
+        "grpc",
+        "endpoint",
+        "versioning",
+        "rate limit"
+      ],
+      "depends_on": [
+        "hexagonal-architect"
+      ],
+      "unlocks": [
+        "backend-performance"
+      ],
       "cost": "medium",
       "value": "high"
     },
@@ -73,10 +181,35 @@
       "name": "database-architect",
       "path": "data/database-architect",
       "category": "data",
-      "tags": ["postgres", "schema", "migrations", "indexes", "prisma", "drizzle", "rls", "multi-tenant"],
-      "triggers": ["database", "schema", "migration", "postgres", "prisma", "drizzle", "index", "n+1", "multi-tenant"],
-      "depends_on": ["domain-modeler"],
-      "unlocks": ["hexagonal-architect", "auth-architect", "backend-performance"],
+      "tags": [
+        "postgres",
+        "schema",
+        "migrations",
+        "indexes",
+        "prisma",
+        "drizzle",
+        "rls",
+        "multi-tenant"
+      ],
+      "triggers": [
+        "database",
+        "schema",
+        "migration",
+        "postgres",
+        "prisma",
+        "drizzle",
+        "index",
+        "n+1",
+        "multi-tenant"
+      ],
+      "depends_on": [
+        "domain-modeler"
+      ],
+      "unlocks": [
+        "hexagonal-architect",
+        "auth-architect",
+        "backend-performance"
+      ],
       "cost": "medium",
       "value": "very-high"
     },
@@ -84,10 +217,35 @@
       "name": "auth-architect",
       "path": "security/auth-architect",
       "category": "security",
-      "tags": ["authentication", "authorization", "oauth", "jwt", "sessions", "rbac", "abac", "passkeys"],
-      "triggers": ["auth", "login", "signup", "oauth", "jwt", "session", "rbac", "permissions", "passkey", "sso"],
-      "depends_on": ["database-architect"],
-      "unlocks": ["forms-and-validation", "backend-performance"],
+      "tags": [
+        "authentication",
+        "authorization",
+        "oauth",
+        "jwt",
+        "sessions",
+        "rbac",
+        "abac",
+        "passkeys"
+      ],
+      "triggers": [
+        "auth",
+        "login",
+        "signup",
+        "oauth",
+        "jwt",
+        "session",
+        "rbac",
+        "permissions",
+        "passkey",
+        "sso"
+      ],
+      "depends_on": [
+        "database-architect"
+      ],
+      "unlocks": [
+        "forms-and-validation",
+        "backend-performance"
+      ],
       "cost": "medium",
       "value": "very-high"
     },
@@ -95,10 +253,29 @@
       "name": "error-handling",
       "path": "implementation/error-handling",
       "category": "implementation",
-      "tags": ["errors", "logging", "problem-details", "error-boundary", "resilience", "retry"],
-      "triggers": ["error", "exception", "error handling", "logging", "problem details", "error boundary", "retry", "circuit breaker"],
+      "tags": [
+        "errors",
+        "logging",
+        "problem-details",
+        "error-boundary",
+        "resilience",
+        "retry"
+      ],
+      "triggers": [
+        "error",
+        "exception",
+        "error handling",
+        "logging",
+        "problem details",
+        "error boundary",
+        "retry",
+        "circuit breaker"
+      ],
       "depends_on": [],
-      "unlocks": ["forms-and-validation", "api-architect"],
+      "unlocks": [
+        "forms-and-validation",
+        "api-architect"
+      ],
       "cost": "medium",
       "value": "high"
     },
@@ -106,8 +283,26 @@
       "name": "testing-strategy",
       "path": "implementation/testing-strategy",
       "category": "implementation",
-      "tags": ["testing", "pyramid", "unit", "integration", "e2e", "playwright", "vitest", "contract"],
-      "triggers": ["test", "testing strategy", "pyramid", "unit test", "integration test", "e2e", "playwright", "contract test"],
+      "tags": [
+        "testing",
+        "pyramid",
+        "unit",
+        "integration",
+        "e2e",
+        "playwright",
+        "vitest",
+        "contract"
+      ],
+      "triggers": [
+        "test",
+        "testing strategy",
+        "pyramid",
+        "unit test",
+        "integration test",
+        "e2e",
+        "playwright",
+        "contract test"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "medium",
@@ -117,8 +312,27 @@
       "name": "sdd-workflow",
       "path": "methodology/sdd-workflow",
       "category": "methodology",
-      "tags": ["sdd", "spec-driven-development", "orchestration", "engram", "openspec", "planning"],
-      "triggers": ["sdd init", "sdd new", "sdd ff", "fast forward", "sdd apply", "sdd verify", "sdd archive", "iniciar sdd", "nuevo cambio", "proposal", "spec-driven"],
+      "tags": [
+        "sdd",
+        "spec-driven-development",
+        "orchestration",
+        "engram",
+        "openspec",
+        "planning"
+      ],
+      "triggers": [
+        "sdd init",
+        "sdd new",
+        "sdd ff",
+        "fast forward",
+        "sdd apply",
+        "sdd verify",
+        "sdd archive",
+        "iniciar sdd",
+        "nuevo cambio",
+        "proposal",
+        "spec-driven"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "low",
@@ -128,8 +342,18 @@
       "name": "tdd-workflow",
       "path": "implementation/tdd-workflow",
       "category": "implementation",
-      "tags": ["tdd", "red-green-refactor", "aaa", "test-doubles"],
-      "triggers": ["tdd", "red green refactor", "test first", "aaa pattern"],
+      "tags": [
+        "tdd",
+        "red-green-refactor",
+        "aaa",
+        "test-doubles"
+      ],
+      "triggers": [
+        "tdd",
+        "red green refactor",
+        "test first",
+        "aaa pattern"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "low",
@@ -139,10 +363,46 @@
       "name": "frontend-foundation",
       "path": "frontend/frontend-foundation",
       "category": "frontend",
-      "tags": ["design-tokens", "theming", "dark-mode", "light-mode", "spacing", "layout-primitives", "component-system", "base-ui", "radix", "mobile-first", "cls", "icon-budget", "design-contract"],
-      "triggers": ["new frontend", "design tokens", "dark mode", "theme", "spacing", "component system", "base ui", "radix", "mobile first", "responsive", "layout shift", "cls", "icon budget", "design.md"],
+      "tags": [
+        "design-tokens",
+        "theming",
+        "dark-mode",
+        "light-mode",
+        "spacing",
+        "layout-primitives",
+        "component-system",
+        "base-ui",
+        "radix",
+        "mobile-first",
+        "cls",
+        "icon-budget",
+        "design-contract"
+      ],
+      "triggers": [
+        "new frontend",
+        "design tokens",
+        "dark mode",
+        "theme",
+        "spacing",
+        "component system",
+        "base ui",
+        "radix",
+        "mobile first",
+        "responsive",
+        "layout shift",
+        "cls",
+        "icon budget",
+        "design.md"
+      ],
       "depends_on": [],
-      "unlocks": ["premium-frontend-design", "forms-and-validation", "product-tour", "landing-page-architect", "react-performance", "frontend-output-validator"],
+      "unlocks": [
+        "premium-frontend-design",
+        "forms-and-validation",
+        "product-tour",
+        "landing-page-architect",
+        "react-performance",
+        "frontend-output-validator"
+      ],
       "cost": "medium",
       "value": "very-high"
     },
@@ -150,10 +410,52 @@
       "name": "mobile-design",
       "path": "frontend/mobile-design",
       "category": "frontend",
-      "tags": ["frontend", "mobile", "responsive", "ux", "bottom-sheet", "fab", "thumb-zone", "touch-target", "overflow", "safe-area", "ios", "android"],
-      "triggers": ["mobile", "responsive", "se sale de pantalla", "no se ve bien en celular", "horizontal scroll", "scroll horizontal", "mobile ux", "shrunk desktop", "mobile afterthought", "bottom sheet", "fab", "tab bar", "swipe action", "pull to refresh", "sticky cta", "thumb zone", "touch target", "tap target", "ios auto-zoom", "viewport meta", "safe area", "notch", "100dvh"],
-      "depends_on": ["frontend-foundation"],
-      "unlocks": ["premium-frontend-design", "frontend-output-validator"],
+      "tags": [
+        "frontend",
+        "mobile",
+        "responsive",
+        "ux",
+        "bottom-sheet",
+        "fab",
+        "thumb-zone",
+        "touch-target",
+        "overflow",
+        "safe-area",
+        "ios",
+        "android"
+      ],
+      "triggers": [
+        "mobile",
+        "responsive",
+        "se sale de pantalla",
+        "no se ve bien en celular",
+        "horizontal scroll",
+        "scroll horizontal",
+        "mobile ux",
+        "shrunk desktop",
+        "mobile afterthought",
+        "bottom sheet",
+        "fab",
+        "tab bar",
+        "swipe action",
+        "pull to refresh",
+        "sticky cta",
+        "thumb zone",
+        "touch target",
+        "tap target",
+        "ios auto-zoom",
+        "viewport meta",
+        "safe area",
+        "notch",
+        "100dvh"
+      ],
+      "depends_on": [
+        "frontend-foundation"
+      ],
+      "unlocks": [
+        "premium-frontend-design",
+        "frontend-output-validator"
+      ],
       "cost": "low",
       "value": "high"
     },
@@ -161,10 +463,66 @@
       "name": "mobile-app-foundation",
       "path": "mobile/mobile-app-foundation",
       "category": "mobile",
-      "tags": ["mobile", "native", "cross-platform", "multiplataforma", "react-native", "react-native-web", "expo", "expo-router", "nativewind", "eas", "app-store", "play-store", "offline", "flashlist", "ota", "ios", "android", "web"],
-      "triggers": ["app mobile", "app nativa", "multiplataforma", "cross-platform", "una sola base de código", "aplicación para celular", "quiero hacer una app", "react native", "react native web", "expo", "expo-router", "eas build", "app store", "play store", "testflight", "apk", "aab", "boilerplate mobile", "nunca hice mobile", "dev build", "expo go", "probar en el celular", "ota", "expo-updates", "export web", "web brain", "scrollview graveyard", "notch blind", "store surprise", "offline amnesia", "one-target tell"],
+      "tags": [
+        "mobile",
+        "native",
+        "cross-platform",
+        "multiplataforma",
+        "react-native",
+        "react-native-web",
+        "expo",
+        "expo-router",
+        "nativewind",
+        "eas",
+        "app-store",
+        "play-store",
+        "offline",
+        "flashlist",
+        "ota",
+        "ios",
+        "android",
+        "web"
+      ],
+      "triggers": [
+        "app mobile",
+        "app nativa",
+        "multiplataforma",
+        "cross-platform",
+        "una sola base de código",
+        "aplicación para celular",
+        "quiero hacer una app",
+        "react native",
+        "react native web",
+        "expo",
+        "expo-router",
+        "eas build",
+        "app store",
+        "play store",
+        "testflight",
+        "apk",
+        "aab",
+        "boilerplate mobile",
+        "nunca hice mobile",
+        "dev build",
+        "expo go",
+        "probar en el celular",
+        "ota",
+        "expo-updates",
+        "export web",
+        "web brain",
+        "scrollview graveyard",
+        "notch blind",
+        "store surprise",
+        "offline amnesia",
+        "one-target tell"
+      ],
       "depends_on": [],
-      "unlocks": ["mobile-design", "forms-and-validation", "auth-architect", "change-safety"],
+      "unlocks": [
+        "mobile-design",
+        "forms-and-validation",
+        "auth-architect",
+        "change-safety"
+      ],
       "cost": "medium",
       "value": "very-high"
     },
@@ -172,10 +530,34 @@
       "name": "premium-frontend-design",
       "path": "frontend/premium-frontend-design",
       "category": "frontend",
-      "tags": ["aesthetics", "glass", "gradients", "motion", "framer-motion", "typography", "ai-tells", "icon-soup", "mobile-afterthought"],
-      "triggers": ["premium ui", "apple-quality", "framer", "glass morphism", "luxury design", "polish", "icon soup", "ai tells"],
-      "depends_on": ["frontend-foundation"],
-      "unlocks": ["react-performance", "frontend-output-validator"],
+      "tags": [
+        "aesthetics",
+        "glass",
+        "gradients",
+        "motion",
+        "framer-motion",
+        "typography",
+        "ai-tells",
+        "icon-soup",
+        "mobile-afterthought"
+      ],
+      "triggers": [
+        "premium ui",
+        "apple-quality",
+        "framer",
+        "glass morphism",
+        "luxury design",
+        "polish",
+        "icon soup",
+        "ai tells"
+      ],
+      "depends_on": [
+        "frontend-foundation"
+      ],
+      "unlocks": [
+        "react-performance",
+        "frontend-output-validator"
+      ],
       "cost": "medium",
       "value": "medium"
     },
@@ -183,10 +565,29 @@
       "name": "forms-and-validation",
       "path": "frontend/forms-and-validation",
       "category": "frontend",
-      "tags": ["react-hook-form", "zod", "validation", "multi-step", "file-upload", "server-actions"],
-      "triggers": ["form", "validation", "zod", "react hook form", "wizard", "multi-step", "upload"],
-      "depends_on": ["frontend-foundation"],
-      "unlocks": ["react-performance"],
+      "tags": [
+        "react-hook-form",
+        "zod",
+        "validation",
+        "multi-step",
+        "file-upload",
+        "server-actions"
+      ],
+      "triggers": [
+        "form",
+        "validation",
+        "zod",
+        "react hook form",
+        "wizard",
+        "multi-step",
+        "upload"
+      ],
+      "depends_on": [
+        "frontend-foundation"
+      ],
+      "unlocks": [
+        "react-performance"
+      ],
       "cost": "medium",
       "value": "high"
     },
@@ -194,10 +595,27 @@
       "name": "product-tour",
       "path": "frontend/product-tour",
       "category": "frontend",
-      "tags": ["onboarding", "walkthrough", "driver-js", "nextstep", "activation"],
-      "triggers": ["product tour", "onboarding", "walkthrough", "activation checklist", "welcome modal", "driver.js"],
-      "depends_on": ["frontend-foundation"],
-      "unlocks": ["react-performance"],
+      "tags": [
+        "onboarding",
+        "walkthrough",
+        "driver-js",
+        "nextstep",
+        "activation"
+      ],
+      "triggers": [
+        "product tour",
+        "onboarding",
+        "walkthrough",
+        "activation checklist",
+        "welcome modal",
+        "driver.js"
+      ],
+      "depends_on": [
+        "frontend-foundation"
+      ],
+      "unlocks": [
+        "react-performance"
+      ],
       "cost": "low",
       "value": "medium"
     },
@@ -205,49 +623,165 @@
       "name": "react-performance",
       "path": "frontend/react-performance",
       "category": "frontend",
-      "tags": ["performance", "useeffect", "rsc", "memoization", "bundle", "core-web-vitals"],
-      "triggers": ["performance", "useeffect", "server component", "bundle size", "render", "core web vitals", "post-frontend review", "react audit", "perf audit"],
+      "tags": [
+        "performance",
+        "useeffect",
+        "rsc",
+        "memoization",
+        "bundle",
+        "core-web-vitals"
+      ],
+      "triggers": [
+        "performance",
+        "useeffect",
+        "server component",
+        "bundle size",
+        "render",
+        "core web vitals",
+        "post-frontend review",
+        "react audit",
+        "perf audit"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "medium",
       "value": "high-post-mvp",
-      "auto_invoke_after": ["frontend-foundation", "premium-frontend-design", "forms-and-validation", "product-tour", "landing-page-architect"],
-      "auto_invoke_conditions": ["new React components created", "useEffect used", "lists or render loops", "data fetching / async work", "more than 2 components touched"]
+      "auto_invoke_after": [
+        "frontend-foundation",
+        "premium-frontend-design",
+        "forms-and-validation",
+        "product-tour",
+        "landing-page-architect"
+      ],
+      "auto_invoke_conditions": [
+        "new React components created",
+        "useEffect used",
+        "lists or render loops",
+        "data fetching / async work",
+        "more than 2 components touched"
+      ]
     },
     {
       "name": "frontend-output-validator",
       "path": "frontend/frontend-output-validator",
       "category": "frontend",
-      "tags": ["review-gate", "design-contract", "validation", "wcag", "contrast", "cls", "icon-budget", "mobile-first", "ai-tells", "lighthouse"],
-      "triggers": ["frontend audit", "design audit", "validate ui", "icon count", "contrast check", "cls audit", "mobile audit", "design.md compliance", "ai tells review"],
+      "tags": [
+        "review-gate",
+        "design-contract",
+        "validation",
+        "wcag",
+        "contrast",
+        "cls",
+        "icon-budget",
+        "mobile-first",
+        "ai-tells",
+        "lighthouse"
+      ],
+      "triggers": [
+        "frontend audit",
+        "design audit",
+        "validate ui",
+        "icon count",
+        "contrast check",
+        "cls audit",
+        "mobile audit",
+        "design.md compliance",
+        "ai tells review"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "low",
       "value": "very-high-post-implementation",
-      "auto_invoke_after": ["frontend-foundation", "premium-frontend-design", "forms-and-validation", "product-tour", "landing-page-architect"],
-      "auto_invoke_conditions": ["new components or layouts", "new images / videos / iframes / fonts / icons", "more than 1 component touched", "hover/focus/active states modified"]
+      "auto_invoke_after": [
+        "frontend-foundation",
+        "premium-frontend-design",
+        "forms-and-validation",
+        "product-tour",
+        "landing-page-architect"
+      ],
+      "auto_invoke_conditions": [
+        "new components or layouts",
+        "new images / videos / iframes / fonts / icons",
+        "more than 1 component touched",
+        "hover/focus/active states modified"
+      ]
     },
     {
       "name": "backend-performance",
       "path": "backend/backend-performance",
       "category": "backend",
-      "tags": ["performance", "n+1", "queries", "caching", "redis", "async", "event-loop", "observability", "tracing", "opentelemetry", "node"],
-      "triggers": ["backend performance", "n+1", "slow query", "slow endpoint", "cache", "redis", "event loop", "blocking", "tracing", "opentelemetry", "latency", "p95", "p99", "post-backend review", "backend audit", "perf audit"],
+      "tags": [
+        "performance",
+        "n+1",
+        "queries",
+        "caching",
+        "redis",
+        "async",
+        "event-loop",
+        "observability",
+        "tracing",
+        "opentelemetry",
+        "node"
+      ],
+      "triggers": [
+        "backend performance",
+        "n+1",
+        "slow query",
+        "slow endpoint",
+        "cache",
+        "redis",
+        "event loop",
+        "blocking",
+        "tracing",
+        "opentelemetry",
+        "latency",
+        "p95",
+        "p99",
+        "post-backend review",
+        "backend audit",
+        "perf audit"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "medium",
       "value": "high-post-mvp",
-      "auto_invoke_after": ["api-architect", "hexagonal-architect", "database-architect", "auth-architect"],
-      "auto_invoke_conditions": ["new endpoint or handler created", "new DB query introduced", "async / I/O work added", "loop over collection with awaits", "payload larger than ~1MB", "more than 2 backend files touched"]
+      "auto_invoke_after": [
+        "api-architect",
+        "hexagonal-architect",
+        "database-architect",
+        "auth-architect"
+      ],
+      "auto_invoke_conditions": [
+        "new endpoint or handler created",
+        "new DB query introduced",
+        "async / I/O work added",
+        "loop over collection with awaits",
+        "payload larger than ~1MB",
+        "more than 2 backend files touched"
+      ]
     },
     {
       "name": "landing-page-architect",
       "path": "content/landing-page-architect",
       "category": "content",
-      "tags": ["landing-page", "conversion", "copywriting", "cta"],
-      "triggers": ["landing page", "conversion", "hero", "cta", "marketing page"],
+      "tags": [
+        "landing-page",
+        "conversion",
+        "copywriting",
+        "cta"
+      ],
+      "triggers": [
+        "landing page",
+        "conversion",
+        "hero",
+        "cta",
+        "marketing page"
+      ],
       "depends_on": [],
-      "unlocks": ["premium-frontend-design", "react-performance"],
+      "unlocks": [
+        "premium-frontend-design",
+        "react-performance"
+      ],
       "cost": "low",
       "value": "high-when-needed"
     },
@@ -255,8 +789,21 @@
       "name": "institutional-site-architect",
       "path": "content/institutional-site-architect",
       "category": "content",
-      "tags": ["institutional", "corporate-site", "sitemap", "information-architecture", "brand-voice"],
-      "triggers": ["institutional site", "corporate site", "b2b saas website", "agency site", "law firm", "multi-page"],
+      "tags": [
+        "institutional",
+        "corporate-site",
+        "sitemap",
+        "information-architecture",
+        "brand-voice"
+      ],
+      "triggers": [
+        "institutional site",
+        "corporate site",
+        "b2b saas website",
+        "agency site",
+        "law firm",
+        "multi-page"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "low",
@@ -266,8 +813,18 @@
       "name": "blog-writer",
       "path": "content/blog-writer",
       "category": "content",
-      "tags": ["blog", "content", "writing", "seo-light"],
-      "triggers": ["blog post", "article", "write content", "content writing"],
+      "tags": [
+        "blog",
+        "content",
+        "writing",
+        "seo-light"
+      ],
+      "triggers": [
+        "blog post",
+        "article",
+        "write content",
+        "content writing"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "low",
@@ -277,9 +834,25 @@
       "name": "data-viz-architect",
       "path": "data/data-viz-architect",
       "category": "data",
-      "tags": ["dashboards", "charts", "data-viz", "kpi", "recharts", "visx"],
-      "triggers": ["dashboard", "chart", "data visualization", "kpi", "metrics", "analytics view"],
-      "depends_on": ["product-planner"],
+      "tags": [
+        "dashboards",
+        "charts",
+        "data-viz",
+        "kpi",
+        "recharts",
+        "visx"
+      ],
+      "triggers": [
+        "dashboard",
+        "chart",
+        "data visualization",
+        "kpi",
+        "metrics",
+        "analytics view"
+      ],
+      "depends_on": [
+        "product-planner"
+      ],
       "unlocks": [],
       "cost": "medium",
       "value": "medium"
@@ -288,8 +861,17 @@
       "name": "remotion-video",
       "path": "media/remotion-video",
       "category": "media",
-      "tags": ["video", "remotion", "programmatic-video"],
-      "triggers": ["remotion", "programmatic video", "react video", "generated video"],
+      "tags": [
+        "video",
+        "remotion",
+        "programmatic-video"
+      ],
+      "triggers": [
+        "remotion",
+        "programmatic video",
+        "react video",
+        "generated video"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "medium",
@@ -299,8 +881,28 @@
       "name": "infra-security",
       "path": "infra-security",
       "category": "infra",
-      "tags": ["aws", "vps", "azure", "docker", "security", "waf", "iam", "cost", "ai-infra"],
-      "triggers": ["aws", "vps", "azure", "docker", "nginx", "security audit", "iam", "waf", "cost optimization"],
+      "tags": [
+        "aws",
+        "vps",
+        "azure",
+        "docker",
+        "security",
+        "waf",
+        "iam",
+        "cost",
+        "ai-infra"
+      ],
+      "triggers": [
+        "aws",
+        "vps",
+        "azure",
+        "docker",
+        "nginx",
+        "security audit",
+        "iam",
+        "waf",
+        "cost optimization"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "high",
@@ -310,10 +912,25 @@
       "name": "github-safety",
       "path": "github/github-safety",
       "category": "github",
-      "tags": ["git", "github", "safety", "force-push", "rebase"],
-      "triggers": ["git", "force push", "rebase", "commit", "branch", "destructive operation"],
+      "tags": [
+        "git",
+        "github",
+        "safety",
+        "force-push",
+        "rebase"
+      ],
+      "triggers": [
+        "git",
+        "force push",
+        "rebase",
+        "commit",
+        "branch",
+        "destructive operation"
+      ],
       "depends_on": [],
-      "unlocks": ["git-workflow"],
+      "unlocks": [
+        "git-workflow"
+      ],
       "cost": "low",
       "value": "very-high-always-on"
     },
@@ -321,8 +938,49 @@
       "name": "git-workflow",
       "path": "github/git-workflow",
       "category": "github",
-      "tags": ["git", "github", "team", "conventional-commits", "commitlint", "husky", "pr-template", "branch-strategy", "code-review", "codeowners", "branch-protection", "rebase", "stacked-prs"],
-      "triggers": ["git workflow", "team workflow", "commit convention", "conventional commits", "commitlint", "husky", "pre-commit", "commit-msg", "pre-push", "pr template", "pull request template", "contributing.md", "branch strategy", "github flow", "trunk based", "branch naming", "branch protection", "codeowners", "merge conflict", "rebase", "force push recovery", "stacked prs", "garbage commit", "frankenstein pr", "eternal branch", "history bomb"],
+      "tags": [
+        "git",
+        "github",
+        "team",
+        "conventional-commits",
+        "commitlint",
+        "husky",
+        "pr-template",
+        "branch-strategy",
+        "code-review",
+        "codeowners",
+        "branch-protection",
+        "rebase",
+        "stacked-prs"
+      ],
+      "triggers": [
+        "git workflow",
+        "team workflow",
+        "commit convention",
+        "conventional commits",
+        "commitlint",
+        "husky",
+        "pre-commit",
+        "commit-msg",
+        "pre-push",
+        "pr template",
+        "pull request template",
+        "contributing.md",
+        "branch strategy",
+        "github flow",
+        "trunk based",
+        "branch naming",
+        "branch protection",
+        "codeowners",
+        "merge conflict",
+        "rebase",
+        "force push recovery",
+        "stacked prs",
+        "garbage commit",
+        "frankenstein pr",
+        "eternal branch",
+        "history bomb"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "low",
@@ -332,20 +990,85 @@
       "name": "change-safety",
       "path": "ops/change-safety",
       "category": "ops",
-      "tags": ["change-management", "rollback", "snapshot", "backup", "runbook", "production-write", "postmortem", "in-flight-transactions"],
-      "triggers": ["alter table", "drop column", "drop table", "truncate", "update without where", "delete without where", "mass update", "deploy to prod", "migration", "shopify catalog", "woocommerce", "store edit", "price change", "inventory bulk", "env rotation", "secret rotation", "dns change", "tls cert", "iam policy", "rollback plan", "production change", "before changing prod"],
+      "tags": [
+        "change-management",
+        "rollback",
+        "snapshot",
+        "backup",
+        "runbook",
+        "production-write",
+        "postmortem",
+        "in-flight-transactions"
+      ],
+      "triggers": [
+        "alter table",
+        "drop column",
+        "drop table",
+        "truncate",
+        "update without where",
+        "delete without where",
+        "mass update",
+        "deploy to prod",
+        "migration",
+        "shopify catalog",
+        "woocommerce",
+        "store edit",
+        "price change",
+        "inventory bulk",
+        "env rotation",
+        "secret rotation",
+        "dns change",
+        "tls cert",
+        "iam policy",
+        "rollback plan",
+        "production change",
+        "before changing prod"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "low",
       "value": "very-high-pre-write",
-      "auto_invoke_on_signal": ["ALTER", "DROP", "TRUNCATE", "RENAME", "UPDATE without WHERE", "DELETE without WHERE", "deploy to prod", "shopify edit", "woocommerce edit", "feature flag flip prod", "env rotation", "dns change", "tls swap", "iam policy change", "security group change"]
+      "auto_invoke_on_signal": [
+        "ALTER",
+        "DROP",
+        "TRUNCATE",
+        "RENAME",
+        "UPDATE without WHERE",
+        "DELETE without WHERE",
+        "deploy to prod",
+        "shopify edit",
+        "woocommerce edit",
+        "feature flag flip prod",
+        "env rotation",
+        "dns change",
+        "tls swap",
+        "iam policy change",
+        "security group change"
+      ]
     },
     {
       "name": "bind-api",
       "path": "bind-api",
       "category": "integration",
-      "tags": ["bind", "argentina", "banking", "open-banking", "cvu", "cbu", "debin", "echeq"],
-      "triggers": ["bind", "cvu", "cbu", "debin", "echeq", "argentine bank", "open banking argentina"],
+      "tags": [
+        "bind",
+        "argentina",
+        "banking",
+        "open-banking",
+        "cvu",
+        "cbu",
+        "debin",
+        "echeq"
+      ],
+      "triggers": [
+        "bind",
+        "cvu",
+        "cbu",
+        "debin",
+        "echeq",
+        "argentine bank",
+        "open banking argentina"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "high",
@@ -355,10 +1078,23 @@
       "name": "brand-identity",
       "path": "brand-identity",
       "category": "brand",
-      "tags": ["brand", "identity", "colors", "typography", "tone"],
-      "triggers": ["brand identity", "brand colors", "brand voice", "brand system"],
+      "tags": [
+        "brand",
+        "identity",
+        "colors",
+        "typography",
+        "tone"
+      ],
+      "triggers": [
+        "brand identity",
+        "brand colors",
+        "brand voice",
+        "brand system"
+      ],
       "depends_on": [],
-      "unlocks": ["premium-frontend-design"],
+      "unlocks": [
+        "premium-frontend-design"
+      ],
       "cost": "low",
       "value": "medium"
     },
@@ -366,8 +1102,13 @@
       "name": "brand-guidelines",
       "path": "brand-guidelines",
       "category": "brand",
-      "tags": ["anthropic-brand"],
-      "triggers": ["anthropic brand", "anthropic colors"],
+      "tags": [
+        "anthropic-brand"
+      ],
+      "triggers": [
+        "anthropic brand",
+        "anthropic colors"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "low",
@@ -377,8 +1118,16 @@
       "name": "skill-creator",
       "path": "skill-creator",
       "category": "meta",
-      "tags": ["skill", "meta", "creation"],
-      "triggers": ["new skill", "create skill", "skill.md"],
+      "tags": [
+        "skill",
+        "meta",
+        "creation"
+      ],
+      "triggers": [
+        "new skill",
+        "create skill",
+        "skill.md"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "low",
@@ -388,8 +1137,20 @@
       "name": "claude-md-keeper",
       "path": "meta/claude-md-keeper",
       "category": "meta",
-      "tags": ["claude-md", "drift-detection", "alignment", "memory", "project-context"],
-      "triggers": ["alinear claude.md", "update claude.md", "check drift", "review claude.md", "promote decisions"],
+      "tags": [
+        "claude-md",
+        "drift-detection",
+        "alignment",
+        "memory",
+        "project-context"
+      ],
+      "triggers": [
+        "alinear claude.md",
+        "update claude.md",
+        "check drift",
+        "review claude.md",
+        "promote decisions"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "low",
@@ -399,10 +1160,25 @@
       "name": "session-bridge",
       "path": "meta/session-bridge",
       "category": "meta",
-      "tags": ["session", "continuity", "memory", "session.md", "context-bridge"],
-      "triggers": ["retomá", "dónde quedamos", "resume session", "cerrá la sesión", "guardá contexto", "archivá"],
+      "tags": [
+        "session",
+        "continuity",
+        "memory",
+        "session.md",
+        "context-bridge"
+      ],
+      "triggers": [
+        "retomá",
+        "dónde quedamos",
+        "resume session",
+        "cerrá la sesión",
+        "guardá contexto",
+        "archivá"
+      ],
       "depends_on": [],
-      "unlocks": ["claude-md-keeper"],
+      "unlocks": [
+        "claude-md-keeper"
+      ],
       "cost": "low",
       "value": "very-high-for-multi-session-work"
     },
@@ -410,8 +1186,20 @@
       "name": "orchestrator",
       "path": "meta/orchestrator",
       "category": "meta",
-      "tags": ["orchestrator", "router", "planner", "supervisor"],
-      "triggers": ["plan", "orchestrate", "which skills", "roadmap", "task breakdown", "plan and execute"],
+      "tags": [
+        "orchestrator",
+        "router",
+        "planner",
+        "supervisor"
+      ],
+      "triggers": [
+        "plan",
+        "orchestrate",
+        "which skills",
+        "roadmap",
+        "task breakdown",
+        "plan and execute"
+      ],
       "depends_on": [],
       "unlocks": [],
       "cost": "low",
@@ -421,10 +1209,35 @@
       "name": "ugc-scriptwriter",
       "path": "ugc/ugc-scriptwriter",
       "category": "ugc",
-      "tags": ["ugc", "scriptwriting", "hooks", "tiktok", "reels", "shorts", "meta-ads", "ad-angles", "avatar-script"],
-      "triggers": ["ugc script", "avatar script", "guion ugc", "guion avatar", "tiktok script", "reels script", "shorts script", "hook variants", "ad hook", "ad angle", "video script"],
+      "tags": [
+        "ugc",
+        "scriptwriting",
+        "hooks",
+        "tiktok",
+        "reels",
+        "shorts",
+        "meta-ads",
+        "ad-angles",
+        "avatar-script"
+      ],
+      "triggers": [
+        "ugc script",
+        "avatar script",
+        "guion ugc",
+        "guion avatar",
+        "tiktok script",
+        "reels script",
+        "shorts script",
+        "hook variants",
+        "ad hook",
+        "ad angle",
+        "video script"
+      ],
       "depends_on": [],
-      "unlocks": ["ai-avatar-director", "ugc-post-production"],
+      "unlocks": [
+        "ai-avatar-director",
+        "ugc-post-production"
+      ],
       "cost": "low",
       "value": "very-high-for-ugc-pipeline"
     },
@@ -432,10 +1245,36 @@
       "name": "ai-avatar-director",
       "path": "ugc/ai-avatar-director",
       "category": "ugc",
-      "tags": ["ugc", "avatar", "casting", "wardrobe", "voice-direction", "heygen", "hedra", "akool", "arcads", "synthesia", "director-brief"],
-      "triggers": ["avatar direction", "director brief", "casting avatar", "heygen brief", "hedra brief", "brief crudo", "wardrobe avatar", "voice direction", "avatar casting"],
-      "depends_on": ["ugc-scriptwriter"],
-      "unlocks": ["ugc-post-production"],
+      "tags": [
+        "ugc",
+        "avatar",
+        "casting",
+        "wardrobe",
+        "voice-direction",
+        "heygen",
+        "hedra",
+        "akool",
+        "arcads",
+        "synthesia",
+        "director-brief"
+      ],
+      "triggers": [
+        "avatar direction",
+        "director brief",
+        "casting avatar",
+        "heygen brief",
+        "hedra brief",
+        "brief crudo",
+        "wardrobe avatar",
+        "voice direction",
+        "avatar casting"
+      ],
+      "depends_on": [
+        "ugc-scriptwriter"
+      ],
+      "unlocks": [
+        "ugc-post-production"
+      ],
       "cost": "low",
       "value": "very-high-for-ugc-pipeline"
     },
@@ -443,9 +1282,33 @@
       "name": "ugc-post-production",
       "path": "ugc/ugc-post-production",
       "category": "ugc",
-      "tags": ["ugc", "edit", "edl", "captions", "b-roll", "visual-hooks", "music", "sfx", "capcut", "premiere", "davinci"],
-      "triggers": ["ugc edit", "edl ugc", "captions ugc", "post production ugc", "edit avatar video", "plan de edicion", "visual hooks", "music sync", "video fx"],
-      "depends_on": ["ai-avatar-director"],
+      "tags": [
+        "ugc",
+        "edit",
+        "edl",
+        "captions",
+        "b-roll",
+        "visual-hooks",
+        "music",
+        "sfx",
+        "capcut",
+        "premiere",
+        "davinci"
+      ],
+      "triggers": [
+        "ugc edit",
+        "edl ugc",
+        "captions ugc",
+        "post production ugc",
+        "edit avatar video",
+        "plan de edicion",
+        "visual hooks",
+        "music sync",
+        "video fx"
+      ],
+      "depends_on": [
+        "ai-avatar-director"
+      ],
       "unlocks": [],
       "cost": "low",
       "value": "very-high-for-ugc-pipeline"
@@ -454,27 +1317,254 @@
       "name": "ugc-video-prompting",
       "path": "ugc/ugc-video-prompting",
       "category": "ugc",
-      "tags": ["ugc", "veo", "veo-3", "seedance", "bytedance", "text-to-video", "image-to-video", "t2v", "i2v", "generative-video", "prompt-engineering", "character-consistency"],
-      "triggers": ["veo", "veo 3", "veo prompt", "seedance", "seedance prompt", "text to video prompt", "image to video prompt", "prompt ugc video", "negative prompt seedance", "character consistency", "t2v prompt", "i2v prompt"],
-      "depends_on": ["ugc-scriptwriter"],
-      "unlocks": ["ugc-post-production"],
+      "tags": [
+        "ugc",
+        "veo",
+        "veo-3",
+        "seedance",
+        "bytedance",
+        "text-to-video",
+        "image-to-video",
+        "t2v",
+        "i2v",
+        "generative-video",
+        "prompt-engineering",
+        "character-consistency"
+      ],
+      "triggers": [
+        "veo",
+        "veo 3",
+        "veo prompt",
+        "seedance",
+        "seedance prompt",
+        "text to video prompt",
+        "image to video prompt",
+        "prompt ugc video",
+        "negative prompt seedance",
+        "character consistency",
+        "t2v prompt",
+        "i2v prompt"
+      ],
+      "depends_on": [
+        "ugc-scriptwriter"
+      ],
+      "unlocks": [
+        "ugc-post-production"
+      ],
       "cost": "low",
       "value": "very-high-for-generative-ugc-pipeline"
+    },
+    {
+      "name": "presskit",
+      "path": "content/presskit",
+      "category": "content",
+      "tags": [
+        "brand",
+        "presskit",
+        "assets",
+        "voz",
+        "tono",
+        "compliance",
+        "contrato-de-marca"
+      ],
+      "triggers": [
+        "presskit",
+        "press kit",
+        "contrato de marca",
+        "identidad de marca",
+        "assets de marca",
+        "logos",
+        "voz y tono",
+        "qué sí qué no",
+        "compliance de marca",
+        "auditar assets"
+      ],
+      "depends_on": [],
+      "unlocks": [
+        "video-creativo",
+        "content-director",
+        "ugc-scriptwriter",
+        "blog-writer"
+      ],
+      "cost": "low",
+      "value": "high"
+    },
+    {
+      "name": "gancho-argumental",
+      "path": "ugc/gancho-argumental",
+      "category": "ugc",
+      "tags": [
+        "research",
+        "hook",
+        "tension",
+        "ironia",
+        "paradoja",
+        "investigacion-web",
+        "viral"
+      ],
+      "triggers": [
+        "gancho",
+        "gancho argumental",
+        "hook",
+        "investigación",
+        "research",
+        "tensión",
+        "ironía",
+        "paradoja",
+        "dato oculto",
+        "por qué le importaría a alguien",
+        "hacer viral"
+      ],
+      "depends_on": [],
+      "unlocks": [
+        "video-creativo",
+        "content-director"
+      ],
+      "cost": "medium",
+      "value": "high"
+    },
+    {
+      "name": "video-creativo",
+      "path": "ugc/video-creativo",
+      "category": "ugc",
+      "tags": [
+        "video",
+        "concepto",
+        "idea",
+        "guion",
+        "escenas",
+        "smp",
+        "insight",
+        "corto",
+        "largo"
+      ],
+      "triggers": [
+        "video",
+        "concepto",
+        "idea creativa",
+        "guion",
+        "guión",
+        "escenas",
+        "smp",
+        "single minded proposition",
+        "insight",
+        "reel",
+        "short",
+        "youtube",
+        "documental",
+        "video largo",
+        "video corto"
+      ],
+      "depends_on": [
+        "presskit"
+      ],
+      "unlocks": [
+        "ai-avatar-director",
+        "ugc-video-prompting",
+        "ugc-post-production"
+      ],
+      "cost": "medium",
+      "value": "very-high"
+    },
+    {
+      "name": "content-director",
+      "path": "ugc/content-director",
+      "category": "ugc",
+      "tags": [
+        "orquestador",
+        "pipeline",
+        "video",
+        "gates",
+        "direccion-de-contenido"
+      ],
+      "triggers": [
+        "quiero un video",
+        "hacer un video",
+        "director de contenido",
+        "pipeline de video",
+        "brief de video",
+        "content director"
+      ],
+      "depends_on": [],
+      "unlocks": [
+        "gancho-argumental",
+        "video-creativo",
+        "ai-avatar-director",
+        "ugc-video-prompting",
+        "ugc-post-production"
+      ],
+      "cost": "medium",
+      "value": "very-high"
     }
   ],
   "phases": {
-    "discovery": ["systems-thinking", "product-planner"],
-    "domain_data": ["domain-modeler", "database-architect"],
-    "architecture": ["hexagonal-architect", "api-architect", "auth-architect"],
-    "frontend_foundation": ["frontend-foundation", "mobile-design"],
-    "ux_ui": ["product-ux-advisor", "premium-frontend-design", "forms-and-validation"],
-    "feature_layer": ["product-tour", "landing-page-architect", "institutional-site-architect", "data-viz-architect"],
-    "cross_cutting": ["error-handling", "testing-strategy", "tdd-workflow", "react-performance", "backend-performance", "frontend-output-validator", "github-safety", "git-workflow", "change-safety"],
-    "ops": ["infra-security", "change-safety"],
-    "gtm": ["blog-writer", "brand-identity", "remotion-video"],
-    "ugc_pipeline": ["ugc-scriptwriter", "ai-avatar-director", "ugc-video-prompting", "ugc-post-production"]
+    "discovery": [
+      "systems-thinking",
+      "product-planner"
+    ],
+    "domain_data": [
+      "domain-modeler",
+      "database-architect"
+    ],
+    "architecture": [
+      "hexagonal-architect",
+      "api-architect",
+      "auth-architect"
+    ],
+    "frontend_foundation": [
+      "frontend-foundation",
+      "mobile-design"
+    ],
+    "ux_ui": [
+      "product-ux-advisor",
+      "premium-frontend-design",
+      "forms-and-validation"
+    ],
+    "feature_layer": [
+      "product-tour",
+      "landing-page-architect",
+      "institutional-site-architect",
+      "data-viz-architect"
+    ],
+    "cross_cutting": [
+      "error-handling",
+      "testing-strategy",
+      "tdd-workflow",
+      "react-performance",
+      "backend-performance",
+      "frontend-output-validator",
+      "github-safety",
+      "git-workflow",
+      "change-safety"
+    ],
+    "ops": [
+      "infra-security",
+      "change-safety"
+    ],
+    "gtm": [
+      "blog-writer",
+      "brand-identity",
+      "remotion-video"
+    ],
+    "ugc_pipeline": [
+      "ugc-scriptwriter",
+      "ai-avatar-director",
+      "ugc-video-prompting",
+      "ugc-post-production"
+    ]
   },
-  "cross_cutting": ["testing-strategy", "error-handling", "github-safety", "git-workflow", "change-safety", "tdd-workflow", "sdd-workflow", "react-performance", "backend-performance", "frontend-output-validator"],
+  "cross_cutting": [
+    "testing-strategy",
+    "error-handling",
+    "github-safety",
+    "git-workflow",
+    "change-safety",
+    "tdd-workflow",
+    "sdd-workflow",
+    "react-performance",
+    "backend-performance",
+    "frontend-output-validator"
+  ],
   "conventions": {
     "foundation_first": "frontend-foundation always precedes premium-frontend-design, product-tour, forms-and-validation, landing-page-architect",
     "data_before_auth": "database-architect precedes auth-architect (auth needs user/session tables)",
