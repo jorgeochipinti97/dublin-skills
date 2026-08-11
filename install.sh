@@ -45,6 +45,10 @@ if [[ "$LANG" == es_* ]]; then
     L_UPDATING="Actualizando skills instaladas..."
     L_NO_SKILLS="No hay skills instaladas para actualizar"
     L_UPDATED="Actualizacion completada."
+    L_PULLING="Trayendo lo ultimo del modelo..."
+    L_ALREADY_LATEST="ya estaba al dia"
+    L_PULL_FAILED="No pude traer lo ultimo (cambios locales o sin remoto) - sigo con lo que hay en disco"
+    L_NEW_SKILLS="nuevas"
     L_AGENT_INSTALLING="Instalando dublin-agent en"
     L_AGENT_BACKUP="Backup creado en"
     L_AGENT_DONE="Agente instalado."
@@ -86,6 +90,10 @@ else
     L_UPDATING="Updating installed skills..."
     L_NO_SKILLS="No skills installed to update"
     L_UPDATED="Update complete."
+    L_PULLING="Fetching the latest model..."
+    L_ALREADY_LATEST="already up to date"
+    L_PULL_FAILED="Couldn't fetch the latest (local changes or no remote) - continuing with what's on disk"
+    L_NEW_SKILLS="new"
     L_AGENT_INSTALLING="Installing dublin-agent into"
     L_AGENT_BACKUP="Backup saved to"
     L_AGENT_DONE="Agent installed."
@@ -137,7 +145,7 @@ ${L_USAGE}:
   ds --tool=<tool> --scope=<scope> --all
   ds agent                              # install dublin-agent (asks tool)
   ds agent --tool=<tool>                # install dublin-agent for specific tool
-  ds update <path>                      # update installed skills
+  ds update <path>                      # git pull the model, then refresh + add its skills
   ds list                               # list available skills
 
 Team environment (ds team) installs: all skills + dublin-agent + team rules
@@ -322,6 +330,8 @@ select_scope_interactive() {
 install_skill() {
     local skill_name=$1
     local target_skills_dir=$2
+    # $3 = optional line marker, so callers can flag a skill as newly added.
+    local mark="${3:-${GREEN}  ✓}"
     local skill_path="${SKILLS[$skill_name]}"
 
     if [[ -z "$skill_path" ]]; then
@@ -340,7 +350,7 @@ install_skill() {
     mkdir -p "$dest_path"
     rsync -av --exclude='.DS_Store' "$source_path/" "$dest_path/" > /dev/null 2>&1
 
-    echo "${GREEN}  ✓ $skill_name${NC}"
+    echo "${mark} $skill_name${NC}"
 }
 
 install_all() {
@@ -352,8 +362,34 @@ install_all() {
     done
 }
 
+# Bring the model repo itself up to date before copying anything out of it.
+# `update` promises "the latest"; without this it only ever hands out whatever
+# this clone happened to have on disk, so a teammate's push stays invisible.
+# --ff-only on purpose: never rewrite or merge someone's work-in-progress here.
+sync_model_repo() {
+    git -C "$SCRIPT_DIR" rev-parse --git-dir > /dev/null 2>&1 || return 0
+
+    echo "${BLUE}${L_PULLING}${NC}"
+    local before after
+    before="$(git -C "$SCRIPT_DIR" rev-parse --short HEAD 2>/dev/null)"
+    if git -C "$SCRIPT_DIR" pull --ff-only > /dev/null 2>&1; then
+        after="$(git -C "$SCRIPT_DIR" rev-parse --short HEAD 2>/dev/null)"
+        if [[ "$before" != "$after" ]]; then
+            echo "${GREEN}  ✓ $before → $after${NC}"
+        else
+            echo "${DIM}  ✓ $before (${L_ALREADY_LATEST})${NC}"
+        fi
+    else
+        echo "${YELLOW}  ! ${L_PULL_FAILED}${NC}"
+    fi
+    echo ""
+}
+
 update_skills() {
     local base_path="$1"
+
+    sync_model_repo
+
     # Heuristic: try to detect existing installations across all known paths.
     local candidates=(
         "$base_path/.claude/skills"
@@ -367,20 +403,38 @@ update_skills() {
     local found=0
     for skills_dir in "${candidates[@]}"; do
         [[ -d "$skills_dir" ]] || continue
-        local has_skill=0
+
+        # A folder counts as a Dublin install once it holds at least one skill
+        # from the manifest. That gate is what keeps `update` from flooding an
+        # unrelated skills folder with the whole library.
+        local is_install=0
         for skill_folder in "$skills_dir"/*/; do
             [[ -d "$skill_folder" ]] || continue
-            local skill_name=$(basename "$skill_folder")
-            if [[ -n "${SKILLS[$skill_name]}" ]]; then
-                if [[ $has_skill -eq 0 ]]; then
-                    echo "${BLUE}${L_UPDATING} ${DIM}($skills_dir)${NC}"
-                    has_skill=1
-                fi
-                install_skill "$skill_name" "$skills_dir"
-                found=1
+            if [[ -n "${SKILLS[$(basename "$skill_folder")]}" ]]; then
+                is_install=1
+                break
             fi
         done
-        [[ $has_skill -eq 1 ]] && echo ""
+        [[ $is_install -eq 1 ]] || continue
+
+        echo "${BLUE}${L_UPDATING} ${DIM}($skills_dir)${NC}"
+
+        # Walk the MANIFEST, not the disk: a skill added to the model since the
+        # last run has no folder here yet, so a disk-driven loop can never see
+        # it — that bug made `update` refresh but never add.
+        local added=0
+        for skill in ${(ko)SKILLS}; do
+            if [[ -d "$skills_dir/$skill" ]]; then
+                install_skill "$skill" "$skills_dir"
+            else
+                install_skill "$skill" "$skills_dir" "${YELLOW}  +" && added=$((added + 1))
+            fi
+        done
+        # Skills NOT in the manifest are left alone on purpose: `update` must
+        # never touch a skill you wrote yourself. Pruning stays in `install`.
+        [[ $added -gt 0 ]] && echo "${YELLOW}  ↳ $added ${L_NEW_SKILLS}${NC}"
+        echo ""
+        found=1
     done
 
     if [[ $found -eq 0 ]]; then

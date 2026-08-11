@@ -60,7 +60,7 @@ environment **into their own working repos**; they don't work inside this repo.
 | `ds agent` | Install just the **dublin-agent** (asks tool) |
 | `ds <path> --all` | Install just the **skills** (no rules/env) |
 | `ds list` | List available skills |
-| `ds update <path>` | Update only the skills already installed in `<path>` |
+| `ds update <path>` | **Bring `<path>` up to the model**: `git pull --ff-only` on dublin-skills, then refresh every installed skill **and add the ones that are new** (marked `+`). Skills you wrote yourself are left untouched — no pruning here |
 | `ds --help` | Full usage |
 
 **Flags** (for `install`): `--tool=claude\|opencode\|codex\|universal` · `--scope=project\|user` · `--force` (refresh rules even if unchanged).
@@ -342,7 +342,7 @@ ds agent --tool=universal      # both Claude + OpenCode
 
 ```bash
 ds list                        # list available skills (no install)
-ds update <path>               # update skills already installed in <path>
+ds update <path>               # git pull the model, then refresh + add its skills in <path>
 ds --help                      # full usage
 ```
 
