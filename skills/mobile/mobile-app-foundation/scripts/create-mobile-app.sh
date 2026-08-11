@@ -61,10 +61,20 @@ for f in babel.config.js metro.config.js tailwind.config.js nativewind-env.d.ts 
     cp "$TEMPLATES/$f" "./$f"
 done
 
+TODAY="$(date +%Y-%m-%d)"
 sed "s/__PROJECT__/$APP_NAME/g" "$TEMPLATES/DESIGN.md" > ./DESIGN.md
 sed "s/__PROJECT__/$APP_NAME/g" "$TEMPLATES/README.md" > ./README.md
 
-info "routes, src/, config, DESIGN.md, eas.json"
+# Dublin operating model: every project carries its own context files.
+sed -e "s/__PROJECT__/$APP_NAME/g" -e "s/__DATE__/$TODAY/g" \
+    "$TEMPLATES/SESSION.md" > ./SESSION.md
+sed "s/__PROJECT__/$APP_NAME/g" "$TEMPLATES/TASKS.md" > ./TASKS.md
+
+# Private per-person task files must never be committed.
+grep -q '^\*\.local\.md' .gitignore 2>/dev/null || \
+    printf '\n# Private personal tasks — never commit\n*.local.md\n' >> .gitignore
+
+info "routes, src/, config, DESIGN.md, eas.json, SESSION.md, TASKS.md"
 
 # ------------------------------------------------------- 3. app.json patch
 

@@ -20,6 +20,7 @@ with `--force` to pull updated rules.
 
 ```bash
 ./install.sh new ~/my-project               # scaffold a NEW project from scratch (git + SESSION/TASKS + env)
+./install.sh app ~/my-app                   # scaffold a cross-platform Expo app (iOS + Android + web) + env
 ./install.sh install ~/my-project              # add (or upgrade) the env on an EXISTING project
 ./install.sh install --tool=claude --scope=project   # non-interactive
 ./install.sh install --force                   # force-refresh rules even if unchanged
@@ -48,6 +49,7 @@ environment **into their own working repos**; they don't work inside this repo.
 | Command | What it does |
 |---|---|
 | `ds new <path>` | **Scaffold a new project** from scratch: `git init` + `SESSION.md` + `TASKS.md` + `.gitignore` + full environment |
+| `ds app <path>` | **Scaffold a cross-platform app** (React Native + Expo → iOS + Android + web): runs `create-expo-app` so the SDK and every native version are current, overlays the Dublin layer (routes, tokens, dual theme, offline cache, `notify`/`session-storage`), then `SESSION.md` + `TASKS.md` + full environment. Generated fresh each time on purpose — a cloned template repo starts rotting the day it is made |
 | `ds daily <path> [--projects=<dir>]` | **Scaffold a cockpit / daily driver**: `task: <x>` splits work into sub-tasks, `daily` rolls up all projects in `<dir>` (asked, default = parent dir) |
 | `ds team-init <path> [--ci]` | **Scaffold the team hub** (roster + registry + generated board + members) — a repo all clone. `--ci` adds a GitHub Actions workflow that auto-regenerates the board on push |
 | `ds team-add <proyecto> <git-url>` | Register a shared repo in the hub (+ map its local path) |

@@ -1138,7 +1138,7 @@ parse_args() {
             --pull) PULL_FLAG=1 ;;
             --ci) CI_FLAG=1 ;;
             --help|-h) print_usage; exit 0 ;;
-            agent|update|list|team|install|new|daily|team-init|team-add|team-board|assign|doctor)
+            agent|update|list|team|install|new|app|daily|team-init|team-add|team-board|assign|doctor)
                 if [[ -z "$COMMAND" ]]; then
                     COMMAND="$arg"
                 else
@@ -1256,6 +1256,47 @@ main() {
         install_team "$TOOL" "$SCOPE" "$new_base"
         echo ""
         echo "${GREEN}✓ New project scaffolded with the Dublin operating model: $new_base${NC}"
+        exit 0
+    fi
+
+    # --- Subcommand: app (scaffold a cross-platform Expo app + full env) ---
+    # Deliberately generates from create-expo-app on every run instead of
+    # cloning a template repo: Expo resolves the current SDK and every native
+    # version at scaffold time. A pinned template repo starts rotting the day
+    # it is created, and a stale SDK is the expensive kind of debt in RN.
+    if [[ "$COMMAND" == "app" ]]; then
+        if [[ ${#POSITIONAL[@]} -lt 1 ]]; then
+            echo "${RED}Usage: ds app <name>   (cross-platform Expo app: iOS + Android + web)${NC}"
+            exit 1
+        fi
+        local app_path="${POSITIONAL[1]}"
+        [[ "$app_path" != /* ]] && app_path="$PWD/$app_path"
+
+        local app_parent
+        app_parent="$(dirname "$app_path")"
+        if [[ ! -d "$app_path" && ! -w "$app_parent" ]]; then
+            echo "${RED}Can't create '$(basename "$app_path")' here — '$app_parent' is read-only.${NC}"
+            exit 1
+        fi
+
+        local app_script="$SCRIPT_DIR/skills/mobile/mobile-app-foundation/scripts/create-mobile-app.sh"
+        if [[ ! -x "$app_script" ]]; then
+            echo "${RED}Missing scaffolder: $app_script${NC}"
+            exit 1
+        fi
+
+        [[ -z "$TOOL" ]] && select_tool_interactive
+        [[ -z "$SCOPE" ]] && SCOPE="project"
+
+        "$app_script" "$app_path" "$(basename "$app_path")" || exit 1
+
+        local app_base
+        app_base="$(cd "$app_path" && pwd)"
+        install_team "$TOOL" "$SCOPE" "$app_base"
+
+        echo ""
+        echo "${GREEN}✓ Cross-platform app scaffolded with the Dublin operating model: $app_base${NC}"
+        echo "${DIM}  cd $app_base && pnpm ios   # or pnpm web${NC}"
         exit 0
     fi
 
