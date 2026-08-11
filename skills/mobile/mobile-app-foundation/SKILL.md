@@ -42,7 +42,8 @@ Break these and the app is broken, not merely imperfect.
 5. **Every data screen defines its offline behavior** before it is called done: cached render, stale indicator, and an error state that is not an infinite spinner. (**Offline Amnesia**)
 6. **Test on a physical device with a dev build** before calling anything done. Expo Go is a preview, not your app. (**Expo Go Mirage**)
 7. **`.npmrc` with `node-linker=hoisted`** in any pnpm React Native project. Metro does not follow pnpm's symlinked `node_modules`; without it the bundle fails on modules you never imported directly — and `tsc` passes clean, so a typecheck-only CI gate misses it. (**The pnpm Trap**)
-8. **All three targets, always: iOS + Android + web.** Dublin apps are multiplatform by default, not iOS-and-maybe-Android. Every change bundles for all three before it is done, and every API is checked against the support matrix in `references/cross-platform.md`. Two modules fail *silently* on web — `expo-secure-store` (its web build is `export default {}`) and `Alert.alert` (react-native-web defines it as `static alert() {}`) — so a green build proves nothing on its own. (**One-Target Tell**)
+8. **Translate design-skill output yourself — never hand the user web code to convert.** Every frontend skill in this library targets the DOM. When one of them runs inside a React Native project (detected by an `expo` key in `app.json`/`app.config.*`, or `react-native` in `package.json`), convert its output through `references/design-skills-bridge.md` **before writing a line**, and state which substitutions were made. Emitting `backdrop-filter`, Framer Motion, Radix, or `:hover` into an RN codebase is a defect, not a starting point — the person asking for a mobile app is the least equipped to do that conversion. **Never run `frontend-output-validator` against native output**: Lighthouse cannot profile a binary and its greps report green without measuring anything. (**Web Code Handoff**)
+9. **All three targets, always: iOS + Android + web.** Dublin apps are multiplatform by default, not iOS-and-maybe-Android. Every change bundles for all three before it is done, and every API is checked against the support matrix in `references/cross-platform.md`. Two modules fail *silently* on web — `expo-secure-store` (its web build is `export default {}`) and `Alert.alert` (react-native-web defines it as `static alert() {}`) — so a green build proves nothing on its own. (**One-Target Tell**)
 
 ---
 
@@ -65,6 +66,8 @@ Named anti-patterns, siblings to the web ones in `premium-frontend-design`. Thes
 | **The pnpm Trap** | pnpm project with no `node-linker=hoisted` | Bundle fails on transitive deps; typecheck passes, so CI says green |
 | **One-Target Tell** | Built and checked on iOS only | Web silently loses every `Alert`, and any secure-store call throws at runtime |
 | **Symmetric Storage Trap** | Mirroring the native token into `localStorage` "so web matches" | Turns a Keychain-protected token into an XSS-readable one |
+| **Web Code Handoff** | Emitting `backdrop-filter` / Framer Motion / Radix into an RN project, or telling the user to convert it | It does not run, and the person who asked for a mobile app is the least able to translate it |
+| **False Green** | Running `frontend-output-validator` (Lighthouse) on a native app | Reports pass without measuring anything — worse than no check |
 
 ---
 
@@ -155,6 +158,7 @@ Verify every version with `npx expo install` at scaffold time. Do not trust a ve
 
 ## Reference Files (load on demand)
 
+- `references/design-skills-bridge.md` — **translation table for every other frontend skill in this library**: what to keep vs drop per skill, web technique → native package (`backdrop-filter` → `expo-blur`, Framer Motion → Reanimated, Vaul → `@gorhom/bottom-sheet`, Recharts → `victory-native`…), a worked before/after example, and the native-only affordances a translated web design always omits (haptics, gestures, lifecycle, offline, hardware back)
 - `references/cross-platform.md` — **the iOS + Android + web mandate**: verified support matrix, the two silent-failure modules, platform-specific files vs `Platform.select` vs feature detection, wide-viewport layout, three-target verification, static web export to a VPS
 - `references/project-structure.md` — expo-router routes, groups, layouts, modals, deep links, where code lives
 - `references/styling-and-theming.md` — NativeWind setup, tokens, dark + light, safe areas, type scale, platform differences

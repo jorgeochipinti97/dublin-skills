@@ -36,6 +36,16 @@ Auto-invoke after any of these skills produces React code:
 - README / docs
 - Single-line bugfixes
 
+### HARD STOP — React Native projects
+
+**Do not run this skill on a React Native / Expo codebase.** Detect it by an `expo` key in `app.json` / `app.config.{js,ts}`, or `react-native` in `package.json` dependencies.
+
+Every layer of this validator assumes a DOM: Lighthouse cannot profile a native binary, and the Layer 1 patterns look for `className` on DOM elements, `<img>`, viewport meta, and CSS units that do not exist there. Run anyway and it reports **pass without having measured anything** — false confidence, which is worse than no check at all (the `False Green` tell).
+
+Say so and route instead:
+- Design-contract review → `mobile-app-foundation` → `references/design-skills-bridge.md`
+- Runtime/perf verification → `mobile-app-foundation` → `references/testing-on-device.md` (manual by necessity — native has no Lighthouse equivalent)
+
 ## Inputs
 
 - The diff (or list of changed files)
