@@ -5,3 +5,6 @@ __pycache__/
 
 # Session bridge — ephemeral, personal context, not for others
 .context/
+
+# Skill bundles empaquetados (build artifacts de skill-creator)
+*.skill
