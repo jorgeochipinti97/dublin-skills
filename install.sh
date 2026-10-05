@@ -145,7 +145,7 @@ ${L_USAGE}:
   ds --tool=<tool> --scope=<scope> --all
   ds agent                              # install dublin-agent (asks tool)
   ds agent --tool=<tool>                # install dublin-agent for specific tool
-  ds update <path>                      # git pull the model, then refresh + add its skills
+  ds update [<path>]                    # pull the model + refresh the full env (rules, agent, hooks, skills); default: current dir
   ds list                               # list available skills
 
 Team environment (ds team) installs: all skills + dublin-agent + team rules
@@ -723,10 +723,23 @@ prune_orphan_skills() {
 
 # Stamp the install with the model's git SHA so `doctor` can flag stale ones.
 write_env_version() {
-    local base="$1"
+    local base="$1" tool="$2"
     local sha
     sha="$(git -C "$SCRIPT_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)"
-    printf 'model_sha=%s\ninstalled=%s\n' "$sha" "$(date +%Y-%m-%d)" > "$base/.dublin-env"
+    printf 'model_sha=%s\ninstalled=%s\ntool=%s\n' "$sha" "$(date +%Y-%m-%d)" "$tool" > "$base/.dublin-env"
+}
+
+# Which tool a project's env was installed for: the stamp if it has one
+# (installs from now on), else inferred from the folders the install created.
+detect_env_tool() {
+    local base="$1" t
+    t="$(sed -n 's/^tool=//p' "$base/.dublin-env" 2>/dev/null)"
+    if [[ -n "$t" ]]; then echo "$t"
+    elif [[ -d "$base/.claude" ]]; then echo "claude"
+    elif [[ -d "$base/.opencode" ]]; then echo "opencode"
+    elif [[ -d "$base/.agents" ]]; then echo "codex"
+    else echo "claude"
+    fi
 }
 
 install_team() {
@@ -765,7 +778,7 @@ install_team() {
     echo "${BLUE}6/6 Wiring engram (persistent memory)…${NC}"
     install_engram "$tool" "$scope" "$base"
 
-    write_env_version "$base"
+    write_env_version "$base" "$tool"
 }
 
 # Report whether a project's env matches the current model SHA.
@@ -1275,7 +1288,22 @@ main() {
             echo "${RED}${L_DIR_NOT_FOUND}: ${POSITIONAL[1]}${NC}"
             exit 1
         }
-        update_skills "$target_dir"
+        # A Dublin project (.dublin-env) gets the FULL env refreshed — rules,
+        # agent, hooks, memory, skills — not just skills. install_rules is
+        # diff-checked, so unchanged files are left alone.
+        if [[ -f "$target_dir/.dublin-env" ]]; then
+            sync_model_repo
+            local env_tool
+            env_tool="$(detect_env_tool "$target_dir")"
+            echo "${L_TOOL_LABEL}:   ${BLUE}$env_tool${NC}"
+            echo "${L_TARGET_PATH}:  ${BLUE}$target_dir${NC}"
+            echo ""
+            install_team "$env_tool" "project" "$target_dir"
+            echo ""
+            echo "${GREEN}✓ Dublin environment updated.${NC}"
+        else
+            update_skills "$target_dir"
+        fi
         exit 0
     fi
 
