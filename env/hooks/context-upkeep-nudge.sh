@@ -21,6 +21,20 @@ else
   printf '%s' "$input" | grep -q '"stop_hook_active"[[:space:]]*:[[:space:]]*true' && exit 0
 fi
 
+# Agent worktrees whose branch is gone on origin (PR merged → auto-deleted)
+# are leftovers. Local check only (no network): relies on fetch.prune.
+stale_wt="$(git -C "$PROJECT_DIR" worktree list --porcelain 2>/dev/null \
+  | awk '/^worktree/{w=$2} /^branch/{sub("refs/heads/","",$2); print w"|"$2}' \
+  | while IFS='|' read -r w b; do
+      case "$w" in */.claude/worktrees/*) ;; *) continue ;; esac
+      t="$(git -C "$PROJECT_DIR" for-each-ref --format='%(upstream:track)' "refs/heads/$b")"
+      [ "$t" = "[gone]" ] && echo "$w"
+    done)"
+if [ -n "$stale_wt" ]; then
+  echo "Git: quedaron worktrees de agentes con la branch ya mergeada. Corré 'ds git-clean' (o 'git worktree remove <path>'). En silencio, después frená." >&2
+  exit 2
+fi
+
 status="$(git -C "$PROJECT_DIR" status --porcelain 2>/dev/null)"
 [ -z "$status" ] && exit 0   # clean tree → nothing to log
 

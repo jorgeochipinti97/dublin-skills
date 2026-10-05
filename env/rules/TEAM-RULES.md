@@ -66,6 +66,10 @@ rotation, DNS/TLS/IAM changes.
 - Forbidden: force push to shared branches, rebasing already-pushed commits,
   `reset --hard` over others' work, `--no-verify`.
 - New changes go in new commits, never by rewriting history.
+- **Branch hygiene**: one branch per PR, deleted when the PR merges (GitHub
+  auto-delete on). Agents remove their worktree when their PR is merged or
+  abandoned. `ds git-clean` cleans merged/closed branches + clean worktrees;
+  run it whenever `git branch` shows more than a handful.
 
 ---
 

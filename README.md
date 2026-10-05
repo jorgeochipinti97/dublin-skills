@@ -60,6 +60,7 @@ environment **into their own working repos**; they don't work inside this repo.
 | `ds agent` | Install just the **dublin-agent** (asks tool) |
 | `ds <path> --all` | Install just the **skills** (no rules/env) |
 | `ds list` | List available skills |
+| `ds git-clean [<path>] [--remote] [--dry-run]` | **Branch hygiene** (default: current dir): deletes local branches whose PR is merged/closed (SHA logged to `.git/dublin-git-clean.log`), removes merged worktrees that are clean and idle > 2h (an agent may be using it), sets `fetch.prune`. `--remote` also deletes merged/closed branches on GitHub. Branches without a PR are never touched |
 | `ds update [<path>]` | **Bring `<path>` (default: current dir) up to the model**: `git pull --ff-only` on dublin-skills, then — in a Dublin project (`.dublin-env`) — refresh the **full env** (rules, agent, hooks, memory, skills; diff-checked, backups first). Outside one, refresh every installed skill **and add the new ones** (marked `+`); your own skills are left untouched |
 | `ds --help` | Full usage |
 

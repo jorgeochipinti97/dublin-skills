@@ -137,6 +137,7 @@ ${L_USAGE}:
   ds install --tool=claude --scope=project # non-interactive
   ds install --force                    # force-refresh rules even if unchanged
   ds doctor <path>                      # check if a project (or folder of projects) is up to date
+  ds git-clean [<path>] [--remote] [--dry-run]  # delete merged/closed branches + clean worktrees (default: current dir)
   (alias: 'ds team' still works — same as 'ds install')
   ds                                    # interactive wizard (skills only)
   ds <project-path>                     # interactive, project scope
@@ -667,6 +668,132 @@ install_hooks() {
     fi
 }
 
+# Branch hygiene for one repo. A branch is "done" when its PR is MERGED or
+# CLOSED (and no PR for it is still OPEN), or git sees it merged into the
+# default branch. Squash merges are invisible to `git branch --merged`, which is
+# why the PR state from gh is the primary signal.
+#   local branches  → deleted (SHA logged to .git/dublin-git-clean.log first)
+#   worktrees       → removed only when clean; dirty ones are reported, never touched
+#   remote (--remote) → deleted on origin; a PR keeps its commits under refs/pull/N
+run_git_clean() {
+    local repo="$1"
+    repo="$(git -C "$repo" rev-parse --show-toplevel 2>/dev/null)" || {
+        echo "${RED}Not a git repo: $1${NC}"; exit 1
+    }
+    local dry=$DRY_RUN_FLAG
+    local log="$(git -C "$repo" rev-parse --git-common-dir)"
+    [[ "$log" = /* ]] || log="$repo/$log"
+    log="$log/dublin-git-clean.log"
+
+    echo "${BLUE}Repo: $repo${NC}"
+    git -C "$repo" config fetch.prune true
+    git -C "$repo" fetch --prune --quiet origin 2>/dev/null
+
+    local def
+    def="$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)"
+    def="${def#origin/}"
+    [[ -z "$def" ]] && def="$(git -C "$repo" branch --list main master | head -1 | tr -d ' *')"
+    [[ -z "$def" ]] && def="main"
+
+    # PR state per head branch: OPEN wins over MERGED/CLOSED.
+    typeset -A pr_state
+    if command -v gh >/dev/null 2>&1; then
+        local head st
+        while IFS=$'\t' read -r head st; do
+            [[ -z "$head" ]] && continue
+            [[ "${pr_state[$head]}" == "OPEN" ]] && continue
+            pr_state[$head]="$st"
+        done < <(cd "$repo" && gh pr list --state all --limit 1000 \
+                   --json headRefName,state --jq '.[] | "\(.headRefName)\t\(.state)"' 2>/dev/null)
+    else
+        echo "${YELLOW}  • gh not installed — only branches git sees as merged will be cleaned${NC}"
+    fi
+
+    typeset -A git_merged
+    local b
+    for b in $(git -C "$repo" branch --merged "$def" --format='%(refname:short)' 2>/dev/null); do
+        git_merged[$b]=1
+    done
+
+    _is_done() {
+        [[ "$1" == "$def" ]] && return 1
+        [[ "${pr_state[$1]}" == "OPEN" ]] && return 1
+        [[ "${pr_state[$1]}" == "MERGED" || "${pr_state[$1]}" == "CLOSED" || -n "${git_merged[$1]}" ]]
+    }
+
+    local act="deleted"; [[ $dry -eq 1 ]] && act="would delete"
+
+    # 1. Worktrees (skip the main one).
+    typeset -A in_worktree
+    local main_wt wt wb wt_gitdir recent n_wt=0 n_dirty=0
+    main_wt="$(git -C "$repo" worktree list --porcelain | awk '/^worktree/{print $2; exit}')"
+    while IFS='|' read -r wt wb; do
+        [[ -z "$wt" ]] && continue
+        in_worktree[$wb]=1
+        [[ "$wt" == "$main_wt" ]] && continue
+        _is_done "$wb" || continue
+        # An agent may be working in it right now: any index/HEAD activity in
+        # the last 2h means "in use" — leave it for the next run.
+        wt_gitdir="$(git -C "$wt" rev-parse --absolute-git-dir 2>/dev/null)"
+        recent="$(find "$wt_gitdir/index" "$wt_gitdir/HEAD" "$wt_gitdir/logs/HEAD" -mmin -120 2>/dev/null)"
+        if [[ -n "$recent" ]]; then
+            echo "${YELLOW}  ! worktree en uso (actividad < 2h), no lo toco: $wt ($wb)${NC}"
+            continue
+        fi
+        # Untracked node_modules (often a symlink, which `node_modules/` in
+        # .gitignore doesn't match) is disposable — it doesn't count as work.
+        if [[ -n "$(git -C "$wt" status --porcelain 2>/dev/null | grep -vE '^\?\? (.*/)?node_modules/?$')" ]]; then
+            echo "${YELLOW}  ! worktree con cambios sin commitear, no lo toco: $wt ($wb)${NC}"
+            n_dirty=$((n_dirty + 1))
+            continue
+        fi
+        if [[ $dry -eq 0 ]]; then
+            git -C "$repo" worktree remove --force "$wt" && in_worktree[$wb]=""
+        fi
+        echo "${GREEN}  ✓ worktree $act: $wt${NC}"
+        n_wt=$((n_wt + 1))
+    done < <(git -C "$repo" worktree list --porcelain | awk '/^worktree/{w=$2} /^branch/{sub("refs/heads/","",$2); print w"|"$2}')
+    [[ $dry -eq 0 ]] && git -C "$repo" worktree prune
+
+    # 2. Local branches.
+    local n_local=0 n_kept=0 sha
+    for b in $(git -C "$repo" for-each-ref refs/heads --format='%(refname:short)'); do
+        [[ -n "${in_worktree[$b]}" ]] && continue
+        if ! _is_done "$b"; then
+            [[ "$b" != "$def" && "${pr_state[$b]}" != "OPEN" ]] && n_kept=$((n_kept + 1))
+            continue
+        fi
+        if [[ $dry -eq 0 ]]; then
+            sha="$(git -C "$repo" rev-parse --short "$b")"
+            printf '%s\t%s\t%s\n' "$(date +%F)" "$b" "$sha" >> "$log"
+            git -C "$repo" branch -D "$b" >/dev/null
+        fi
+        n_local=$((n_local + 1))
+    done
+    echo "${GREEN}  ✓ local branches $act: $n_local${NC}"
+
+    # 3. Remote branches (opt-in).
+    local n_remote=0
+    if [[ $REMOTE_FLAG -eq 1 ]]; then
+        for b in $(git -C "$repo" for-each-ref refs/remotes/origin --format='%(refname:short)'); do
+            b="${b#origin/}"
+            [[ "$b" == "HEAD" || "$b" == "origin" ]] && continue
+            # Remote side: only trust the PR state, never a local merge view.
+            [[ "${pr_state[$b]}" == "MERGED" || "${pr_state[$b]}" == "CLOSED" ]] || continue
+            [[ "$b" == "$def" ]] && continue
+            [[ $dry -eq 0 ]] && git -C "$repo" push origin --delete "$b" >/dev/null 2>&1
+            n_remote=$((n_remote + 1))
+        done
+        echo "${GREEN}  ✓ remote branches $act: $n_remote${NC}"
+    fi
+
+    echo ""
+    echo "  Quedan sin PR (no las toco, decidí vos): $n_kept"
+    [[ $n_dirty -gt 0 ]] && echo "${YELLOW}  Worktrees mergeados con cambios: $n_dirty (commiteá o descartá y volvé a correr)${NC}"
+    [[ $dry -eq 0 && $n_local -gt 0 ]] && echo "${DIM}  Recuperar una branch: ver $log → git branch <nombre> <sha>${NC}"
+    [[ $REMOTE_FLAG -eq 0 ]] && echo "${DIM}  Para limpiar también GitHub: ds git-clean --remote${NC}"
+}
+
 # Wire engram (persistent memory) as an MCP server for Claude Code.
 # Writes/merges <project>/.mcp.json. The binary itself is per-machine: we detect
 # it and print the install command rather than installing it silently.
@@ -777,6 +904,13 @@ install_team() {
 
     echo "${BLUE}6/6 Wiring engram (persistent memory)…${NC}"
     install_engram "$tool" "$scope" "$base"
+
+    # Branches deleted on GitHub (auto-delete on merge) disappear locally on the
+    # next fetch — per-repo config, so it reaches every teammate who installs.
+    if git -C "$base" rev-parse --git-dir >/dev/null 2>&1; then
+        git -C "$base" config fetch.prune true
+        echo "${GREEN}  ✓ git fetch.prune = true${NC}"
+    fi
 
     write_env_version "$base" "$tool"
 }
@@ -1191,6 +1325,8 @@ INSTALL_ALL_FLAG=0
 FORCE_FLAG=0
 PULL_FLAG=0
 CI_FLAG=0
+REMOTE_FLAG=0
+DRY_RUN_FLAG=0
 COMMAND=""
 PROJECTS_ROOT=""
 POSITIONAL=()
@@ -1209,8 +1345,10 @@ parse_args() {
             --force|-f) FORCE_FLAG=1 ;;
             --pull) PULL_FLAG=1 ;;
             --ci) CI_FLAG=1 ;;
+            --remote) REMOTE_FLAG=1 ;;
+            --dry-run|-n) DRY_RUN_FLAG=1 ;;
             --help|-h) print_usage; exit 0 ;;
-            agent|update|list|team|install|new|app|daily|team-init|team-add|team-board|assign|doctor)
+            agent|update|list|team|install|new|app|daily|team-init|team-add|team-board|assign|doctor|git-clean)
                 if [[ -z "$COMMAND" ]]; then
                     COMMAND="$arg"
                 else
@@ -1304,6 +1442,12 @@ main() {
         else
             update_skills "$target_dir"
         fi
+        exit 0
+    fi
+
+    # --- Subcommand: git-clean (branch + worktree hygiene) ---
+    if [[ "$COMMAND" == "git-clean" ]]; then
+        run_git_clean "${POSITIONAL[1]:-$PWD}"
         exit 0
     fi
 
