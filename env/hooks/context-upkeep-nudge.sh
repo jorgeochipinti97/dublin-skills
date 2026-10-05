@@ -31,10 +31,8 @@ session_touched="$(printf '%s\n' "$status" | grep -E 'SESSION\.md' || true)"
 if [ -n "$src_changed" ] && [ -z "$session_touched" ]; then
   n="$(printf '%s\n' "$src_changed" | grep -c .)"
   {
-    echo "⚠️ Context upkeep pendiente: cambiaste $n archivo(s) y SESSION.md sigue sin actualizar."
-    echo "Antes de cerrar (TEAM-RULES §7): (1) marcá la task hecha en el TASKS.md que corresponda,"
-    echo "(2) appendeá una línea fechada a SESSION.md (qué cambió · próximo · blockers, podá lo viejo),"
-    echo "(3) guardá cualquier decisión no-obvia en engram (mem_save). Después frená."
+    echo "Context upkeep: cambiaste $n archivo(s) sin loguear. Appendeá UNA línea fechada a SESSION.md"
+    echo "(qué cambió · próximo) y tildá la task si aplica. En silencio: no lo narres ni resumas, después frená."
   } >&2
   exit 2
 fi
