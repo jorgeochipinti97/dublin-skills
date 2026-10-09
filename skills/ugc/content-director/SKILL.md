@@ -1,6 +1,6 @@
 ---
 name: content-director
-description: "Orquesta el pipeline completo de producción de contenido en video. El cliente da un brief de 1-2 líneas ('quiero un video para IG sobre el Mundial 78') y el director determina el pipeline, corre los skills en orden, y solo detiene al cliente en 3 gates de aprobación (gancho, SMP, guion). Delega a: presskit, gancho-argumental, video-creativo, ai-avatar-director / ugc-video-prompting, ugc-post-production. El cliente no tiene que conocer los skills — solo da el brief y aprueba en los gates."
+description: "Orquesta el pipeline completo de producción de contenido en video. El cliente da un brief de 1-2 líneas ('quiero un video para IG sobre el Mundial 78') y el director determina el pipeline, corre los skills en orden, y solo detiene al cliente en 3 gates de aprobación (gancho, SMP, guion). Delega a: presskit, gancho-argumental, video-creativo, ai-avatar-director / ugc-video-prompting / onetake, ugc-post-production. El cliente no tiene que conocer los skills — solo da el brief y aprueba en los gates."
 ---
 
 # Content Director
@@ -52,7 +52,7 @@ Para arrancar necesito entender:
 2. ¿Es para una marca/empresa o para tu propio canal?
 3. ¿Qué plataforma? (Instagram / TikTok / YouTube / otro)
 4. ¿Corto (15-90 seg) o largo (3-20 min)?
-5. ¿Cómo vas a producirlo? (avatar IA / generativo / grabación propia / sin definir)
+5. ¿Cómo vas a producirlo? (avatar IA / generativo / motion de producto / grabación propia / sin definir)
 ```
 
 Si el cliente da las 5 respuestas en el brief inicial → pasar directo al plan.
@@ -67,7 +67,7 @@ Correr el árbol de decisión con el contexto disponible. Determinar:
 - ¿Corre presskit? (¿y en qué modo?)
 - ¿Corre gancho-argumental? (¿o el cliente ya trae gancho?)
 - Formato del guion (corto / largo)
-- Tipo de producción (avatar / generativo / shot list)
+- Tipo de producción (avatar / generativo / motion de producto / shot list)
 
 Mostrar el **Informe de Arranque** (template en `references/gate-templates.md`):
 
@@ -165,6 +165,12 @@ Correr cada stage en orden. Para cada uno:
 → Delegar a `ugc-video-prompting`: prompt por escena, negative prompts, character consistency
 → No gate. Output incluido en el paquete.
 
+**Motion de producto (onetake):**
+→ "Armando la pieza de motion..."
+→ Usar cuando el video es un lanzamiento / demo de feature / teaser de producto hecho con UI real, tipografía cinética o motion graphics — sin persona a cámara y sin footage generativo.
+→ Delegar a `onetake`: el guion + breakdown de escenas aprobados son su beat sheet. onetake resuelve su propio sonido, captions/subtítulos y render.
+→ No gate. Output incluido en el paquete.
+
 **Grabación propia:**
 → El breakdown de escenas ES el shot list. No stage adicional.
 
@@ -173,6 +179,7 @@ Correr cada stage en orden. Para cada uno:
 → "Armando el Edit Decision List..."
 → Delegar a `ugc-post-production`: captions, visual hooks, B-roll, música, SFX, timing de efectos
 → No gate. Output incluido en el paquete final.
+→ **Branch motion (onetake): POST-PRODUCCIÓN es opcional.** onetake ya entrega sonido, captions y render; correr `ugc-post-production` solo si el entregable necesita captions de plataforma o música extra más allá de lo que produce onetake.
 
 ---
 
@@ -204,7 +211,7 @@ Después del último stage, entregar el **Paquete de Producción completo**:
 [Lista]
 
 ### 5. Brief de Producción
-[Avatar director brief / prompts generativos / instrucciones de rodaje]
+[Avatar director brief / prompts generativos / composición onetake / instrucciones de rodaje]
 
 ### 6. Edit Decision List (Post-producción)
 [Captions, música, SFX, efectos]
@@ -232,7 +239,7 @@ Después del último stage, entregar el **Paquete de Producción completo**:
 → Si es después de GUION: ajustar solo la sección que pide, no reescribir todo.
 
 ### El cliente no tiene producción definida
-→ Completar hasta Escenas. En la entrega, incluir las 3 opciones de producción (avatar / generativo / grabación) con sus requerimientos para que el cliente elija.
+→ Completar hasta Escenas. En la entrega, incluir las 4 opciones de producción (avatar / generativo / motion de producto / grabación) con sus requerimientos para que el cliente elija.
 
 ### El cliente dice "no me convence" en un gate sin especificar qué
 → "¿Podés señalar qué parte específicamente no te convence? Así ajusto eso sin tocar lo que sí funciona."
@@ -260,5 +267,5 @@ El director habla en términos de lo que se está haciendo, no de los skills que
 
 ## Reference Loading
 
-- `references/pipeline-decision-tree.md` — árbol de decisión para determinar el pipeline, los 4 pipelines resultantes con sus stages, tiempos estimados (cargar en Fase 1)
+- `references/pipeline-decision-tree.md` — árbol de decisión para determinar el pipeline, los 5 pipelines resultantes con sus stages, tiempos estimados (cargar en Fase 1)
 - `references/gate-templates.md` — formato exacto de los 3 gates, manejo de feedback, informe de arranque, updates de progreso entre gates (cargar antes de cada gate)

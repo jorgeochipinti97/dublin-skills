@@ -397,6 +397,7 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[institutional-site-architect](skills/content/institutional-site-architect)** | Multi-page institutional / corporate site blueprints — sitemap, IA, brand voice, trust strategy, per-page copy direction for B2B SaaS, agencies, law firms, VC, nonprofits, personal brands |
 | **[data-viz-architect](skills/data/data-viz-architect)** | Dashboard + data viz architect — picks chart type per business question WITH the reason, KPI hierarchy, layout, library, data fetching strategy |
 | **[remotion-video](skills/media/remotion-video)** | Programmatic video generation from React components with Remotion |
+| **[onetake](skills/media/onetake)** | Short product/launch motion videos (10–60 s) — kinetic type, real UI rebuilt in HTML, motion-blur render, synthesised SFX, slideshow oracle. No Remotion needed |
 | **[ugc-scriptwriter](skills/ugc/ugc-scriptwriter)** | UGC video scripts for AI avatar delivery: 10 ad angles, hook engineering, per-platform pacing, ES/EN, shoot-ready tables |
 | **[ai-avatar-director](skills/ugc/ai-avatar-director)** | Vendor-agnostic director brief for AI avatar video generation: casting, wardrobe, setting, framing, voice — works with HeyGen / Hedra / Akool / Arcads / Synthesia |
 | **[ugc-post-production](skills/ugc/ugc-post-production)** | Edit Decision List for UGC cuts: captions, visual hooks, B-roll, music, SFX — every effect earns its place or gets cut |
@@ -439,7 +440,8 @@ frontend-foundation   frontend-output-validator
 git-workflow          github-safety         hexagonal-architect
 infra-security
 institutional-site-architect                landing-page-architect
-mobile-app-foundation mobile-design         orchestrator
+mobile-app-foundation mobile-design         onetake
+orchestrator
 premium-frontend-design
 product-planner       product-tour          product-ux-advisor
 react-performance
@@ -530,6 +532,7 @@ prompts/
 ├── landing-page-architect.md
 ├── mobile-app-foundation.md
 ├── mobile-design.md
+├── onetake.md
 ├── premium-frontend-design.md
 ├── product-planner.md
 ├── product-tour.md

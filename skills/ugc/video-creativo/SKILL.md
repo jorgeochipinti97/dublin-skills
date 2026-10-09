@@ -249,6 +249,7 @@ Después de ESCENAS, según la producción disponible:
 |---|---|
 | Avatar IA (HeyGen / Hedra / Arcads) | → `ai-avatar-director` (director brief completo) |
 | Video generativo (Veo 3 / Seedance) | → `ugc-video-prompting` (prompts por escena) |
+| Motion de producto (UI real, tipografía cinética, sin persona a cámara) | → `onetake` (guion + escenas como beat sheet; resuelve sonido, captions y render) |
 | Equipo real / auto-filmación | → El breakdown de escenas es el shot list de rodaje |
 | Post-producción (cualquiera) | → `ugc-post-production` (EDL: captions, B-roll, música, SFX) |
 

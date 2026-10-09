@@ -68,6 +68,7 @@ Si no lo especificó: preguntar ahora (única pregunta pendiente antes de correr
 ¿Tipo de producción?
 ├── Avatar IA (HeyGen/Hedra/Arcads) → producción: `ai-avatar-director`
 ├── Video generativo (Veo 3 / Seedance) → producción: `ugc-video-prompting`
+├── Motion de producto (lanzamiento / demo de feature / teaser con UI real, tipografía cinética, motion graphics — sin persona a cámara, sin footage generativo) → producción: `onetake`
 ├── Grabación propia / equipo real → producción: breakdown de escenas como shot list
 └── Sin decisión aún → registrar como "TBD" y el director pregunta al final de GUION
 ```
@@ -154,6 +155,28 @@ ugc-post-production
 
 ---
 
+### Pipeline E — Motion de producto (onetake) + Cualquier marca/gancho + Corto
+
+```
+presskit (si es marca: leer o crear)
+    ↓
+gancho-argumental (opcional — si no trae gancho)
+    ↓ [GATE: elegir gancho]
+video-creativo / CONCEPTO
+    ↓ [GATE: aprobar SMP]
+video-creativo / IDEA + FILTRO DE GUION
+    ↓
+video-creativo / GUION
+    ↓ [GATE: aprobar guion]
+video-creativo / ESCENAS (= beat sheet de onetake)
+    ↓
+onetake (composición HTML + SFX + voz/subtítulos + render)
+    ↓
+ugc-post-production (OPCIONAL — solo si hacen falta captions de plataforma o música extra; onetake ya resuelve sonido, captions y render)
+```
+
+---
+
 ## Tiempos Estimados por Stage
 
 Para comunicarle al cliente cuánto va a tardar el proceso:
@@ -170,6 +193,7 @@ Para comunicarle al cliente cuánto va a tardar el proceso:
 | video-creativo ESCENAS | 5-15 min |
 | ai-avatar-director | 5-10 min |
 | ugc-video-prompting | 5-10 min |
+| onetake | sin medir todavía (incluye render) |
 | ugc-post-production | 5-10 min |
 
 **Pipeline completo corto (A o B)**: 45-90 min de trabajo concentrado con gates.

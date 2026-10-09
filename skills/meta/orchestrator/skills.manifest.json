@@ -858,6 +858,29 @@
       "value": "medium"
     },
     {
+      "name": "onetake",
+      "path": "media/onetake",
+      "category": "media",
+      "tags": [
+        "video",
+        "motion",
+        "launch-video",
+        "kinetic-type"
+      ],
+      "triggers": [
+        "motion video",
+        "launch video",
+        "promo video",
+        "product demo video",
+        "feature demo",
+        "teaser"
+      ],
+      "depends_on": [],
+      "unlocks": [],
+      "cost": "medium",
+      "value": "medium"
+    },
+    {
       "name": "remotion-video",
       "path": "media/remotion-video",
       "category": "media",
@@ -1544,12 +1567,14 @@
     "gtm": [
       "blog-writer",
       "brand-identity",
-      "remotion-video"
+      "remotion-video",
+      "onetake"
     ],
     "ugc_pipeline": [
       "ugc-scriptwriter",
       "ai-avatar-director",
       "ugc-video-prompting",
+      "onetake",
       "ugc-post-production"
     ]
   },

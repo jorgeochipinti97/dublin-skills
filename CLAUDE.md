@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-A **Claude Code skills library** — specialized prompts, reference materials, and code templates that extend Claude Code in specific domains. Currently **41 skills** across 17 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
+A **Claude Code skills library** — specialized prompts, reference materials, and code templates that extend Claude Code in specific domains. Currently **42 skills** across 17 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
 
 ## Structure
 
@@ -74,6 +74,8 @@ skills/
 │   └── testing-strategy/     # WHAT to test at which layer — pyramid, doubles, integration (testcontainers), E2E (Playwright), contract
 │       └── references/       # patterns.md (Vitest, MSW, testcontainers, Playwright, factories, Pact)
 ├── media/
+│   ├── onetake/              # Short product/launch motion videos (10–60 s): single HTML comp as pure function of time, measured moves library, frame-by-frame render with motion blur, synthesised SFX, slideshow oracle. Third-party (feitangyuan/onetake), rendered sample mp4/gifs stripped
+│   │   └── references/ scripts/ lib/ templates/ looks/ cases/
 │   └── remotion-video/       # Programmatic video generation with Remotion + React
 ├── methodology/
 │   └── sdd-workflow/         # Spec-Driven Development — triggers, commands, dep graph, artifact store (engram/openspec/none), sub-agent patterns
@@ -103,7 +105,7 @@ skills/
 │       └── references/       # patterns.md (Better-Auth, NestJS + JWT rotation, RBAC guard, CASL, password reset, rate limit)
 ├── ugc/
 │   ├── content-director/     # Orquestador del pipeline de video. El cliente da un brief de 1-2 líneas; el director determina el pipeline, corre los skills en orden, y solo para al cliente en 3 gates (gancho / SMP / guion). El cliente no conoce los skills internos.
-│   │   └── references/       # pipeline-decision-tree.md (árbol + 4 pipelines resultantes), gate-templates.md (formato de los 3 gates + informe de arranque)
+│   │   └── references/       # pipeline-decision-tree.md (árbol + 5 pipelines resultantes), gate-templates.md (formato de los 3 gates + informe de arranque)
 │   ├── gancho-argumental/    # Investigación web sistemática para encontrar tensión, ironía, paradoja o dato oculto que transforma un tema en historia. 11 tipos de gancho clasificados por potencial viral. Output: brief de investigación → alimenta CONCEPTO de video-creativo.
 │   │   └── references/       # hook-taxonomy.md (11 tipos + ranking viral), search-playbook.md (8 dimensiones de búsqueda + queries modelo + verificación)
 │   ├── video-creativo/       # Flujo completo CONCEPTO → IDEA → GUION → ESCENAS — corto (15-90 seg) y largo (3-20 min). Upstream de todo el pipeline UGC.
@@ -136,7 +138,7 @@ This repo is the **model/source**, not where the team works: they clone it and i
 
 `./install.sh install` installs a complete AI agent environment for the team in **two commands** (`git clone … && cd dublin-skills && ./install.sh install`). Asks tool + scope, then installs in order:
 
-1. **All 41 skills** (reuses `install_all`)
+1. **All 42 skills** (reuses `install_all`)
 2. **dublin-agent** (claude/opencode; both for `universal`)
 3. **Team rules** — `env/rules/TEAM-RULES.md` → `CLAUDE.md` (Claude) or `AGENTS.md` (OpenCode/Codex/Universal). Eight sections: (1) hard rules, (2) frontend conventions, (3) forbidden AI Tells, (4) process, (5) technical defaults, (6) agent operating discipline (work routing / delegation contract / TDD evidence / model routing), (7) project tracking (`SESSION.md` status + `TASKS.md` shared backlog with Client-pains/Backlog/Doing/Done/Future buckets + private gitignored `TASKS.<you>.local.md` + mandatory context upkeep), (8) roles & operating model (Tech Lead = agent, Approver = owner, Dev = team incl. non-technical; agent builds order when none exists). Companion `env/OPERATING-MODEL.md` → project root. Merged between `<!-- DUBLIN-TEAM-RULES:START/END -->` markers (hand edits outside survive). Idempotent; `--force` refreshes.
 4. **Shared memory** — `env/memory/*` → `<project>/.claude/team-memory/` (5 pre-seeded facts: zero-hallucinations, finish-now, change-safety, foundation-first-frontend, forbidden-ai-tells)
@@ -234,12 +236,14 @@ Two rendering branches share `ugc-scriptwriter` (start) and `ugc-post-production
 - **Lipsync** (talking head): `ugc-scriptwriter` → `ai-avatar-director` → `ugc-post-production`. For HeyGen / Hedra / Akool / Arcads / Synthesia.
 - **Generative** (Veo 3 / Seedance 2.0): `ugc-scriptwriter` → `ugc-video-prompting` → `ugc-post-production`. For scene-based UGC, B-roll, POV, demo.
 - Hybrid campaigns combine both (lipsync talking head + generative B-roll).
+- **Motion/product** (third branch): `video-creativo` → `onetake` [→ `ugc-post-production` optional]. For launch / feature-demo / teaser built from real UI, kinetic type or motion graphics (no person on camera, no generative footage). onetake does its own sound/captions/render, so post-production only runs if extra platform captions/music are needed.
 - Shared vocabulary across branches: Filler Word Index, Jane Doe Effect, Pure Black Tell, Data Realism. `ai-avatar-director` mandates ES-AR voseo voice (not neutral).
 
 ### Integration / Media / Meta
 
 - **bind-api** — BIND Argentina Open Banking sandbox: OAuth 2.0 Direct Login; accounts, transfers, DEBIN, eCheqs, CBU/CVU validation; TS client `scripts/bind_client.ts`.
 - **remotion-video** — programmatic video from React components.
+- **onetake** — launch/promo/feature-demo motion clips without Remotion: HTML comp + `scripts/render.py` (1080p30 drafts, 4K60 final). Python scripts; vendored from upstream — update by re-syncing, not hand-editing.
 - **skill-creator** — guide for creating new skills.
 
 ## Working with This Repository
@@ -305,5 +309,6 @@ These four rules override the natural tendency to over-plan. They apply to every
   - Lipsync branch: `video-creativo` (or `ugc-scriptwriter`) → `ai-avatar-director` → `ugc-post-production`
   - Generative branch: `video-creativo` (or `ugc-scriptwriter`) → `ugc-video-prompting` → `ugc-post-production`
   - Hybrid campaigns use both branches (lipsync talking head, generative B-roll/scene)
+  - Motion/product branch: `video-creativo` → `onetake` [→ `ugc-post-production` optional — onetake ships its own sound/captions/render]
   - Use `video-creativo` when the comunicación strategic layer (concepto, insight, SMP) is not yet defined. Use `ugc-scriptwriter` directly when the angle and script are the only deliverable.
-  - Never skip post-production (renders still need captions, music sync, hook FX)
+  - Never skip post-production (renders still need captions, music sync, hook FX) — except the motion/product branch, where it's optional

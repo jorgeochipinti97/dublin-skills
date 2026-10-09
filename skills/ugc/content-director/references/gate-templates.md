@@ -154,15 +154,15 @@ El primer output del director — antes de correr cualquier skill — es el plan
 
 **Brief**: "[lo que entendí del pedido del cliente]"
 **Tipo**: [con marca / sin marca] · **Formato**: [corto/largo] · **Plataforma**: [plataforma]
-**Producción**: [avatar / generativo / equipo / TBD]
+**Producción**: [avatar / generativo / motion de producto / equipo / TBD]
 
 **Pipeline que voy a correr:**
 
 1. [✅ PRESSKIT — leer] / [🔄 PRESSKIT — crear] / [— no aplica]
 2. [🔄 GANCHO ARGUMENTAL — buscar] / [✅ GANCHO — ya definido por el cliente]
 3. 🔄 VIDEO CREATIVO — CONCEPTO → IDEA → FILTRO → GUION → ESCENAS
-4. 🔄 [ai-avatar-director / ugc-video-prompting / shot list]
-5. 🔄 UGC POST-PRODUCTION
+4. 🔄 [ai-avatar-director / ugc-video-prompting / onetake / shot list]
+5. 🔄 UGC POST-PRODUCTION [opcional si la producción es onetake]
 
 **Gates de aprobación**: [N] puntos donde voy a pausar para tu input
 **Tiempo estimado**: [X-Y minutos en total]

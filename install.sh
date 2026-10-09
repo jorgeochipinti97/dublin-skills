@@ -190,6 +190,7 @@ SKILLS=(
     landing-page-architect "content/landing-page-architect"
     mobile-app-foundation "mobile/mobile-app-foundation"
     mobile-design "frontend/mobile-design"
+    onetake "media/onetake"
     orchestrator "meta/orchestrator"
     premium-frontend-design "frontend/premium-frontend-design"
     presskit "content/presskit"
