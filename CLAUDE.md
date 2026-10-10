@@ -243,7 +243,7 @@ Two rendering branches share `ugc-scriptwriter` (start) and `ugc-post-production
 
 - **bind-api** — BIND Argentina Open Banking sandbox: OAuth 2.0 Direct Login; accounts, transfers, DEBIN, eCheqs, CBU/CVU validation; TS client `scripts/bind_client.ts`.
 - **remotion-video** — programmatic video from React components.
-- **onetake** — launch/promo/feature-demo motion clips without Remotion: HTML comp + `scripts/render.py` (1080p30 drafts, 4K60 final). Python scripts; vendored from upstream — update by re-syncing, not hand-editing.
+- **onetake** — launch/promo/feature-demo motion clips without Remotion: HTML comp + `scripts/render.py` (1080p30 drafts, 4K60 final). Python scripts. Dublin fork of upstream: adds optional ElevenLabs voice (`vo_tools.py --engine auto`, falls back to local Kokoro without `ELEVENLABS_API_KEY`) — re-syncing from upstream must keep these changes.
 - **skill-creator** — guide for creating new skills.
 
 ## Working with This Repository

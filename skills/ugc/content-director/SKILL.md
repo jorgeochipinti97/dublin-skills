@@ -169,6 +169,7 @@ Correr cada stage en orden. Para cada uno:
 → "Armando la pieza de motion..."
 → Usar cuando el video es un lanzamiento / demo de feature / teaser de producto hecho con UI real, tipografía cinética o motion graphics — sin persona a cámara y sin footage generativo.
 → Delegar a `onetake`: el guion + breakdown de escenas aprobados son su beat sheet. onetake resuelve su propio sonido, captions/subtítulos y render.
+→ **Voz (si el video lleva voz en off):** si existe `ELEVENLABS_API_KEY`, mostrar las voces de la cuenta (`vo_tools.py voices`) y que el cliente elija (biblioteca, clonada o diseñada). Si no existe, avisar en una línea que se usa la voz local gratuita y que con la key puede usar la voz que quiera — y seguir, nunca frenar por la key.
 → No gate. Output incluido en el paquete.
 
 **Grabación propia:**

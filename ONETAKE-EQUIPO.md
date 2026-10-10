@@ -91,6 +91,16 @@ pip3 install playwright numpy scipy Pillow matplotlib fonttools brotli opencv-py
 python3 -m playwright install chromium
 ```
 
+### Voz en off con la voz que quieras (opcional)
+
+Con una API key de [ElevenLabs](https://elevenlabs.io) podés usar cualquier voz: de su biblioteca, **clonada** (subís 1–2 min de audio) o diseñada por descripción. Sin key funciona igual con una voz local gratuita.
+
+```bash
+export ELEVENLABS_API_KEY=tu_key      # agregalo a ~/.zshrc para que quede fijo
+```
+
+Claude te muestra las voces de tu cuenta y elegís. Para clonar una voz ajena, pedí permiso a su dueño.
+
 ---
 
 ## Cómo pedirlo

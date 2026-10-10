@@ -101,7 +101,11 @@ effect**. Config format in the script's docstring.
 languages), the user screenshots or records only reference takes, and the UI is rebuilt in HTML in the reference's
 own pixel frame. Every string lives in a table, every state is written by a pure `set(state)`, and the replica sits
 on the plane where the camera can close in at any zoom. Highlights are measured from its DOM (`lib/ui_kit.js`).
-Narration comes from `scripts/vo_tools.py`: audition, lines, word times, subtitles. A second language is `?lang=`
+Narration comes from `scripts/vo_tools.py`: audition, lines, word times, subtitles. **Voice step (always part of a narrated film):**
+before any TTS, check `ELEVENLABS_API_KEY`. Set → run `vo_tools.py voices` and let the user pick a voice_id (library,
+cloned or designed); `tts` uses ElevenLabs automatically. Not set → say so in one line ("sin API key de ElevenLabs uso
+la voz local; con key podés usar la voz que quieras") and continue with Kokoro (`--kokoro-voice`). Never block on the key.
+Spanish: `--lang es` on `tts` and `words`. A second language is `?lang=`
 on the same comp, its VO mapped onto the authored timeline by `UIK.timeWarp` knots on words that mean the same
 thing, checked pixel-identical for the source language with `scripts/frame_diff.py`. The content stays the product's
 real output. Method, numbers and what bit: `references/product-demo.md`. It is a technique, not a look: palette,

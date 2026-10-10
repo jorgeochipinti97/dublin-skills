@@ -5,6 +5,8 @@
   KPY=~/.cache/kokoro/venv/bin/python
   $KPY  vo_tools.py tts   vo/lines.txt --voice bf_emma --lang en-gb --out vo/bf_emma            # Kokoro, local; see --lang
   $KPY  vo_tools.py tts   vo/ja/lines.txt --read vo/ja/read.txt --voice jf_alpha --lang ja --out vo/ja/jf_alpha
+  python3 vo_tools.py voices                                                                     # ElevenLabs: voice_id + name of every voice on the account
+  python3 vo_tools.py tts   vo/lines.txt --voice <voice_id> --lang es --out vo/el                  # auto: ElevenLabs if ELEVENLABS_API_KEY is set, else Kokoro (--kokoro-voice)
   python3 vo_tools.py words vo/bf_emma --lang en --lines vo/lines.txt                            # faster-whisper → words.json
   python3 vo_tools.py plan  vo/bf_emma --lead 0.5 --breath 0.45 --gap 7:2.45                     # → plan.json: durs, VO starts
   python3 vo_tools.py subs  vo/lines.txt vo/bf_emma --max 42                                     # → subs.json [[t0, t1, text], …]
@@ -14,6 +16,11 @@ tts      each line → t<i>.wav (48 kHz mono), silence trimmed and inner pauses 
          joined <voice>.m4a instead of per-line files (auditions). Japanese: Kokoro's default espeak cannot read kanji —
          pass --read, a kana reading of each line (names spelled as they are said: エクセル, エイチティーエムエル),
          phonemised by misaki[ja] (+ unidic-lite) in the Kokoro venv. The subtitles still use lines.txt.
+         --engine auto (default): ElevenLabs when ELEVENLABS_API_KEY is set, otherwise Kokoro with --kokoro-voice.
+         ElevenLabs: --voice is a voice_id (library, cloned or designed voice — list them with
+         `voices`), --el-model picks the model (default eleven_multilingual_v2). Same output as Kokoro, so words / plan /
+         subs / timeWarp work unchanged. Spanish: run words with --lang es.
+voices   ElevenLabs only: prints voice_id, name and category of the voices on the account.
 words    word-level times per line (faster-whisper small, CPU). English: when the count matches the line, the line's own
          words replace whisper's spelling (it hears brand names wrong). Japanese comes back as characters in whatever
          script whisper chose (kana for a katakana name, even a wrong kanji) — use it to find anchors by ear-order, not text.
@@ -53,21 +60,65 @@ def trim(x, thr=10 ** (-45 / 20), gap=0.28):
     return np.concatenate(out)
 
 
+EL_API = "https://api.elevenlabs.io/v1"
+
+
+def el_key():
+    k = os.environ.get("ELEVENLABS_API_KEY")
+    if not k:
+        sys.exit("ELEVENLABS_API_KEY is not set — export it (elevenlabs.io → Profile → API keys)")
+    return k
+
+
+def el_request(path, body=None):
+    import urllib.request, urllib.error
+    req = urllib.request.Request(EL_API + path, data=json.dumps(body).encode() if body else None,
+                                 headers={"xi-api-key": el_key(), "Content-Type": "application/json"})
+    try:
+        return urllib.request.urlopen(req, timeout=120).read()
+    except urllib.error.HTTPError as e:
+        sys.exit(f"ElevenLabs {e.code}: {e.read().decode(errors='replace')[:400]}")
+
+
+def el_tts(text, voice, model):
+    """→ (float32 mono, SR): mp3 from the API (raw PCM at 44.1 kHz is Pro-tier only), decoded by ffmpeg"""
+    import numpy as np
+    mp3 = el_request(f"/text-to-speech/{voice}?output_format=mp3_44100_128", {"text": text, "model_id": model})
+    pcm = subprocess.run(["ffmpeg", "-v", "error", "-i", "pipe:0", "-f", "f32le", "-ac", "1", "-ar", str(SR), "pipe:1"],
+                         input=mp3, capture_output=True, check=True).stdout
+    return np.frombuffer(pcm, "<f4"), SR
+
+
+def cmd_voices(a):
+    for v in json.loads(el_request("/voices"))["voices"]:
+        print(f"{v['voice_id']}  {v['name']}  ({v.get('category', '')})")
+
+
 def cmd_tts(a):
     import numpy as np, soundfile as sf
-    from kokoro_onnx import Kokoro
     from scipy.signal import resample_poly
-    K = os.path.expanduser("~/.cache/kokoro")
-    tts = Kokoro(os.path.join(K, "kokoro-v1.0.onnx"), os.path.join(K, "voices-v1.0.bin"))
+    if a.engine == "auto":
+        a.engine = "elevenlabs" if os.environ.get("ELEVENLABS_API_KEY") else "kokoro"
+        print(f"engine: {a.engine}" + ("" if a.engine == "elevenlabs" else " (no ELEVENLABS_API_KEY — local fallback)"), file=sys.stderr)
+        if a.engine == "kokoro":
+            a.voice = a.kokoro_voice
+    if not a.voice:
+        sys.exit("--voice is required (ElevenLabs: a voice_id from `vo_tools.py voices`; Kokoro: a voice name)")
     lines = read_lines(a.read or a.lines)
-    g2p = None
-    if a.lang == "ja":
+    tts = g2p = None
+    if a.engine == "kokoro":
+        from kokoro_onnx import Kokoro
+        K = os.path.expanduser("~/.cache/kokoro")
+        tts = Kokoro(os.path.join(K, "kokoro-v1.0.onnx"), os.path.join(K, "voices-v1.0.bin"))
+    if a.engine == "kokoro" and a.lang == "ja":
         from misaki import ja
         g2p = ja.JAG2P()
     pick = [int(i) for i in a.pick.split(",")] if a.pick else list(range(1, len(lines) + 1))
     os.makedirs(a.out, exist_ok=True); parts, durs = [], []
     for i in pick:
-        if g2p:
+        if a.engine == "elevenlabs":
+            x, sr = el_tts(lines[i - 1], a.voice, a.el_model)
+        elif g2p:
             ph, _ = g2p(lines[i - 1]); x, sr = tts.create(ph, voice=a.voice, speed=a.speed, is_phonemes=True)
         else:
             x, sr = tts.create(lines[i - 1], voice=a.voice, speed=a.speed, lang=a.lang)
@@ -174,9 +225,12 @@ def cmd_subs(a):
 
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter); sp = ap.add_subparsers(dest="cmd", required=True)
-p = sp.add_parser("tts"); p.add_argument("lines"); p.add_argument("--voice", required=True); p.add_argument("--lang", default="en-us", help="en-us | en-gb | ja")
+p = sp.add_parser("tts"); p.add_argument("lines"); p.add_argument("--voice"); p.add_argument("--lang", default="en-us", help="Kokoro: en-us | en-gb | ja | es (ElevenLabs reads the language from the text)")
 p.add_argument("--read", help="a reading per line to speak instead (Japanese: kana)"); p.add_argument("--speed", type=float, default=1.0); p.add_argument("--gap-in", type=float, default=0.28)
-p.add_argument("--lines", dest="pick", default=""); p.add_argument("--sample", action="store_true"); p.add_argument("--out", required=True); p.set_defaults(f=cmd_tts)
+p.add_argument("--lines", dest="pick", default=""); p.add_argument("--sample", action="store_true"); p.add_argument("--out", required=True)
+p.add_argument("--engine", choices=["auto", "kokoro", "elevenlabs"], default="auto")
+p.add_argument("--kokoro-voice", default="ef_dora", help="voice used when auto falls back to Kokoro"); p.add_argument("--el-model", default="eleven_multilingual_v2"); p.set_defaults(f=cmd_tts)
+p = sp.add_parser("voices"); p.set_defaults(f=cmd_voices)
 p = sp.add_parser("words"); p.add_argument("dir"); p.add_argument("--lang", default="en"); p.add_argument("--lines"); p.add_argument("--model", default="small"); p.set_defaults(f=cmd_words)
 p = sp.add_parser("plan"); p.add_argument("dir"); p.add_argument("--lead", type=float, default=0.5); p.add_argument("--breath", type=float, default=0.45)
 p.add_argument("--gap", nargs="*", default=[], help="i:s — s seconds before line i instead of the breath"); p.set_defaults(f=cmd_plan)
