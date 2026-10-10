@@ -89,6 +89,17 @@ def el_tts(text, voice, model):
     return np.frombuffer(pcm, "<f4"), SR
 
 
+def lint_es(lines):
+    """warn about Spanish VO text that makes a TTS voice sound flat: missing ¿/¡, digits, symbols, bare caps"""
+    for i, l in enumerate(lines, 1):
+        why = [m for m, bad in (("falta ¿", "?" in l and "¿" not in l), ("falta ¡", "!" in l and "¡" not in l),
+                                ("números en cifras", bool(re.search(r"\d", l))), ("símbolos (% & / etc.)", bool(re.search(r"[%&/]|\betc\.", l))),
+                                ("MAYÚSCULAS sueltas", bool(re.search(r"\b[A-ZÁÉÍÓÚÑ]{4,}\b", l))),
+                                ("sin puntuación final", not re.search(r"[.?!…—:]$", l))) if bad]
+        if why:
+            print(f"  línea {i}: {', '.join(why)} → {l}", file=sys.stderr)
+
+
 def cmd_voices(a):
     for v in json.loads(el_request("/voices"))["voices"]:
         print(f"{v['voice_id']}  {v['name']}  ({v.get('category', '')})")
@@ -105,6 +116,8 @@ def cmd_tts(a):
     if not a.voice:
         sys.exit("--voice is required (ElevenLabs: a voice_id from `vo_tools.py voices`; Kokoro: a voice name)")
     lines = read_lines(a.read or a.lines)
+    if a.lang.startswith("es"):
+        lint_es(lines)
     tts = g2p = None
     if a.engine == "kokoro":
         from kokoro_onnx import Kokoro

@@ -117,7 +117,7 @@ Correr cada stage en orden. Para cada uno:
 
 **Si existe `.agents/product-marketing.md`:** leerlo en silencio (público, dolores, objeciones, lenguaje del cliente) y pasarlo a CONCEPTO.
 
-**Si NO existe:** delegar a `marketing-brain` Modo 1, versión corta. Hacer las preguntas **dentro del mismo intercambio del PRESSKIT** (o del intake si no hay PRESSKIT) — no agrega un gate nuevo.
+**Si NO existe:** armar la **Ficha de Marketing** con `marketing-brain` (Modo rápido): buyer persona, principio psicológico y 3 ángulos de venta con uno recomendado, explicados en criollo. El cliente no necesita saber de marketing — el director propone y el cliente elige. La ficha va **dentro del Informe de Arranque** (Gate 1), no agrega un gate nuevo. Al aprobarse, guardarla en `.agents/product-marketing.md`.
 
 #### Stage: GANCHO ARGUMENTAL
 

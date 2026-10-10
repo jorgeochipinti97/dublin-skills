@@ -19,7 +19,7 @@ Cada capa se construye sobre la anterior. Saltear el CONCEPTO produce un guión 
 
 1. **Empezar siempre en CONCEPTO.** Sin brief de concepto aprobado, no se escribe una línea de guión.
 2. **Un video = un mensaje.** Si hay dos mensajes, hay dos videos.
-3. **El guión se escribe para el oído, no para el ojo.** Frases cortas. Contracciones. Sin construcciones de texto.
+3. **El guión se escribe para el oído, no para el ojo.** Frases cortas. Contracciones. Sin construcciones de texto. Si lo va a leer una voz de IA (ElevenLabs/Kokoro), escribirlo con **todas las tildes, `¿?`/`¡!` de apertura, pausas marcadas (coma, `…`, `—`) y números en palabras** — sin eso la voz entona plano y suena rara.
 4. **El hook visual y el hook verbal son dos cosas distintas** — deben complementarse, no repetirse.
 5. **El CTA es específico o no existe.** "Seguime para más contenido" = CTA nulo.
 6. **Nunca inventar datos, testimonios o resultados sin marcar ⚠️.**
@@ -98,7 +98,7 @@ Producir el **Brief de Concepto**:
 **Cargar**: `references/idea-angles.md`
 
 1. **Definir el formato** de video (talking head / B-roll + VO / pantalla / híbrido)
-2. **Seleccionar el ángulo** de los 12 disponibles — justificar por qué este ángulo match con el RTB
+2. **Seleccionar el ángulo** de los 12 disponibles — justificar por qué este ángulo match con el RTB. Si hay Ficha de Marketing aprobada (`.agents/product-marketing.md`), el ángulo creativo tiene que servir al **ángulo de venta** elegido y hablarle a esa persona.
 3. **Definir la imagen mental de los primeros 3 seg** — lo que la audiencia VE antes de que nadie hable
 4. **Validar con la prueba de anclaje**: ¿esta IDEA sería imposible sin este SMP específico?
 

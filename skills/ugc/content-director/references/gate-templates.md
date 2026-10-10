@@ -156,6 +156,11 @@ El primer output del director — antes de correr cualquier skill — es el plan
 **Tipo**: [con marca / sin marca] · **Formato**: [corto/largo] · **Plataforma**: [plataforma]
 **Producción**: [avatar / generativo / motion de producto / equipo / TBD]
 
+**Ficha de Marketing** (si es marca/producto y no había contexto guardado — template en `marketing-brain`):
+- A quién le hablamos: [persona en una línea]
+- Por qué compraría: [principio]
+- Ángulo de venta recomendado: [ángulo — en criollo] · alternativas: [2] y [3]
+
 **Pipeline que voy a correr:**
 
 1. [✅ PRESSKIT — leer] / [🔄 PRESSKIT — crear] / [— no aplica]
@@ -168,7 +173,7 @@ El primer output del director — antes de correr cualquier skill — es el plan
 **Tiempo estimado**: [X-Y minutos en total]
 
 ---
-¿Arrancamos o querés ajustar algo del plan primero?
+¿Arrancamos o querés ajustar algo del plan primero? (Si hay ficha: decime qué ángulo preferís o corregí lo que no cierre del público.)
 ```
 
 Si el cliente aprueba el plan → arrancar sin más.

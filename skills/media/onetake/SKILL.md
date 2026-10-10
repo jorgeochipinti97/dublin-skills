@@ -105,7 +105,15 @@ Narration comes from `scripts/vo_tools.py`: audition, lines, word times, subtitl
 before any TTS, check `ELEVENLABS_API_KEY`. Set → run `vo_tools.py voices` and let the user pick a voice_id (library,
 cloned or designed); `tts` uses ElevenLabs automatically. Not set → say so in one line ("sin API key de ElevenLabs uso
 la voz local; con key podés usar la voz que quieras") and continue with Kokoro (`--kokoro-voice`). Never block on the key.
-Spanish: `--lang es` on `tts` and `words`. A second language is `?lang=`
+Spanish: `--lang es` on `tts` and `words`.
+
+**Texto para la voz (TTS)** — la voz lee exactamente lo que recibe; sin marcas, entona plano y suena rara:
+- **Todas las tildes**, incluido el voseo: *acordás, tenés, querés, mirá, está, también, cómo/qué/dónde* interrogativos.
+- **Signos de apertura y cierre**: `¿…?` y `¡…!` siempre — el `¿` le avisa que la frase sube.
+- **Tono tácito escrito**: coma = respiro, punto = bajada, `…` = suspenso o pausa larga, `—` = giro o remate. Una idea por frase.
+- **Números, siglas y símbolos en palabras**: *dos mil veintidós*, *tres a tres*, *por ciento*; nada de `2022`, `3-3`, `%`, `etc.`
+- **Énfasis por puntuación y orden**, nunca MAYÚSCULAS sueltas ni asteriscos (los lee o los ignora).
+ A second language is `?lang=`
 on the same comp, its VO mapped onto the authored timeline by `UIK.timeWarp` knots on words that mean the same
 thing, checked pixel-identical for the source language with `scripts/frame_diff.py`. The content stays the product's
 real output. Method, numbers and what bit: `references/product-demo.md`. It is a technique, not a look: palette,

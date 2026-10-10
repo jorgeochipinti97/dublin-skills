@@ -13,6 +13,31 @@ Basado en [coreyhaines31/marketingskills](https://github.com/coreyhaines31/marke
 
 Antes de cualquier modo, buscar el documento de contexto: `.agents/product-marketing.md` (o `.claude/product-marketing.md`). Si existe, leerlo y no repreguntar lo que ya dice. Si no existe y el trabajo es para una marca/producto concreto → correr el Modo 1 primero (versión corta si el usuario está apurado: producto, público, dolor principal, diferencial, objeción principal, palabras del cliente).
 
+## Modo rápido — Ficha de Marketing (default dentro del flujo de video)
+
+El usuario no tiene por qué saber de marketing. **Proponer, no interrogar**: armar la ficha a partir del brief, el PRESSKIT, la web del producto y búsqueda web; preguntar solo lo que no se puede deducir, en lenguaje llano y máximo 3 preguntas ("¿qué vendés?", "¿a quién se lo querés vender?", "¿dónde y a qué precio?"). Cero jerga sin traducir: si aparece un término (ICP, objeción, JTBD), explicarlo en media línea.
+
+```markdown
+## Ficha de Marketing — [producto]
+
+**A quién le hablamos (buyer persona)**
+- [Etiqueta descriptiva, ej: "El que vio el Mundial con el viejo" — 40-55, AR] — no inventar nombre ni foto
+- Qué quiere: [deseo en sus palabras]
+- Qué le duele / qué le frena: [dolor u objeción principal]
+- Dónde está: [plataforma donde lo encontramos]
+
+**Por qué compraría (principio psicológico)**: [uno solo + media línea de por qué]
+
+**3 ángulos de venta** (cómo le entramos)
+1. [Ángulo] — [en criollo: qué le decimos y por qué funciona] ← recomendado
+2. [Ángulo] — [...]
+3. [Ángulo] — [...]
+
+**Lo que no sabemos**: [datos marcados `[FALTA]`, nunca inventados]
+```
+
+El usuario aprueba o corrige en una línea ("el 2", "es para regalar, no para uno"). La ficha aprobada se guarda en `.agents/product-marketing.md` (sección "Ficha rápida") para no repreguntar en el próximo video del mismo producto. B2C: una persona principal; B2B: personas por rol (ver `references/product-marketing.md` §3).
+
 ## Modos
 
 | Modo | Cuándo | Cargar |
