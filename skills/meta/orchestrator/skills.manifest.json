@@ -810,6 +810,37 @@
       "value": "medium"
     },
     {
+      "name": "marketing-brain",
+      "path": "marketing/marketing-brain",
+      "category": "marketing",
+      "tags": [
+        "marketing",
+        "positioning",
+        "persuasion",
+        "ad-creative",
+        "hooks"
+      ],
+      "triggers": [
+        "positioning",
+        "target audience",
+        "ICP",
+        "marketing psychology",
+        "ad angles",
+        "hooks",
+        "ad variations",
+        "posicionamiento",
+        "público objetivo"
+      ],
+      "depends_on": [],
+      "unlocks": [
+        "video-creativo",
+        "ugc-scriptwriter",
+        "landing-page-architect"
+      ],
+      "cost": "low",
+      "value": "high"
+    },
+    {
       "name": "blog-writer",
       "path": "content/blog-writer",
       "category": "content",
@@ -1565,12 +1596,14 @@
       "change-safety"
     ],
     "gtm": [
+      "marketing-brain",
       "blog-writer",
       "brand-identity",
       "remotion-video",
       "onetake"
     ],
     "ugc_pipeline": [
+      "marketing-brain",
       "ugc-scriptwriter",
       "ai-avatar-director",
       "ugc-video-prompting",

@@ -1,6 +1,6 @@
 ---
 name: content-director
-description: "Orquesta el pipeline completo de producción de contenido en video. El cliente da un brief de 1-2 líneas ('quiero un video para IG sobre el Mundial 78') y el director determina el pipeline, corre los skills en orden, y solo detiene al cliente en 3 gates de aprobación (gancho, SMP, guion). Delega a: presskit, gancho-argumental, video-creativo, ai-avatar-director / ugc-video-prompting / onetake, ugc-post-production. El cliente no tiene que conocer los skills — solo da el brief y aprueba en los gates."
+description: "Orquesta el pipeline completo de producción de contenido en video. El cliente da un brief de 1-2 líneas ('quiero un video para IG sobre el Mundial 78') y el director determina el pipeline, corre los skills en orden, y solo detiene al cliente en 3 gates de aprobación (gancho, SMP, guion). Delega a: presskit, marketing-brain, gancho-argumental, video-creativo, ai-avatar-director / ugc-video-prompting / onetake, ugc-post-production. El cliente no tiene que conocer los skills — solo da el brief y aprueba en los gates."
 ---
 
 # Content Director
@@ -112,6 +112,12 @@ Correr cada stage en orden. Para cada uno:
 → Presentar el PRESSKIT.md resultante
 → "¿El PRESSKIT está bien? Si confirmás, arrancamos con el contenido."
 → (Este es un gate implícito — único caso donde se agrega un 4to gate)
+
+#### Stage: CONTEXTO DE PRODUCTO (si es marca/producto)
+
+**Si existe `.agents/product-marketing.md`:** leerlo en silencio (público, dolores, objeciones, lenguaje del cliente) y pasarlo a CONCEPTO.
+
+**Si NO existe:** delegar a `marketing-brain` Modo 1, versión corta. Hacer las preguntas **dentro del mismo intercambio del PRESSKIT** (o del intake si no hay PRESSKIT) — no agrega un gate nuevo.
 
 #### Stage: GANCHO ARGUMENTAL
 

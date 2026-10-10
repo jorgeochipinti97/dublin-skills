@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-A **Claude Code skills library** — specialized prompts, reference materials, and code templates that extend Claude Code in specific domains. Currently **42 skills** across 17 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
+A **Claude Code skills library** — specialized prompts, reference materials, and code templates that extend Claude Code in specific domains. Currently **43 skills** across 18 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
 
 ## Structure
 
@@ -73,6 +73,10 @@ skills/
 │   │   └── references/       # examples.md
 │   └── testing-strategy/     # WHAT to test at which layer — pyramid, doubles, integration (testcontainers), E2E (Playwright), contract
 │       └── references/       # patterns.md (Vitest, MSW, testcontainers, Playwright, factories, Pact)
+├── marketing/
+│   └── marketing-brain/      # Marketing brain — 3 modes: product context (.agents/product-marketing.md: positioning, ICP, objections, customer language), persuasion psychology, ad creative (angles, hooks, variants, platform formats). Based on coreyhaines31/marketingskills (MIT)
+│       ├── references/       # product-marketing.md, psychology.md, ad-creative.md + ad-creative/ (hook-system, short-form-video-specs, motion-video-ads, awareness-headlines, …)
+│       └── assets/           # creative-review-template.html
 ├── media/
 │   ├── onetake/              # Short product/launch motion videos (10–60 s): single HTML comp as pure function of time, measured moves library, frame-by-frame render with motion blur, synthesised SFX, slideshow oracle. Third-party (feitangyuan/onetake), rendered sample mp4/gifs stripped
 │   │   └── references/ scripts/ lib/ templates/ looks/ cases/
@@ -138,7 +142,7 @@ This repo is the **model/source**, not where the team works: they clone it and i
 
 `./install.sh install` installs a complete AI agent environment for the team in **two commands** (`git clone … && cd dublin-skills && ./install.sh install`). Asks tool + scope, then installs in order:
 
-1. **All 42 skills** (reuses `install_all`)
+1. **All 43 skills** (reuses `install_all`)
 2. **dublin-agent** (claude/opencode; both for `universal`)
 3. **Team rules** — `env/rules/TEAM-RULES.md` → `CLAUDE.md` (Claude) or `AGENTS.md` (OpenCode/Codex/Universal). Eight sections: (1) hard rules, (2) frontend conventions, (3) forbidden AI Tells, (4) process, (5) technical defaults, (6) agent operating discipline (work routing / delegation contract / TDD evidence / model routing), (7) project tracking (`SESSION.md` status + `TASKS.md` shared backlog with Client-pains/Backlog/Doing/Done/Future buckets + private gitignored `TASKS.<you>.local.md` + mandatory context upkeep), (8) roles & operating model (Tech Lead = agent, Approver = owner, Dev = team incl. non-technical; agent builds order when none exists). Companion `env/OPERATING-MODEL.md` → project root. Merged between `<!-- DUBLIN-TEAM-RULES:START/END -->` markers (hand edits outside survive). Idempotent; `--force` refreshes.
 4. **Shared memory** — `env/memory/*` → `<project>/.claude/team-memory/` (5 pre-seeded facts: zero-hallucinations, finish-now, change-safety, foundation-first-frontend, forbidden-ai-tells)
@@ -228,6 +232,7 @@ The directory tree above describes each skill and its reference files. This sect
 ### Content & GTM
 
 - **blog-writer** / **landing-page-architect** / **institutional-site-architect** — Filler Word Index + Data Realism (99.99% Problem, Jane Doe, Acme Slop) enforced. landing-page-architect hands off to `product-ux-advisor` + `premium-frontend-design`.
+- **marketing-brain** — one entry, three modes; loads only the reference the mode needs. Product context lives in `<project>/.agents/product-marketing.md` and is read by `video-creativo` (CONCEPTO picks ONE dominant psychological principle) and `content-director` (asks the short version inside the PRESSKIT exchange — no extra gate). Upstream: coreyhaines31/marketingskills; re-sync by copying the three skills' files, keep the Dublin `SKILL.md` router.
 - **brand-identity** / **brand-guidelines** — feed `premium-frontend-design` so it doesn't improvise colors/typography.
 
 ### UGC Pipeline

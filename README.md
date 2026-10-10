@@ -393,6 +393,7 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[bind-api](skills/bind-api)** | BIND Argentina API integration (Open Banking) |
 | **[infra-security](skills/infra-security)** | Infrastructure architect and security specialist — AWS, VPS, Azure, AI-as-a-Service, Docker cleanup & disk hygiene |
 | **[blog-writer](skills/content/blog-writer)** | Professional blog posts in English/Spanish — no hype, no fluff |
+| **[marketing-brain](skills/marketing/marketing-brain)** | Marketing brain: product context (positioning, ICP, customer language), persuasion psychology, ad angles/hooks/variants — feeds video-creativo, ugc-scriptwriter, landing-page-architect. Based on coreyhaines31/marketingskills (MIT) |
 | **[landing-page-architect](skills/content/landing-page-architect)** | Conversion-optimized landing page blueprints (copy + structure) — hands off to product-ux-advisor + premium-frontend-design |
 | **[institutional-site-architect](skills/content/institutional-site-architect)** | Multi-page institutional / corporate site blueprints — sitemap, IA, brand voice, trust strategy, per-page copy direction for B2B SaaS, agencies, law firms, VC, nonprofits, personal brands |
 | **[data-viz-architect](skills/data/data-viz-architect)** | Dashboard + data viz architect — picks chart type per business question WITH the reason, KPI hierarchy, layout, library, data fetching strategy |
@@ -440,7 +441,8 @@ frontend-foundation   frontend-output-validator
 git-workflow          github-safety         hexagonal-architect
 infra-security
 institutional-site-architect                landing-page-architect
-mobile-app-foundation mobile-design         onetake
+marketing-brain       mobile-app-foundation mobile-design
+onetake
 orchestrator
 premium-frontend-design
 product-planner       product-tour          product-ux-advisor
@@ -530,6 +532,7 @@ prompts/
 ├── infra-security.md
 ├── institutional-site-architect.md
 ├── landing-page-architect.md
+├── marketing-brain.md
 ├── mobile-app-foundation.md
 ├── mobile-design.md
 ├── onetake.md

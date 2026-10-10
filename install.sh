@@ -188,6 +188,7 @@ SKILLS=(
     infra-security "infra-security"
     institutional-site-architect "content/institutional-site-architect"
     landing-page-architect "content/landing-page-architect"
+    marketing-brain "marketing/marketing-brain"
     mobile-app-foundation "mobile/mobile-app-foundation"
     mobile-design "frontend/mobile-design"
     onetake "media/onetake"

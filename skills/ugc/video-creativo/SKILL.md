@@ -39,6 +39,10 @@ Si existe un `PRESSKIT.md` en la raíz del proyecto, leerlo antes de cualquier o
 
 Si no existe PRESSKIT.md y es contenido de marca → crear uno primero con el skill `presskit`.
 
+### Si es marca/producto — leer el contexto de producto
+
+Si existe `.agents/product-marketing.md`, leerlo junto con el PRESSKIT: público, dolores, objeciones, diferencial y **lenguaje textual del cliente**. Si no existe, correr `marketing-brain` Modo 1 (versión corta) antes del CONCEPTO. PRESSKIT dice *cómo* habla la marca; el contexto dice *a quién* y *por qué compraría*.
+
 ### Mínimo
 
 1. **Producto / servicio / idea que comunicamos** — qué es, en una oración
@@ -82,6 +86,8 @@ Producir el **Brief de Concepto**:
 **Acción esperada**: [específica]
 **Restricciones**: [lo que NO se puede decir o hacer]
 ```
+
+**Psicología**: nombrar en el brief el principio dominante que mueve el desplazamiento de creencia (uno solo — aversión a la pérdida, prueba social, costo de oportunidad, etc.). Elegirlo con `marketing-brain` Modo 2 (`references/psychology.md`).
 
 **Gate**: el Brief de Concepto debe estar confirmado antes de pasar a IDEA. Si hay ambigüedad en el SMP, resolverla aquí.
 
