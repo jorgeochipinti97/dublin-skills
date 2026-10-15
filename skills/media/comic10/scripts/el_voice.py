@@ -3,28 +3,31 @@
 #   usage (from an episode's narration/ folder): python3 el_voice.py [VOICE_ID]
 # Reads script.json (text = captions, optional tts = what the voice reads, same word count).
 # Writes voice/take.mp3, voice/take.json, voice/final_narrator/<id>.wav, timing_narrator.js.
-import base64, json, os, subprocess, sys, urllib.request, wave
+import base64, json, os, subprocess, sys, urllib.error, urllib.request, wave
 
 VOICE = sys.argv[1] if len(sys.argv) > 1 else "5da4nOCHLuswM3TyAUSo"
-KEY = os.environ["ELEVENLABS_API_KEY"]
 script = json.load(open("script.json"))
 os.makedirs("voice/final_narrator", exist_ok=True)
 said = [l.get("tts", l["text"]) for l in script]
 full = " ".join(said)
 
 if not os.path.exists("voice/take.json") or os.environ.get("FORCE"):
+    KEY = os.environ.get("ELEVENLABS_API_KEY") or sys.exit("falta ELEVENLABS_API_KEY en el entorno")
     body = json.dumps({"text": full, "model_id": "eleven_multilingual_v2",
                        "voice_settings": {"stability": 0.45, "similarity_boost": 0.8, "style": 0.25, "use_speaker_boost": True}}).encode()
     req = urllib.request.Request(f"https://api.elevenlabs.io/v1/text-to-speech/{VOICE}/with-timestamps?output_format=mp3_44100_128",
                                  data=body, headers={"xi-api-key": KEY, "Content-Type": "application/json"})
-    d = json.load(urllib.request.urlopen(req))
+    try:
+        d = json.load(urllib.request.urlopen(req, timeout=120))
+    except urllib.error.HTTPError as e:
+        sys.exit(f"ElevenLabs {e.code}: {e.read().decode(errors='replace')[:300]}")
     open("voice/take.mp3", "wb").write(base64.b64decode(d.pop("audio_base64")))
     json.dump(d, open("voice/take.json", "w"))
 d = json.load(open("voice/take.json"))
-al = d.get("normalized_alignment") or d["alignment"]
+al = d["alignment"]  # matches the input text char by char (normalized_alignment may rewrite numbers/symbols)
 chars, cs, ce = al["characters"], al["character_start_times_seconds"], al["character_end_times_seconds"]
 txt = "".join(chars)
-assert txt.strip() == full.strip() or len(txt) == len(full), "alignment text differs from input"
+assert txt.strip() == full.strip(), "alignment text differs from input"
 
 SR = 48000
 subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", "voice/take.mp3", "-ac", "1", "-ar", str(SR), "voice/take.wav"], check=True)

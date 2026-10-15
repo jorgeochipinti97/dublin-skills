@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-A **Claude Code skills library** — specialized prompts, reference materials, and code templates that extend Claude Code in specific domains. Currently **44 skills** across 18 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
+A **Claude Code skills library** — specialized prompts, reference materials, and code templates that extend Claude Code in specific domains. Currently **49 skills** across 18 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
 
 ## Structure
 
@@ -144,7 +144,7 @@ This repo is the **model/source**, not where the team works: they clone it and i
 
 `./install.sh install` installs a complete AI agent environment for the team in **two commands** (`git clone … && cd dublin-skills && ./install.sh install`). Asks tool + scope, then installs in order:
 
-1. **All 44 skills** (reuses `install_all`)
+1. **All 49 skills** (reuses `install_all`)
 2. **dublin-agent** (claude/opencode; both for `universal`)
 3. **Team rules** — `env/rules/TEAM-RULES.md` → `CLAUDE.md` (Claude) or `AGENTS.md` (OpenCode/Codex/Universal). Eight sections: (1) hard rules, (2) frontend conventions, (3) forbidden AI Tells, (4) process, (5) technical defaults, (6) agent operating discipline (work routing / delegation contract / TDD evidence / model routing), (7) project tracking (`SESSION.md` status + `TASKS.md` shared backlog with Client-pains/Backlog/Doing/Done/Future buckets + private gitignored `TASKS.<you>.local.md` + mandatory context upkeep), (8) roles & operating model (Tech Lead = agent, Approver = owner, Dev = team incl. non-technical; agent builds order when none exists). Companion `env/OPERATING-MODEL.md` → project root. Merged between `<!-- DUBLIN-TEAM-RULES:START/END -->` markers (hand edits outside survive). Idempotent; `--force` refreshes.
 4. **Shared memory** — `env/memory/*` → `<project>/.claude/team-memory/` (5 pre-seeded facts: zero-hallucinations, finish-now, change-safety, foundation-first-frontend, forbidden-ai-tells)

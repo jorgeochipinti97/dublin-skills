@@ -436,8 +436,8 @@ The installer creates the target directory automatically if it does not exist.
 ai-avatar-director    api-architect         auth-architect
 backend-performance   bind-api              blog-writer
 brand-guidelines      brand-identity        change-safety
-claude-md-keeper      database-architect    data-viz-architect
-comic10
+claude-md-keeper      comic10               database-architect
+data-viz-architect
 domain-modeler        error-handling        forms-and-validation
 frontend-foundation   frontend-output-validator
 git-workflow          github-safety         hexagonal-architect

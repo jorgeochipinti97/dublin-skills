@@ -9,7 +9,7 @@ Arma un reel vertical de 25-33 s sobre UNA nota, con el pipeline de **papercut-e
 
 ## Requisitos
 
-- **papercut-explainer** instalado (modo Standard): `git clone https://github.com/0xS4N4TG/papercut-explainer && cd papercut-explainer && ./install.sh --mode standard`. Deja las skills `papercut-*`, la librería (`PAPERCUT_LIB`, ver `~/.config/papercut-explainer/config.env`) y el venv `~/.local/share/papercut-explainer/tools-venv`.
+- **papercut-explainer** instalado (modo Standard): `git clone https://github.com/0xS4N4TG/papercut-explainer && cd papercut-explainer && git checkout 5a342bf855160379b4684e1c49f2e3faaecd5d0b && ./install.sh --mode standard` (MIT; pineado al commit probado con los reels de octubre 2026 — subir el pin solo después de re-probar un reel, los templates importan su estructura interna). Deja las skills `papercut-*`, la librería (`PAPERCUT_LIB`, ver `~/.config/papercut-explainer/config.env`) y el venv `~/.local/share/papercut-explainer/tools-venv`.
 - **ElevenLabs:** `ELEVENLABS_API_KEY` en el entorno (o en un `.env` que se cargue con `set -a; . archivo; set +a`). Nunca pegar la clave en el chat ni commitearla.
 - Una **carpeta de serie** por cuenta (p. ej. `~/PROGRAMACION/tribuna-reels`) con `SERIES.md`, `tools/el_voice.py` y `episodes/`. Si ya hay episodios terminados ahí, copiar patrones de sus `src/scenes/*.tsx` (nunca importar entre proyectos).
 

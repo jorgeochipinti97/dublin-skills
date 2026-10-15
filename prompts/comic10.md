@@ -19,7 +19,7 @@ Vamos con otro reel que no sea de Boca
 ```
 
 ```
-Hacé un reel papercut de esta nota de la Selección, con la cara de Scaloni
+Hacé un reel papercut de esta nota de la Selección, con la cara de Scaloni (sale en la foto de la nota)
 ```
 
 ## Example Use Cases
