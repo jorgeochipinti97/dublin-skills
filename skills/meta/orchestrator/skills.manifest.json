@@ -4,6 +4,31 @@
   "description": "Machine-readable index of all skills in this repository. Used by the orchestrator skill (and dublin-agent) to plan without parsing every SKILL.md. Keep in sync when adding/modifying skills.",
   "skills": [
     {
+      "name": "comic10",
+      "path": "media/comic10",
+      "category": "media",
+      "tags": [
+        "video",
+        "reel",
+        "papercut",
+        "football",
+        "remotion",
+        "elevenlabs",
+        "tribuna"
+      ],
+      "triggers": [
+        "reel de la nota",
+        "reel papercut",
+        "comic10",
+        "otro reel como el de",
+        "reel de fútbol"
+      ],
+      "depends_on": [],
+      "unlocks": [],
+      "cost": "high",
+      "value": "medium"
+    },
+    {
       "name": "systems-thinking",
       "path": "discovery/systems-thinking",
       "category": "discovery",

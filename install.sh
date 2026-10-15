@@ -172,6 +172,7 @@ SKILLS=(
     brand-identity "brand-identity"
     change-safety "ops/change-safety"
     claude-md-keeper "meta/claude-md-keeper"
+    comic10 "media/comic10"
     content-director "ugc/content-director"
     data-viz-architect "data/data-viz-architect"
     database-architect "data/database-architect"

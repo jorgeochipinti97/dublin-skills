@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-A **Claude Code skills library** — specialized prompts, reference materials, and code templates that extend Claude Code in specific domains. Currently **43 skills** across 18 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
+A **Claude Code skills library** — specialized prompts, reference materials, and code templates that extend Claude Code in specific domains. Currently **49 skills** across 18 categories, paired with the user-scope **dublin-agent** (personal senior-architect mentor) and a shared memory layer.
 
 ## Structure
 
@@ -78,6 +78,8 @@ skills/
 │       ├── references/       # product-marketing.md, psychology.md, ad-creative.md + ad-creative/ (hook-system, short-form-video-specs, motion-video-ads, awareness-headlines, …)
 │       └── assets/           # creative-review-template.html
 ├── media/
+│   ├── comic10/              # Papercut football reel from a news article: paper players with the real face cut from the article photo, Tribuna B/W look, one-take ElevenLabs voice, proof beat, comment CTA. Needs papercut-explainer (Remotion) installed
+│   │   └── scripts/ templates/   # cut_face.py, el_voice.py · theme-club.tsx, theme-seleccion.tsx, PapercutVideo.tsx
 │   ├── onetake/              # Short product/launch motion videos (10–60 s): single HTML comp as pure function of time, measured moves library, frame-by-frame render with motion blur, synthesised SFX, slideshow oracle. Third-party (feitangyuan/onetake), rendered sample mp4/gifs stripped
 │   │   └── references/ scripts/ lib/ templates/ looks/ cases/
 │   └── remotion-video/       # Programmatic video generation with Remotion + React
@@ -142,7 +144,7 @@ This repo is the **model/source**, not where the team works: they clone it and i
 
 `./install.sh install` installs a complete AI agent environment for the team in **two commands** (`git clone … && cd dublin-skills && ./install.sh install`). Asks tool + scope, then installs in order:
 
-1. **All 43 skills** (reuses `install_all`)
+1. **All 49 skills** (reuses `install_all`)
 2. **dublin-agent** (claude/opencode; both for `universal`)
 3. **Team rules** — `env/rules/TEAM-RULES.md` → `CLAUDE.md` (Claude) or `AGENTS.md` (OpenCode/Codex/Universal). Eight sections: (1) hard rules, (2) frontend conventions, (3) forbidden AI Tells, (4) process, (5) technical defaults, (6) agent operating discipline (work routing / delegation contract / TDD evidence / model routing), (7) project tracking (`SESSION.md` status + `TASKS.md` shared backlog with Client-pains/Backlog/Doing/Done/Future buckets + private gitignored `TASKS.<you>.local.md` + mandatory context upkeep), (8) roles & operating model (Tech Lead = agent, Approver = owner, Dev = team incl. non-technical; agent builds order when none exists). Companion `env/OPERATING-MODEL.md` → project root. Merged between `<!-- DUBLIN-TEAM-RULES:START/END -->` markers (hand edits outside survive). Idempotent; `--force` refreshes.
 4. **Shared memory** — `env/memory/*` → `<project>/.claude/team-memory/` (5 pre-seeded facts: zero-hallucinations, finish-now, change-safety, foundation-first-frontend, forbidden-ai-tells)
@@ -248,6 +250,7 @@ Two rendering branches share `ugc-scriptwriter` (start) and `ugc-post-production
 
 - **bind-api** — BIND Argentina Open Banking sandbox: OAuth 2.0 Direct Login; accounts, transfers, DEBIN, eCheqs, CBU/CVU validation; TS client `scripts/bind_client.ts`.
 - **remotion-video** — programmatic video from React components.
+- **comic10** — news article → papercut football reel on top of papercut-explainer (third-party, `0xS4N4TG/papercut-explainer`, installed separately, not vendored). Encodes the owner's rules: paper humans (never the kit's critter or generic backdrops), real face cutout only for people in the article photo, nothing outside the article, one-take voice with a closing question, max 2 scene agents on 8 GB machines. Voice via `ELEVENLABS_API_KEY` from the environment.
 - **onetake** — launch/promo/feature-demo motion clips without Remotion: HTML comp + `scripts/render.py` (1080p30 drafts, 4K60 final). Python scripts. Dublin fork of upstream: adds optional ElevenLabs voice (`vo_tools.py --engine auto`, falls back to local Kokoro without `ELEVENLABS_API_KEY`) — re-syncing from upstream must keep these changes.
 - **skill-creator** — guide for creating new skills.
 

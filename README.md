@@ -398,6 +398,7 @@ Skills are structured prompts with detailed instructions, code patterns, and ref
 | **[institutional-site-architect](skills/content/institutional-site-architect)** | Multi-page institutional / corporate site blueprints — sitemap, IA, brand voice, trust strategy, per-page copy direction for B2B SaaS, agencies, law firms, VC, nonprofits, personal brands |
 | **[data-viz-architect](skills/data/data-viz-architect)** | Dashboard + data viz architect — picks chart type per business question WITH the reason, KPI hierarchy, layout, library, data fetching strategy |
 | **[remotion-video](skills/media/remotion-video)** | Programmatic video generation from React components with Remotion |
+| **[comic10](skills/media/comic10)** | Papercut football reel from a news article (25-33 s vertical): paper players with the protagonist's real face cut from the article photo, Tribuna black-and-white look, one-take ElevenLabs voice in Rioplatense Spanish, one real-screenshot proof beat, comment-question CTA. Built on papercut-explainer (Remotion) |
 | **[onetake](skills/media/onetake)** | Short product/launch motion videos (10–60 s) — kinetic type, real UI rebuilt in HTML, motion-blur render, synthesised SFX, slideshow oracle. No Remotion needed |
 | **[ugc-scriptwriter](skills/ugc/ugc-scriptwriter)** | UGC video scripts for AI avatar delivery: 10 ad angles, hook engineering, per-platform pacing, ES/EN, shoot-ready tables |
 | **[ai-avatar-director](skills/ugc/ai-avatar-director)** | Vendor-agnostic director brief for AI avatar video generation: casting, wardrobe, setting, framing, voice — works with HeyGen / Hedra / Akool / Arcads / Synthesia |
@@ -435,7 +436,8 @@ The installer creates the target directory automatically if it does not exist.
 ai-avatar-director    api-architect         auth-architect
 backend-performance   bind-api              blog-writer
 brand-guidelines      brand-identity        change-safety
-claude-md-keeper      database-architect    data-viz-architect
+claude-md-keeper      comic10               database-architect
+data-viz-architect
 domain-modeler        error-handling        forms-and-validation
 frontend-foundation   frontend-output-validator
 git-workflow          github-safety         hexagonal-architect
@@ -521,6 +523,7 @@ prompts/
 ├── data-viz-architect.md
 ├── auth-architect.md
 ├── claude-md-keeper.md
+├── comic10.md
 ├── database-architect.md
 ├── domain-modeler.md
 ├── error-handling.md
