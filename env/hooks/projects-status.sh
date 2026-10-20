@@ -10,8 +10,6 @@ set -uo pipefail
 ROOT="${1:?usage: projects-status.sh <projects-root>}"
 STALE_DAYS="${STALE_DAYS:-30}"
 TOP_BACKLOG=3
-user="$(git config user.name 2>/dev/null | awk '{print tolower($1)}')"
-[ -z "$user" ] && user="$(whoami)"
 today="$(date +%Y-%m-%d)"
 cutoff="$(date -v-"${STALE_DAYS}"d +%Y-%m-%d 2>/dev/null || date -d "-${STALE_DAYS} days" +%Y-%m-%d)"
 
@@ -51,7 +49,7 @@ for dir in "$ROOT"/*/; do
     [ -n "$doing" ] && b+=$'\n'"**Doing**"$'\n'"${doing}"$'\n'
     [ -n "$next" ] && b+=$'\n'"**Backlog (top ${TOP_BACKLOG})**"$'\n'"${next}"$'\n'
   fi
-  mine="$(grep -E '^[ ]*- \[ \]' "$dir/TASKS.${user}.local.md" 2>/dev/null)"
+  mine="$(cat "$dir"/TASKS.*.local.md 2>/dev/null | grep -E '^[ ]*- \[ \]')"
   [ -n "$mine" ] && b+=$'\n'"**Mías**"$'\n'"${mine}"$'\n'
   blocks+="${day}"$'\t'"$(printf '%s' "$b" | base64 | tr -d '\n')"$'\n'
 done

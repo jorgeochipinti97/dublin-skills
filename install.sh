@@ -129,6 +129,7 @@ ${L_USAGE}:
   ds new <project-path>                 # scaffold a NEW project (git + SESSION/TASKS) + full env
   ds daily <path> [--projects=<dir>]    # scaffold a cockpit / daily driver (task-breakdown + daily rollup)
   ds status [<projects-dir>]            # daily rollup → STATUS.md (in a cockpit) or stdout (with a path)
+  ds voz ["<texto>"]                    # anotar/marcar tareas hablando (whisper + Ollama, local); con texto salta el mic
   ds install                            # install/upgrade the FULL environment in existing project (asks tool + scope)
   ds install <project-path>             # full environment into a project
   ds install --tool=claude --scope=project # non-interactive
@@ -1122,7 +1123,7 @@ parse_args() {
             --remote) REMOTE_FLAG=1 ;;
             --dry-run|-n) DRY_RUN_FLAG=1 ;;
             --help|-h) print_usage; exit 0 ;;
-            agent|update|list|team|install|new|app|daily|status|doctor|git-clean)
+            agent|update|list|team|install|new|app|daily|status|voz|doctor|git-clean)
                 if [[ -z "$COMMAND" ]]; then
                     COMMAND="$arg"
                 else
@@ -1226,6 +1227,10 @@ main() {
     fi
 
     # --- Subcommand: doctor (check install freshness) ---
+    if [[ "$COMMAND" == "voz" ]]; then
+        bash "$ENV_SOURCE/voice/voz.sh" "${POSITIONAL[@]}"; exit $?
+    fi
+
     if [[ "$COMMAND" == "status" ]]; then
         run_status "${POSITIONAL[1]:-}"; exit 0
     fi

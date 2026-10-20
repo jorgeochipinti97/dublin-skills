@@ -21,6 +21,7 @@ cd dublin-skills && ./install.sh install
 | `hooks/change-safety-guard.sh` | Bash PreToolUse guard — blocks destructive ops | `<project>/.claude/hooks/` |
 | `hooks/session-context-loader.sh` | SessionStart hook — hard-rules banner + team-memory + SESSION.md every session, warns if engram is missing | `<project>/.claude/hooks/` |
 | `hooks/projects-status.sh` | Daily rollup generator (markdown, no LLM) — used by `ds status` and by the loader in a cockpit | `<project>/.claude/hooks/` |
+| `voice/voz.sh` | `ds voz` — tasks by voice (whisper.cpp + Ollama, local), runs from the repo, not installed into projects | — |
 | `hooks/context-upkeep-nudge.sh` | Stop hook — forces SESSION/TASKS update when source changed but wasn't logged | `<project>/.claude/hooks/` |
 | `mcp/mcp.json` | engram persistent-memory MCP server | `<project>/.mcp.json` (merged) |
 
