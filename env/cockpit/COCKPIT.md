@@ -19,18 +19,19 @@ Cuando se diga `task: <algo>` o `tarea: <algo>`:
    solo lo global/personal y lo que no tiene proyecto todavía.
 
 ## "daily" / "standup" / "qué tengo hoy" / "resumen" — rollup de TODO
-Cuando se pida el daily (o "todos mis proyectos"):
-1. Listá los proyectos: `ls -1 __PROJECTS_ROOT__/`.
-2. Para cada uno, leé su `SESSION.md` (glob case-insensitive) **on demand**.
-3. Armá el rollup, **más activo/reciente primero**, un bloque corto por proyecto:
-   **En progreso · Próximo · Blockers**. Quotá lo que dice el SESSION.md, no
-   inventes progreso. Si un proyecto no tiene session file, decilo en una línea.
-4. Cerrá con las **tareas del cockpit** (`TASKS.md` + `TASKS.__USER__.local.md`):
+El rollup lo arma un script, no vos: `STATUS.md` se regenera solo al abrir la
+sesión (hook) y llega inyectado en el contexto. Si piden el daily más tarde,
+corré `ds status` y leé `STATUS.md`.
+1. Resumilo **más activo/reciente primero**, un bloque corto por proyecto:
+   **En progreso · Próximo · Blockers**. Quotá lo que dice `STATUS.md`, no
+   inventes progreso. Los parados y los sin SESSION.md, en una línea cada uno.
+2. Si hace falta más detalle de un proyecto, recién ahí leé su `SESSION.md`.
+3. Cerrá con las **tareas del cockpit** (`TASKS.md` + `TASKS.__USER__.local.md`):
    qué está en `## Doing`, qué hay arriba del backlog.
 
 ## Reglas del cockpit
-- **On demand only** — nunca precargues los SESSION/TASKS de otros proyectos al
-  contexto; leelos solo cuando se pida el daily o se nombre un proyecto.
+- **On demand only** — fuera de `STATUS.md`, no leas SESSION/TASKS de otros
+  proyectos salvo que se nombre uno.
 - **Cero inventos** — si no está en el archivo, no lo afirmes (ya es hard rule).
 - **Marcar hecho** — "marcá <x> como hecho [en <proj>]" → mover la línea a `## Done`.
 - El `SESSION.md` de acá es la bitácora del **cockpit mismo** (qué se tocó del

@@ -57,6 +57,15 @@ if [ -f "$SESSION" ]; then
   body+="## SESSION.md — estado actual del proyecto${nl}${nl}$(cat "$SESSION")${nl}"
 fi
 
+# 4. Cockpit — regenerate the daily rollup of every project and inject it, so
+#    the day starts with the status already on screen (no per-project reads).
+if [ -f "$PROJECT_DIR/.dublin-cockpit" ] && [ -x "$PROJECT_DIR/.claude/hooks/projects-status.sh" ]; then
+  root="$(head -1 "$PROJECT_DIR/.dublin-cockpit")"
+  if "$PROJECT_DIR/.claude/hooks/projects-status.sh" "$root" > "$PROJECT_DIR/STATUS.md" 2>/dev/null; then
+    body+="${nl}## Daily — STATUS.md (generado al abrir; mostralo como saludo, resumido)${nl}${nl}$(cat "$PROJECT_DIR/STATUS.md")${nl}"
+  fi
+fi
+
 [ -z "$body" ] && exit 0
 
 # Emit as SessionStart additionalContext. jq does safe JSON escaping; if jq is

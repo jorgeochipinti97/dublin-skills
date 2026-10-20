@@ -50,7 +50,8 @@ environment **into their own working repos**; they don't work inside this repo.
 |---|---|
 | `ds new <path>` | **Scaffold a new project** from scratch: `git init` + `SESSION.md` + `TASKS.md` + `.gitignore` + full environment |
 | `ds app <path>` | **Scaffold a cross-platform app** (React Native + Expo → iOS + Android + web): runs `create-expo-app` so the SDK and every native version are current, overlays the Dublin layer (routes, tokens, dual theme, offline cache, `notify`/`session-storage`), then `SESSION.md` + `TASKS.md` + full environment. Generated fresh each time on purpose — a cloned template repo starts rotting the day it is made |
-| `ds daily <path> [--projects=<dir>]` | **Scaffold a cockpit / daily driver**: `task: <x>` splits work into sub-tasks, `daily` rolls up all projects in `<dir>` (asked, default = parent dir) |
+| `ds daily <path> [--projects=<dir>]` | **Scaffold a cockpit / daily driver**: `task: <x>` splits work into sub-tasks, `daily` rolls up all projects in `<dir>` (asked, default = parent dir). Opening the agent there regenerates `STATUS.md` and shows it |
+| `ds status [<dir>]` | **Daily rollup, zero tokens**: last SESSION.md entry + Doing + top Backlog + your `*.local.md` per project, most recent first; stale/no-session in one line. In a cockpit → `STATUS.md`; with a path → stdout |
 | `ds install [<path>]` | Install **or upgrade** the full environment on an existing project (no path = current dir) |
 | `ds doctor [<path>]` | Report which projects are **up to date vs outdated** (scans subfolders of a projects dir) |
 | `ds agent` | Install just the **dublin-agent** (asks tool) |
