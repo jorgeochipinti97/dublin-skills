@@ -462,6 +462,30 @@ a.pp-row .pp-ic,a.pp-ic{color:var(--faint)}
 .mov:first-child{border-top:0}
 .mov .d{font-size:13px;color:var(--faint);width:44px;font-variant-numeric:tabular-nums;flex:none}
 .mov .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fl-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--s2);margin-bottom:var(--s3)}
+.fl-canvas{overflow:auto;border-radius:var(--r2);background:var(--bg) radial-gradient(circle,var(--line) 1px,transparent 1.2px) 0 0/18px 18px;max-height:560px}
+.fl-plane{position:relative;min-width:100%}.fl-wires{position:absolute;inset:0;pointer-events:none;overflow:visible}
+.fl-wire{fill:none;stroke:var(--tx3);stroke-width:1.5}.fl-wire.on{stroke:var(--accent);stroke-width:2}.fl-wire.tmp{stroke-dasharray:5 4}
+.fl-node{position:absolute;width:210px;height:62px;box-sizing:border-box;padding:10px 12px;border-radius:var(--r2);background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;justify-content:center;gap:2px;user-select:none;touch-action:none}
+.fl-node b{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fl-node small{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fl-node.start{background:var(--sunken);border-style:dashed}.fl-node.empty b{color:var(--faint)}
+.fl-canvas.edit .fl-node:not(.start){cursor:grab}.fl-node.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.fl-port{position:absolute;top:50%;width:12px;height:12px;margin-top:-6px;border-radius:50%;background:var(--panel);border:1.5px solid var(--tx3)}
+.fl-port.in{left:-7px;pointer-events:none}.fl-port.out{right:-7px;cursor:crosshair}.fl-port.out:hover{border-color:var(--accent);background:var(--accent-soft);transform:scale(1.25)}
+.fl-port.out::before{content:"";position:absolute;inset:-10px}
+.fl-cond,.fl-dot{position:absolute;transform:translate(-50%,-50%);border:1px solid var(--line);background:var(--panel);color:var(--text)}
+.fl-cond{font-size:12px;padding:3px 8px;border-radius:999px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fl-dot{width:14px;height:14px;padding:0;border-radius:50%}.fl-dot::before{content:"";position:absolute;inset:-8px}
+.fl-cond.on,.fl-dot.on{border-color:var(--accent);color:var(--accent)}
+.fl-share{display:grid;gap:var(--s3);margin:0 0 var(--s3);padding:var(--s3);border-radius:var(--r2);background:var(--sunken)}
+.fl-paste{width:100%;height:160px;padding:var(--s3);font-family:var(--mono);font-size:12.5px;resize:vertical;box-sizing:border-box}
+.fl-node.sink{border-color:var(--accent);border-style:dashed;text-decoration:none;color:var(--text)}.fl-wire.end{stroke-dasharray:4 4}
+.fl-tipo{font-size:13px;font-weight:500;margin-left:var(--s2)}
+.idea{display:flex;gap:var(--s3);align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--sep);flex-wrap:wrap}
+.idea-t{display:grid;gap:2px;min-width:0;flex:1 1 260px}.idea-t .faint{font-size:12.5px}.idea-t .muted{font-size:13.5px}
+.idea-a{display:flex;gap:var(--s2);flex-wrap:wrap}.idea-a .btn{height:32px}
+.idea-desc summary{cursor:pointer;font-weight:600}.idea-desc[open] summary{margin-bottom:var(--s2)}
+.fl-insp{display:grid;gap:var(--s2);margin-top:var(--s3);max-width:560px}.fl-insp label{display:grid;gap:var(--s1);font-size:13px;font-weight:600;color:var(--muted)}
 .mov .a{font-variant-numeric:tabular-nums;font-weight:600}
 .mov .act{opacity:0}.mov:hover .act,.mov .act:focus-visible,.mov .act.sure{opacity:1}
 @media (hover:none){.mov .act{opacity:1}}
@@ -548,6 +572,8 @@ const I={
   ext:'<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',plus:'<path d="M12 5v14M5 12h14"/>',pin:'<path d="M12 17v5M9 3h6l-1 6 4 4H6l4-4z"/>',archive:'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/>',cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
   book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',leaf:'<path d="M11 20A7 7 0 0 1 4 13c0-6 7-10 16-10 0 9-4 16-10 16"/><path d="M4 21c4-4 7-7 11-10"/>'
 };
+I.inbox='<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/>';
+I.flow='<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="M8.5 6H15a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h6.5"/>';
 const svg=n=>`<svg viewBox="0 0 24 24">${I[n]}</svg>`;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const md=s=>esc(s).replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+?)\*\*/g,"<strong>$1</strong>").replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s.,;:)]|$)/g,"$1<em>$2</em>").replace(/\*\*/g,"");
@@ -594,7 +620,7 @@ function route(){const [,page="inicio",arg="",sec=""]=location.hash.split("/");r
 
 function renderNav(){
   const {page:pg}=route(),page=pg==="p"?"proyectos":pg,a=S?active():[];
-  const items=[["inicio","Inicio","home",""],["proyectos","Proyectos","board",a.length],["calendario","Calendario","cal",""],["mcps","MCPs","plug",S?.mcps.length??""],["finanzas","Finanzas","wallet",""],["mascotas","Mascotas","paw",S?.mascotas.pets.length||""],["estudio","Estudio","book",S?S.estudio.cerebros.reduce((n,c)=>n+c.due.length,0)||"":""],["nutricion","Nutrición","leaf",""]];
+  const items=[["inicio","Inicio","home",""],["proyectos","Proyectos","board",a.length],["calendario","Calendario","cal",""],["mcps","MCPs","plug",S?.mcps.length??""],["finanzas","Finanzas","wallet",""],["mascotas","Mascotas","paw",S?.mascotas.pets.length||""],["estudio","Estudio","book",S?S.estudio.cerebros.reduce((n,c)=>n+c.due.length,0)||"":""],["nutricion","Nutrición","leaf",""],["flujos","Flujos","flow",S?.flujos.list.length||""],["contenido","Contenido","inbox",S?.contenido.secs.Bandeja.length||""]];
   document.getElementById("nav").innerHTML=items.map(([k,l,ic,c])=>`<a href="#/${k}" ${page===k?'aria-current="page"':""} title="${l}">${svg(ic)}<span class="label">${l}</span><span class="count">${c}</span></a>`).join("");
   const dark=getComputedStyle(document.documentElement).colorScheme==="dark";
   document.getElementById("themeIcon").innerHTML=dark?I.sun:I.moon;
@@ -604,9 +630,10 @@ function render(){
   if(!S)return;
   renderNav();
   const {page}=route(),el=document.getElementById("page");document.documentElement.dataset.page=page;
-  const sx=document.querySelector(".board")?.scrollLeft??0;
-  el.innerHTML=({inicio:pInicio,proyectos:pProyectos,p:()=>{location.replace(`#/proyectos/${encodeURIComponent(route().arg)}/codigo`);return ""},calendario:pCalendario,mcps:pMcps,finanzas:pFinanzas,mascotas:pMascotas,estudio:pEstudio,nutricion:pNutricion}[page]||pInicio)();
+  const sx=document.querySelector(".board")?.scrollLeft??0,ks=[...document.querySelectorAll("[data-keep-scroll]")].map(x=>[x.dataset.keepScroll,x.scrollLeft,x.scrollTop]);
+  el.innerHTML=({inicio:pInicio,proyectos:pProyectos,p:()=>{location.replace(`#/proyectos/${encodeURIComponent(route().arg)}/codigo`);return ""},calendario:pCalendario,mcps:pMcps,finanzas:pFinanzas,mascotas:pMascotas,estudio:pEstudio,nutricion:pNutricion,flujos:pFlujos,contenido:pContenido}[page]||pInicio)();
   const b=document.querySelector(".board");if(b)b.scrollLeft=sx;
+  ks.forEach(([k,l,t])=>{const x=document.querySelector(`[data-keep-scroll="${CSS.escape(k)}"]`);if(x){x.scrollLeft=l;x.scrollTop=t}});
   drawCharts();
   if(ui.editing!=null){const ta=document.querySelector(".task textarea");if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}}
 }
@@ -1329,6 +1356,179 @@ function pNutricion(){
   </div></div>`;
 }
 
+/* ---------------- Flujos ---------------- */
+// Qué cerebros consulta el agente, y por qué camino, antes de ciertas tareas. Vive en flujos.md.
+// Lienzo de nodos: el disparo a la izquierda, cada cerebro es un nodo y los cables marcan el orden.
+// Desde un nodo, los cables sin condición van en paralelo; los que tienen condición son ramas.
+const FW=210,FH=62,FIN={x:24,y:40};
+const flSlug=n=>String(n).normalize("NFD").replace(/\p{M}/gu,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const cerTitle=slug=>S.estudio.cerebros.find(c=>c.slug===slug)?.title||slug;
+const flPos=(f,id)=>id==="inicio"?FIN:f.nodes.find(n=>n.id===id);
+function flEdgesSvg(f,edit,tmp){
+  const path=(a,b)=>{const x1=a.x+FW,y1=a.y+FH/2,x2=b.x,y2=b.y+FH/2,d=Math.max(40,Math.abs(x2-x1)/2);return `M${x1},${y1} C${x1+d},${y1} ${x2-d},${y2} ${x2},${y2}`};
+  const sel=ui.flD?.sel;
+  return f.edges.map(e=>{const a=flPos(f,e.from),b=flPos(f,e.to);if(!a||!b)return "";
+    const on=edit&&sel?.t==="e"&&sel.k===e.from+">"+e.to;
+    return `<path class="fl-wire ${on?"on":""}" d="${path(a,b)}"/>`}).join("")
+    +(tmp?`<path class="fl-wire on tmp" d="${path(tmp.a,{x:tmp.x,y:tmp.y-FH/2})}"/>`:"");
+}
+function flCondsHtml(f,edit){
+  return f.edges.map(e=>{const a=flPos(f,e.from),b=flPos(f,e.to);if(!a||!b||!e.cond&&!edit)return "";
+    const k=e.from+">"+e.to,on=ui.flD?.sel?.t==="e"&&ui.flD.sel.k===k,x=(a.x+FW+b.x)/2,y=(a.y+b.y)/2+FH/2;
+    return e.cond?`<button type="button" class="fl-cond ${on?"on":""}" ${edit?`data-edge="${esc(k)}"`:"tabindex=-1"} style="left:${x}px;top:${y}px">${esc(e.cond)}</button>`
+      :`<button type="button" class="fl-dot ${on?"on":""}" data-edge="${esc(k)}" style="left:${x}px;top:${y}px" aria-label="Elegir cable"></button>`}).join("");
+}
+function flCanvas(f,edit){
+  const ns=[{id:"inicio",...FIN},...f.nodes],w=Math.max(...ns.map(n=>n.x))+FW+(edit?300:f.tipo==="ideas"?320:60),h=Math.max(Math.max(...ns.map(n=>n.y))+FH+(edit?200:60),edit?340:0),sel=ui.flD?.sel;
+  const trig=(Array.isArray(f.disparo)?f.disparo:String(f.disparo||"").split(",")).map(s=>s.trim()).filter(Boolean),sk=(Array.isArray(f.skills)?f.skills:String(f.skills||"").split(",")).map(s=>s.trim()).filter(Boolean);
+  return `<div class="fl-canvas ${edit?"edit":""}" data-keep-scroll="fl-${edit?"edit":esc(f.name)}"><div class="fl-plane" style="width:${w}px;height:${h}px">
+    <svg class="fl-wires" width="${w}" height="${h}">${flEdgesSvg(f,edit)}</svg>
+    <div class="fl-node start" data-node="inicio" style="left:${FIN.x}px;top:${FIN.y}px"><b>/flujo ${esc(flSlug(f.name||"…"))}</b><small>${esc([...trig,...sk.map(s=>"skill "+s)].join(", ")||"se corre solo con el comando")}</small>${edit?`<span class="fl-port out" data-port="inicio"></span>`:""}</div>
+    ${f.nodes.map(n=>`<div class="fl-node ${edit&&sel?.t==="n"&&sel.id===n.id?"on":""} ${n.cerebro?"":"empty"}" data-node="${n.id}" style="left:${n.x}px;top:${n.y}px">
+      <b>${n.cerebro?esc(cerTitle(n.cerebro)):"Elegí un cerebro"}</b><small>${esc(n.ok===false?"te falta este cerebro":n.pregunta||"sin pregunta")}</small>
+      ${edit?`<span class="fl-port in"></span><span class="fl-port out" data-port="${n.id}"></span>`:""}</div>`).join("")}
+    ${flCondsHtml(f,edit)}${f.tipo==="ideas"?flBandeja(f):""}</div></div>`;
+}
+function flInspector(D){
+  const s=D.sel,n=s?.t==="n"&&D.nodes.find(x=>x.id===s.id),e=s?.t==="e"&&D.edges.find(x=>x.from+">"+x.to===s.k);
+  if(n)return `<div class="fl-insp"><label>Cerebro<select class="field" data-fl="cerebro"><option value="">Elegí un cerebro</option>${S.estudio.cerebros.map(c=>`<option value="${esc(c.slug)}" ${c.slug===n.cerebro?"selected":""}>${esc(c.title)}</option>`).join("")}</select></label>
+    <label>Qué le pregunta el agente<input class="field" data-fl="pregunta" value="${esc(n.pregunta)}" placeholder="Ej. ¿qué gancho funciona para este público?"></label>
+    <div class="row"><button type="button" class="btn" data-act="flnodo">${svg("plus")}Cerebro a continuación</button><button type="button" class="btn" data-act="flquitar">${svg("trash")}Quitar cerebro</button></div></div>`;
+  if(e)return `<div class="fl-insp"><label>Condición para seguir este cable<input class="field" data-fl="cond" value="${esc(e.cond)}" placeholder="Ej. si es para un cliente"></label>
+    <p class="faint" style="margin:0">Vacío = se sigue siempre. Si de un cerebro salen varios cables sin condición, el agente los consulta en paralelo.</p>
+    <div class="row"><button type="button" class="btn" data-act="flquitar">${svg("trash")}Quitar cable</button></div></div>`;
+  return `<div class="fl-insp"><p class="faint" style="margin:0">Tocá un cerebro para editarlo. Para unir dos, arrastrá desde el punto de la derecha de uno hasta el otro. Tocá un cable para ponerle condición.</p>
+    <div class="row"><button type="button" class="btn" data-act="flnodo">${svg("plus")}Sumar cerebro</button></div></div>`;
+}
+function pFlujos(){
+  const F=S.flujos,D=ui.flD;
+  if(!F.file)return `<div class="head"><div><h1>Flujos</h1><p class="sub">Primero creá un cerebro con <code>ds cerebro new</code>.</p></div></div>`;
+  const editor=D?`<section class="card"><div class="fl-top">
+      <input class="field" data-fl="name" value="${esc(D.name)}" placeholder="Nombre del flujo, ej. Ad para cliente" aria-label="Nombre del flujo">
+      <select class="field" data-fl="tipo" aria-label="Qué produce"><option value="consulta" ${D.tipo!=="ideas"?"selected":""}>Consulta: el agente aprende y hace el trabajo</option><option value="ideas" ${D.tipo==="ideas"?"selected":""}>Ideas: el agente deja ideas en la bandeja</option></select>
+      <input class="field" data-fl="disparo" value="${esc(D.disparo)}" placeholder="Sugerirlo si el pedido dice… (ad, campaña)" aria-label="Palabras para sugerirlo">
+      <input class="field" data-fl="skills" list="fl-skills" value="${esc(D.skills)}" placeholder="Correrlo si el agente usa la skill (solo consulta)" aria-label="Skills que lo activan"></div>
+    ${flCanvas(D,true)}${flInspector(D)}
+    <div class="row" style="margin-top:var(--s4)"><button class="btn primary" data-act="flsave">${svg("check")}Guardar</button><button class="btn" data-act="flcancel">Cancelar</button>
+      ${D.old?`<button class="btn" data-act="fldel" style="margin-left:auto">${ui.confirm==="fldel"?"¿Borrar el flujo?":svg("trash")+"Borrar flujo"}</button>`:""}</div></section>`:"";
+  return `<div class="head"><div><h1>Flujos</h1><p class="sub">Qué cerebros consulta el agente, y por qué camino, antes de ciertas tareas. Vive en <code>${esc(F.file)}</code>.</p></div>
+    ${D?"":`<div class="row"><button class="btn" data-act="flimp">Importar</button><button class="btn primary" data-act="flnew">${svg("plus")}Nuevo flujo</button></div>`}</div>
+  ${ui.flNote?`<section class="card" style="margin-bottom:var(--s4)"><div class="card-head"><p style="margin:0">${ui.flNote}</p><button class="btn" data-act="flnote">Listo</button></div></section>`:""}
+  ${ui.flImp&&!D?`<section class="card" style="margin-bottom:var(--s4)"><div class="card-head"><h2>Importar un flujo</h2></div>
+    <p class="muted" style="margin:0 0 var(--s3)">Pegá el texto que te pasaron. Si trae cerebros que no tenés, los creo apuntando a su notebook: pedile al dueño que te dé acceso y corré <code>ds cerebro sync</code>.</p>
+    <textarea class="field fl-paste" data-fl="imp" placeholder="## Nombre del flujo…" aria-label="Texto del flujo">${esc(ui.flImpText||"")}</textarea>
+    <div class="row" style="margin-top:var(--s3)"><button class="btn primary" data-act="flimpok">Importar</button><button class="btn" data-act="flimp">Cancelar</button></div></section>`:""}
+  <datalist id="fl-skills">${F.skills.map(s=>`<option value="${esc(s)}">`).join("")}</datalist>
+  <div style="display:grid;gap:var(--s4)">${D&&!D.old?editor:""}
+    ${F.list.map((f,i)=>D?.old===f.raw?editor:`<section class="card"><div class="card-head"><h2>${esc(f.name)} <span class="faint fl-tipo">${f.tipo==="ideas"?"Ideas → bandeja":"Consulta"}</span></h2><div class="row"><button class="btn" data-act="flshare" data-i="${i}" aria-expanded="${ui.flShare===i}">Compartir</button><button class="btn" data-act="fledit" data-i="${i}">${svg("edit")}Editar</button></div></div>${ui.flShare===i?flSharePanel(f,i):""}${flCanvas(f,false)}</section>`).join("")}
+    ${!F.list.length&&!D?`<section class="card"><p class="muted" style="margin:0">Un flujo es una receta: “para un ad, el agente consulta primero Marca personal; si es para un cliente sigue con Dirección creativa, si no con Storytelling”. Así cada tarea pasa siempre por los mismos cerebros.</p></section>`:""}
+  </div>`;
+}
+// Compartir = texto del flujo + qué notebook es cada cerebro, para que el otro lo importe.
+const flCers=f=>[...new Set(f.nodes.map(n=>n.cerebro))];
+const flText=f=>["<!-- Flujo de ds panel: pegalo en Flujos → Importar -->",f.raw,...flCers(f).map(c=>`<!-- cerebro ${c} | ${S.flujos.cer[c]?.title||c} | ${S.flujos.cer[c]?.notebook||""} -->`)].join("\n");
+function flSharePanel(f,i){
+  return `<div class="fl-share"><p class="muted" style="margin:0">Le pasás el texto y lo importa en su panel. Para que el agente pueda consultarlos, también necesita acceso a estos cerebros: ${flCers(f).map(c=>esc(cerTitle(c))).join(", ")}.</p>
+    <form class="row" data-form="flshare" data-i="${i}"><input class="field grow" name="email" type="email" placeholder="Su mail de Google" required aria-label="Mail"><button class="btn" ${ui.flSharing?"disabled":""}>${ui.flSharing?"Compartiendo…":"Darle acceso a los cerebros"}</button></form>
+    <div class="row"><button class="btn primary" data-act="flcopy" data-i="${i}">Copiar flujo</button></div></div>`;
+}
+// Flujo de ideas: termina en la Bandeja de Contenido. No es un nodo guardado: los cerebros
+// donde termina el camino (sin cables de salida) desembocan ahí.
+function flBandeja(f){
+  const x=Math.max(FIN.x,...f.nodes.map(n=>n.x))+FW+90,ends=f.nodes.filter(n=>!f.edges.some(e=>e.from===n.id)),y=ends.length?Math.round(ends.reduce((a,n)=>a+n.y,0)/ends.length):FIN.y;
+  const w=ends.map(n=>{const x1=n.x+FW,y1=n.y+FH/2,y2=y+FH/2,d=Math.max(40,(x-x1)/2);return `<path class="fl-wire end" d="M${x1},${y1} C${x1+d},${y1} ${x-d},${y2} ${x},${y2}"/>`}).join("");
+  return `<svg class="fl-wires" width="${x+FW}" height="${y+FH+40}" style="width:${x+FW}px;height:${y+FH+40}px">${w}</svg>
+    <a class="fl-node sink" href="#/contenido" style="left:${x}px;top:${y}px"><b>Bandeja de contenido</b><small>Las ideas esperan tu sí o no</small></a>`;
+}
+const flId=D=>{let k=D.nodes.length;while(D.nodes.some(n=>n.id==="n"+k))k++;return "n"+k};
+function flAddNode(D){
+  const from=D.sel?.t==="n"?D.nodes.find(n=>n.id===D.sel.id):null,src=from||(D.nodes.length?null:{id:"inicio",...FIN});
+  const base=src||{x:Math.max(...D.nodes.map(n=>n.x)),y:0},x=base.x+FW+90;let y=src?src.y:FIN.y;
+  while(D.nodes.some(n=>Math.abs(n.x-x)<FW&&Math.abs(n.y-y)<FH+10))y+=FH+30;
+  const n={id:flId(D),cerebro:"",pregunta:"",x,y};D.nodes.push(n);if(src)D.edges.push({from:src.id,to:n.id,cond:""});D.sel={t:"n",id:n.id};
+}
+// Arrastre: mover nodos y tirar cables. El borrador vive en ui.flD, así un render no pierde nada.
+let flDrag=null;
+function flRedraw(tmp){const c=document.querySelector(".fl-canvas.edit");if(!c||!ui.flD)return;c.querySelector(".fl-wires").innerHTML=flEdgesSvg(ui.flD,true,tmp);
+  c.querySelectorAll(".fl-cond,.fl-dot").forEach(x=>x.remove());c.querySelector(".fl-plane").insertAdjacentHTML("beforeend",flCondsHtml(ui.flD,true))}
+document.addEventListener("pointerdown",e=>{
+  const c=e.target.closest?.(".fl-canvas.edit");if(!c||!ui.flD)return;const D=ui.flD,r=c.querySelector(".fl-plane").getBoundingClientRect();
+  const port=e.target.closest(".fl-port.out"),node=e.target.closest(".fl-node"),edge=e.target.closest("[data-edge]");
+  if(port){e.preventDefault();flDrag={t:"wire",from:port.dataset.port,r}}
+  else if(edge){D.sel={t:"e",k:edge.dataset.edge};render()}
+  else if(node&&node.dataset.node!=="inicio"){const n=D.nodes.find(x=>x.id===node.dataset.node);flDrag={t:"move",n,el:node,dx:e.clientX-r.left-n.x,dy:e.clientY-r.top-n.y,x0:e.clientX,y0:e.clientY,r};node.setPointerCapture?.(e.pointerId)}
+  else if(!node){D.sel=null;render()}
+});
+document.addEventListener("pointermove",e=>{
+  if(!flDrag)return;const {r}=flDrag;
+  if(flDrag.t==="move"){const n=flDrag.n;n.x=Math.max(FIN.x+FW+40,Math.round(e.clientX-r.left-flDrag.dx));n.y=Math.max(0,Math.round(e.clientY-r.top-flDrag.dy));
+    flDrag.el.style.left=n.x+"px";flDrag.el.style.top=n.y+"px";flRedraw()}
+  else flRedraw({a:flPos(ui.flD,flDrag.from),x:e.clientX-r.left,y:e.clientY-r.top});
+});
+document.addEventListener("pointerup",e=>{
+  if(!flDrag)return;const d=flDrag,D=ui.flD;flDrag=null;
+  if(d.t==="move"){if(Math.abs(e.clientX-d.x0)<4&&Math.abs(e.clientY-d.y0)<4)D.sel={t:"n",id:d.n.id};render();return}
+  const to=document.elementFromPoint(e.clientX,e.clientY)?.closest(".fl-node")?.dataset.node;
+  if(to&&to!=="inicio"&&to!==d.from&&!D.edges.some(x=>x.from===d.from&&x.to===to)){D.edges.push({from:d.from,to,cond:""});D.sel={t:"e",k:d.from+">"+to}}
+  render();
+});
+document.addEventListener("input",e=>{
+  const k=e.target.dataset?.fl,D=ui.flD;if(k==="imp"){ui.flImpText=e.target.value;return}if(!k||!D)return;
+  if(k==="name"||k==="disparo"||k==="skills"){D[k]=e.target.value;return}
+  if(k==="tipo"){D.tipo=e.target.value;render();return}
+  const n=D.sel?.t==="n"&&D.nodes.find(x=>x.id===D.sel.id),ed=D.sel?.t==="e"&&D.edges.find(x=>x.from+">"+x.to===D.sel.k);
+  if(k==="pregunta"&&n){n.pregunta=e.target.value;const s=document.querySelector(`.fl-node[data-node="${n.id}"] small`);if(s)s.textContent=n.pregunta||"sin pregunta"}
+  if(k==="cerebro"&&n){n.cerebro=e.target.value;render()}
+  if(k==="cond"&&ed){ed.cond=e.target.value;flRedraw()}
+});
+document.addEventListener("keydown",e=>{
+  if(!ui.flD?.sel||!["Delete","Backspace"].includes(e.key)||e.target.closest?.("input,select,textarea"))return;
+  e.preventDefault();flRemove(ui.flD);render();
+});
+function flRemove(D){const s=D.sel;if(!s)return;
+  if(s.t==="n"){D.nodes=D.nodes.filter(n=>n.id!==s.id);D.edges=D.edges.filter(x=>x.from!==s.id&&x.to!==s.id)}else D.edges=D.edges.filter(x=>x.from+">"+x.to!==s.k);D.sel=null}
+async function flAct(act,b){
+  const F=S.flujos;
+  if(act==="flnew"){ui.flD={old:"",name:"",tipo:"consulta",disparo:"",skills:"",nodes:[],edges:[],sel:null};flAddNode(ui.flD);render()}
+  else if(act==="fledit"){const f=F.list[Number(b.dataset.i)];ui.flD={old:f.raw,name:f.name,tipo:f.tipo,disparo:f.disparo.join(", "),skills:f.skills.join(", "),nodes:f.nodes.map(n=>({...n})),edges:f.edges.map(x=>({...x})),sel:null};render()}
+  else if(act==="flcancel"){ui.flD=null;render()}
+  else if(act==="flnodo"){flAddNode(ui.flD);render();document.querySelector(`.fl-canvas.edit .fl-node[data-node="${ui.flD.sel.id}"]`)?.scrollIntoView({block:"nearest",inline:"nearest"});document.querySelector('[data-fl="cerebro"]')?.focus({preventScroll:true})}
+  else if(act==="flquitar"){flRemove(ui.flD);render()}
+  else if(act==="flsave"){const D=ui.flD;try{await post("/api/flujos",{op:"save",old:D.old,name:D.name,tipo:D.tipo,disparo:D.disparo,skills:D.skills,nodes:D.nodes,edges:D.edges});ui.flD=null;render();toast("Flujo guardado")}catch{}}
+  else if(act==="flimp"){ui.flImp=!ui.flImp;ui.flImpText="";render();document.querySelector('[data-fl="imp"]')?.focus()}
+  else if(act==="flnote"){ui.flNote="";render()}
+  else if(act==="flshare"){const i=Number(b.dataset.i);ui.flShare=ui.flShare===i?null:i;render()}
+  else if(act==="flcopy"){navigator.clipboard.writeText(flText(F.list[Number(b.dataset.i)])).then(()=>toast("Flujo copiado: pasáselo por donde quieras")).catch(()=>toast("No pude copiar"))}
+  else if(act==="flimpok"){try{const r=await post("/api/flujos",{op:"import",text:ui.flImpText||""});ui.flImp=false;ui.flImpText="";
+    ui.flNote=`Importé «${esc(r.name)}».`+(r.created.length?` Creé ${r.created.length===1?"el cerebro":"los cerebros"} ${esc(r.created.join(", "))}: cuando te den acceso, corré <code>ds cerebro sync</code> para traer sus fuentes.`:"");render()}catch{}}
+  else if(act==="fldel"){const D=ui.flD;confirmOr("fldel",()=>post("/api/flujos",{op:"delete",old:D.old}).then(()=>{ui.flD=null;render();toast("Flujo borrado")}).catch(()=>{}))}
+}
+
+/* ---------------- Contenido ---------------- */
+// contenido.md: las ideas que dejan los flujos de tipo ideas (ds contenido add). Vos elegís:
+// sí → Cola, no → Descartadas; después Producción → Publicado.
+function ideaRow(x,sec,acts){
+  return `<div class="idea"><div class="idea-t"><span class="faint">${esc(alias(x.proyecto))}${x.flujo?" · "+esc(x.flujo):""}</span><b>${esc(x.idea)}</b>${x.gancho?`<span class="muted">${esc(x.gancho)}</span>`:""}</div>
+    <div class="idea-a">${acts.map(([lbl,op,to,cls])=>`<button class="btn ${cls||""}" data-act="cmove" data-op="${op}" data-to="${to||""}" data-line="${x.line}" data-raw="${esc(x.raw)}">${lbl}</button>`).join("")}</div></div>`;
+}
+function pContenido(){
+  const C=S.contenido,X=C.secs,proys=[...new Set(S.projects.map(p=>p.name))];
+  const card=(t,sub,body,empty)=>`<section class="card"><div class="card-head"><h2>${t}</h2>${sub?`<span class="faint">${sub}</span>`:""}</div>${body||`<p class="muted" style="margin:0">${empty}</p>`}</section>`;
+  return `<div class="head"><div><h1>Contenido</h1><p class="sub">Las ideas que te dejan los flujos de tipo ideas. Decís sí o no y lo que aprobás pasa a la cola. Vive en <code>${esc(C.file)}</code>.</p></div></div>
+  <div style="display:grid;gap:var(--s4);max-width:820px">
+    ${card("Bandeja",X.Bandeja.length?X.Bandeja.length+" por decidir":"",X.Bandeja.map(x=>ideaRow(x,"Bandeja",[["Sí","move","Cola","primary"],["No","move","Descartadas"]])).join(""),
+      `Vacía. Pedile al agente, por ejemplo, “ideas de contenido para ${esc(alias(proys[0]||"rumen"))}”, o anotá una abajo.`)}
+    ${card("Cola","",X.Cola.map(x=>ideaRow(x,"Cola",[["↑","up"],["↓","down"],["Empezar","move","Producción","primary"],["Quitar","move","Descartadas"]])).join(""),"Lo que aprobás queda acá, en el orden en que lo vas a hacer.")}
+    ${X["Producción"].length?card("En producción","",X["Producción"].map(x=>ideaRow(x,"Producción",[["Publicado","move","Publicado","primary"],["A la cola","move","Cola"]])).join("")):""}
+    ${X.Publicado.length?card("Publicado",X.Publicado.length+"",X.Publicado.slice(-10).reverse().map(x=>ideaRow(x,"Publicado",[])).join("")):""}
+    ${X.Descartadas.length?`<details class="card idea-desc"><summary>Descartadas · ${X.Descartadas.length} <span class="faint">(el agente no las vuelve a proponer)</span></summary>${X.Descartadas.map(x=>ideaRow(x,"Descartadas",[["Recuperar","move","Bandeja"],["Borrar","delete"]])).join("")}</details>`:""}
+    <section class="card"><div class="card-head"><h2>Anotar una idea</h2></div>
+      <form class="row" data-form="cidea"><select class="field" name="proyecto" aria-label="Proyecto" style="flex:1 1 140px">${proys.map(n=>`<option value="${esc(n)}">${esc(alias(n))}</option>`).join("")}</select>
+        <input class="field" style="flex:3 1 200px" name="idea" placeholder="La idea" required aria-label="La idea"><input class="field" style="flex:2 1 160px" name="gancho" placeholder="Gancho (opcional)" aria-label="Gancho">
+        <button class="btn">${svg("plus")}A la bandeja</button></form></section>
+  </div>`;
+}
+
 /* ---------------- Finanzas ---------------- */
 const compact=n=>new Intl.NumberFormat("es-AR",{notation:"compact",maximumFractionDigits:1}).format(n);
 const ymLabel=m=>new Date(m+"-15").toLocaleDateString("es-AR",{month:"short",year:"2-digit"});
@@ -1582,6 +1782,8 @@ document.addEventListener("click",async e=>{
   else if(act==="eextra"){ui.estExtra=true;ui.repTema="";ui.showBack=false;render()}
   else if(act==="erep"){const t=b.dataset.tema,cb=t&&S.estudio.cerebros.find(x=>x.slug===t),c=cb?.due[0]?{...cb.due[0],slug:t}:dueList()[0];if(!c)return;ui.showBack=false;
     post("/api/estudio",{op:"repaso",slug:c.slug,file:c.file,raw:c.raw,ok:!!b.dataset.ok}).then(()=>toast(b.dataset.ok?"Bien, vuelve más adelante":"Vuelve mañana")).catch(()=>{})}
+  else if(act.startsWith("fl"))flAct(act,b);
+  else if(act==="cmove"){const {op,to,line,raw}=b.dataset;post("/api/contenido",{op,to,line:Number(line),raw}).then(()=>{if(op==="move")toast(to==="Cola"?"A la cola":to==="Descartadas"?"Descartada":to==="Publicado"?"¡Publicado!":"Movida")}).catch(()=>{})}
   else if(act==="ncomi")post("/api/nutricion",{op:"comi",comida:b.dataset.comida,que:b.dataset.que}).then(()=>toast("Anotado")).catch(()=>{});
   else if(act==="ldel")confirmOr(b.dataset.key,()=>post("/api/"+b.dataset.f,{op:"delete",line:Number(b.dataset.line),raw:b.dataset.raw}).then(()=>toast("Borrado")).catch(()=>{}));
   else if(act==="cprompt"){const x=pend[Number(b.dataset.n)];navigator.clipboard.writeText(promptOf(x.p,x.items)).then(()=>toast("Prompt de "+alias(x.p.name)+" copiado")).catch(()=>toast("No pude copiar"))}
@@ -1637,6 +1839,11 @@ document.addEventListener("submit",async e=>{
     if(k==="ematerial"){await post("/api/estudio",{op:"material",...d,obligatoria:!!d.obligatoria});toast("Agregado")}
     if(k==="eactividad"){await post("/api/estudio",{op:"actividad",...d});toast("Actividad agregada")}
     if(k==="ncomi"||k==="nplan"||k==="npeso"){await post("/api/nutricion",{op:k.slice(1),...d});toast("Anotado")}
+    if(k==="flshare"){const f2=S.flujos.list[Number(f.dataset.i)];ui.flSharing=true;render();
+      try{const r=await post("/api/flujos",{op:"share",old:f2.raw,email:d.email});
+        ui.flNote=(r.shared.length?`Le di acceso a ${esc(d.email)} a ${esc(r.shared.join(", "))}. Ahora pasale el flujo con «Copiar flujo».`:"")+(r.failed.length?` No pude compartir ${esc(r.failed.join(", "))}: probá con <code>notebooklm share add</code>.`:"")}
+      finally{ui.flSharing=false;render()}}
+    if(k==="cidea"){await post("/api/contenido",{op:"add",...d});toast("A la bandeja")}
     if(k==="inv"){await post("/api/fin",{op:"inv",...d});toast("Inversión agregada")}
     if(k==="invact"){const v=S.finanzas.inversiones[Number(f.dataset.i)];await post("/api/fin",{op:"invact",line:v.line,raw:v.raw,actual:d.actual});toast("Valor actualizado")}
     if(k==="fin"){await post("/api/fin",{op:"add",tipo:ui.tipo||"-",...d});toast("Anotado");document.querySelector('[name="monto"]')?.focus()}
