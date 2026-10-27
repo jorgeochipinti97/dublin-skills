@@ -479,6 +479,7 @@ a.pp-row .pp-ic,a.pp-ic{color:var(--faint)}
 .fl-cond.on,.fl-dot.on{border-color:var(--accent);color:var(--accent)}
 .fl-share{display:grid;gap:var(--s3);margin:0 0 var(--s3);padding:var(--s3);border-radius:var(--r2);background:var(--sunken)}
 .fl-paste{width:100%;height:160px;padding:var(--s3);font-family:var(--mono);font-size:12.5px;resize:vertical;box-sizing:border-box}
+.fl-node.skill{border-style:solid;border-color:color-mix(in srgb,var(--series-1) 55%,var(--line))}.fl-node.skill b{color:var(--series-1)}
 .fl-node.sink{border-color:var(--accent);border-style:dashed;text-decoration:none;color:var(--text)}.fl-wire.end{stroke-dasharray:4 4}
 .fl-tipo{font-size:13px;font-weight:500;margin-left:var(--s2)}
 .idea{display:flex;gap:var(--s4);align-items:flex-start;justify-content:space-between;padding:14px var(--s3);margin:0 calc(-1*var(--s3));border-top:1px solid var(--sep);border-radius:var(--r2)}
@@ -492,8 +493,8 @@ a.pp-row .pp-ic,a.pp-ic{color:var(--faint)}
 .idea-hook{margin:0;font-size:15.5px;font-weight:550;line-height:1.35;letter-spacing:-.15px;color:var(--text);text-wrap:pretty}
 .idea-title{margin:3px 0 0;font-size:13.5px;line-height:1.4;color:var(--muted)}
 .idea-det{margin-top:var(--s2);padding-top:var(--s2);border-top:1px dashed var(--sep);font-size:13.5px;line-height:1.5;color:var(--text)}.idea-det p{margin:0 0 4px}
-.idea-a{display:flex;gap:6px;flex:none;padding-top:2px;opacity:0;transition:opacity .12s}
-.idea:hover .idea-a,.idea.sel .idea-a,.idea:focus-within .idea-a{opacity:1}@media (hover:none){.idea-a{opacity:1}}
+.idea-a{display:flex;gap:6px;flex:none;padding-top:2px;transition:opacity .12s}
+.idea-inbox .idea-a{opacity:0}.idea-inbox .idea:hover .idea-a,.idea-inbox .idea.sel .idea-a,.idea-inbox .idea:focus-within .idea-a{opacity:1}@media (hover:none){.idea-inbox .idea-a{opacity:1}}
 .idea-a .btn{height:30px;padding:0 12px;font-size:13px}
 .fpills{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 var(--s2)}
 .fpill{height:28px;padding:0 10px;border:0;border-radius:999px;background:var(--chip);color:var(--muted);font-size:12.5px;font-weight:500;display:inline-flex;gap:6px;align-items:center}
@@ -1378,7 +1379,7 @@ function pNutricion(){
 // Desde un nodo, los cables sin condición van en paralelo; los que tienen condición son ramas.
 const FW=210,FH=62,FIN={x:24,y:40};
 const flSlug=n=>String(n).normalize("NFD").replace(/\p{M}/gu,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
-const cerTitle=slug=>S.estudio.cerebros.find(c=>c.slug===slug)?.title||slug;
+const cerTitle=slug=>slug?.startsWith("skill:")?"Skill · "+slug.slice(6):S.estudio.cerebros.find(c=>c.slug===slug)?.title||slug;
 const flPos=(f,id)=>id==="inicio"?FIN:f.nodes.find(n=>n.id===id);
 function flEdgesSvg(f,edit,tmp){
   const path=(a,b)=>{const x1=a.x+FW,y1=a.y+FH/2,x2=b.x,y2=b.y+FH/2,d=Math.max(40,Math.abs(x2-x1)/2);return `M${x1},${y1} C${x1+d},${y1} ${x2-d},${y2} ${x2},${y2}`};
@@ -1400,15 +1401,17 @@ function flCanvas(f,edit){
   return `<div class="fl-canvas ${edit?"edit":""}" data-keep-scroll="fl-${edit?"edit":esc(f.name)}"><div class="fl-plane" style="width:${w}px;height:${h}px">
     <svg class="fl-wires" width="${w}" height="${h}">${flEdgesSvg(f,edit)}</svg>
     <div class="fl-node start" data-node="inicio" style="left:${FIN.x}px;top:${FIN.y}px"><b>/flujo ${esc(flSlug(f.name||"…"))}</b><small>${esc([...trig,...sk.map(s=>"skill "+s)].join(", ")||"se corre solo con el comando")}</small>${edit?`<span class="fl-port out" data-port="inicio"></span>`:""}</div>
-    ${f.nodes.map(n=>`<div class="fl-node ${edit&&sel?.t==="n"&&sel.id===n.id?"on":""} ${n.cerebro?"":"empty"}" data-node="${n.id}" style="left:${n.x}px;top:${n.y}px">
-      <b>${n.cerebro?esc(cerTitle(n.cerebro)):"Elegí un cerebro"}</b><small>${esc(n.ok===false?"te falta este cerebro":n.pregunta||"sin pregunta")}</small>
+    ${f.nodes.map(n=>`<div class="fl-node ${edit&&sel?.t==="n"&&sel.id===n.id?"on":""} ${n.cerebro?"":"empty"} ${n.cerebro?.startsWith("skill:")?"skill":""}" data-node="${n.id}" style="left:${n.x}px;top:${n.y}px">
+      <b>${n.cerebro?esc(cerTitle(n.cerebro)):"Elegí un cerebro"}</b><small>${esc(n.ok===false?(n.cerebro.startsWith("skill:")?"te falta esta skill":"te falta este cerebro"):n.pregunta||(n.cerebro?.startsWith("skill:")?"sin instrucción":"sin pregunta"))}</small>
       ${edit?`<span class="fl-port in"></span><span class="fl-port out" data-port="${n.id}"></span>`:""}</div>`).join("")}
     ${flCondsHtml(f,edit)}${f.tipo==="ideas"?flBandeja(f):""}</div></div>`;
 }
 function flInspector(D){
   const s=D.sel,n=s?.t==="n"&&D.nodes.find(x=>x.id===s.id),e=s?.t==="e"&&D.edges.find(x=>x.from+">"+x.to===s.k);
-  if(n)return `<div class="fl-insp"><label>Cerebro<select class="field" data-fl="cerebro"><option value="">Elegí un cerebro</option>${S.estudio.cerebros.map(c=>`<option value="${esc(c.slug)}" ${c.slug===n.cerebro?"selected":""}>${esc(c.title)}</option>`).join("")}</select></label>
-    <label>Qué le pregunta el agente<input class="field" data-fl="pregunta" value="${esc(n.pregunta)}" placeholder="Ej. ¿qué gancho funciona para este público?"></label>
+  if(n)return `<div class="fl-insp"><label>Cerebro o skill<select class="field" data-fl="cerebro"><option value="">Elegí un cerebro o una skill</option>
+      <optgroup label="Cerebros (consultar)">${S.estudio.cerebros.map(c=>`<option value="${esc(c.slug)}" ${c.slug===n.cerebro?"selected":""}>${esc(c.title)}</option>`).join("")}</optgroup>
+      <optgroup label="Skills (hacer)">${S.flujos.skills.map(s=>`<option value="skill:${esc(s)}" ${"skill:"+s===n.cerebro?"selected":""}>${esc(s)}</option>`).join("")}</optgroup></select></label>
+    <label>${n.cerebro?.startsWith("skill:")?"Qué tiene que hacer con esta skill":"Qué le pregunta el agente"}<input class="field" data-fl="pregunta" value="${esc(n.pregunta)}" placeholder="Ej. ¿qué gancho funciona para este público?"></label>
     <div class="row"><button type="button" class="btn" data-act="flnodo">${svg("plus")}Cerebro a continuación</button><button type="button" class="btn" data-act="flquitar">${svg("trash")}Quitar cerebro</button></div></div>`;
   if(e)return `<div class="fl-insp"><label>Condición para seguir este cable<input class="field" data-fl="cond" value="${esc(e.cond)}" placeholder="Ej. si es para un cliente"></label>
     <p class="faint" style="margin:0">Vacío = se sigue siempre. Si de un cerebro salen varios cables sin condición, el agente los consulta en paralelo.</p>
@@ -1421,7 +1424,7 @@ function pFlujos(){
   if(!F.file)return `<div class="head"><div><h1>Flujos</h1><p class="sub">Primero creá un cerebro con <code>ds cerebro new</code>.</p></div></div>`;
   const editor=D?`<section class="card"><div class="fl-top">
       <input class="field" data-fl="name" value="${esc(D.name)}" placeholder="Nombre del flujo, ej. Ad para cliente" aria-label="Nombre del flujo">
-      <select class="field" data-fl="tipo" aria-label="Qué produce"><option value="consulta" ${D.tipo!=="ideas"?"selected":""}>Consulta: el agente aprende y hace el trabajo</option><option value="ideas" ${D.tipo==="ideas"?"selected":""}>Ideas: el agente deja ideas en la bandeja</option></select>
+      <select class="field" data-fl="tipo" aria-label="Qué produce"><option value="consulta" ${D.tipo!=="ideas"?"selected":""}>Consulta: el agente aprende y hace el trabajo</option><option value="ideas" ${D.tipo==="ideas"?"selected":""}>Ideas: el agente deja ideas en la bandeja</option><option value="produccion" ${D.tipo==="produccion"?"selected":""}>Producción: el agente hace la pieza de una idea</option></select>
       <input class="field" data-fl="disparo" value="${esc(D.disparo)}" placeholder="Sugerirlo si el pedido dice… (ad, campaña)" aria-label="Palabras para sugerirlo">
       ${D.tipo==="ideas"?`<input class="field" data-fl="angulos" value="${esc(D.angulos)}" placeholder="Ángulos de venta (dolor, prueba social…)" aria-label="Ángulos de venta">`:""}
       <input class="field" data-fl="skills" list="fl-skills" value="${esc(D.skills)}" placeholder="Correrlo si el agente usa la skill (solo consulta)" aria-label="Skills que lo activan"></div>
@@ -1437,12 +1440,12 @@ function pFlujos(){
     <div class="row" style="margin-top:var(--s3)"><button class="btn primary" data-act="flimpok">Importar</button><button class="btn" data-act="flimp">Cancelar</button></div></section>`:""}
   <datalist id="fl-skills">${F.skills.map(s=>`<option value="${esc(s)}">`).join("")}</datalist>
   <div style="display:grid;gap:var(--s4)">${D&&!D.old?editor:""}
-    ${F.list.map((f,i)=>D?.old===f.raw?editor:`<section class="card"><div class="card-head"><h2>${esc(f.name)} <span class="faint fl-tipo">${f.tipo==="ideas"?"Ideas → bandeja":"Consulta"}</span></h2><div class="row"><button class="btn" data-act="flshare" data-i="${i}" aria-expanded="${ui.flShare===i}">Compartir</button><button class="btn" data-act="fledit" data-i="${i}">${svg("edit")}Editar</button></div></div>${ui.flShare===i?flSharePanel(f,i):""}${flCanvas(f,false)}</section>`).join("")}
+    ${F.list.map((f,i)=>D?.old===f.raw?editor:`<section class="card"><div class="card-head"><h2>${esc(f.name)} <span class="faint fl-tipo">${f.tipo==="ideas"?"Ideas → bandeja":f.tipo==="produccion"?"Producción → video":"Consulta"}</span></h2><div class="row"><button class="btn" data-act="flshare" data-i="${i}" aria-expanded="${ui.flShare===i}">Compartir</button><button class="btn" data-act="fledit" data-i="${i}">${svg("edit")}Editar</button></div></div>${ui.flShare===i?flSharePanel(f,i):""}${flCanvas(f,false)}</section>`).join("")}
     ${!F.list.length&&!D?`<section class="card"><p class="muted" style="margin:0">Un flujo es una receta: “para un ad, el agente consulta primero Marca personal; si es para un cliente sigue con Dirección creativa, si no con Storytelling”. Así cada tarea pasa siempre por los mismos cerebros.</p></section>`:""}
   </div>`;
 }
 // Compartir = texto del flujo + qué notebook es cada cerebro, para que el otro lo importe.
-const flCers=f=>[...new Set(f.nodes.map(n=>n.cerebro))];
+const flCers=f=>[...new Set(f.nodes.map(n=>n.cerebro).filter(c=>!c.startsWith("skill:")))];
 const flText=f=>["<!-- Flujo de ds panel: pegalo en Flujos → Importar -->",f.raw,...flCers(f).map(c=>`<!-- cerebro ${c} | ${S.flujos.cer[c]?.title||c} | ${S.flujos.cer[c]?.notebook||""} -->`)].join("\n");
 function flSharePanel(f,i){
   return `<div class="fl-share"><p class="muted" style="margin:0">Le pasás el texto y lo importa en su panel. Para que el agente pueda consultarlos, también necesita acceso a estos cerebros: ${flCers(f).map(c=>esc(cerTitle(c))).join(", ")}.</p>
@@ -1545,6 +1548,9 @@ function ideaRow(x,acts,o={}){
     </div>
     <div class="idea-a">${acts.map(([lbl,op,to,cls,tip])=>`<button class="btn ${cls||""}" data-act="cmove" data-op="${op}" data-to="${to||""}" data-line="${x.line}" data-raw="${esc(x.raw)}" ${tip?`title="${tip}"`:""}>${lbl}</button>`).join("")}</div></div>`;
 }
+// Botón Producir: copia el comando del flujo de producción con la idea (lo corrés en Claude Code, en la carpeta del proyecto).
+const prodFlow=()=>S.flujos.list.find(f=>f.tipo==="produccion");
+const prodBtn=x=>prodFlow()?[["Producir","prod","","primary","Copia el comando para Claude Code"]]:[];
 const cBandeja=()=>{const B=S.contenido.secs.Bandeja;return ui.cAng?B.filter(x=>angKey(x.angulo||"sin")===ui.cAng):B};
 function pContenido(){
   const C=S.contenido,X=C.secs,proys=[...new Set(S.projects.map(p=>p.name))],B=cBandeja();
@@ -1561,8 +1567,8 @@ function pContenido(){
         ${B.map((x,k)=>ideaRow(x,[["Sí","move","Cola","primary","a"],["No","move","Descartadas","","x"]],{k,sel:k===ui.cSel,proy:varios,open:ui.cOpen===x.raw})).join("")}
         <p class="idea-keys faint"><kbd>j</kbd><kbd>k</kbd> moverte · <kbd>a</kbd> sí · <kbd>x</kbd> no · <kbd>e</kbd> ver cómo filmarlo</p>`
       :`<p class="muted" style="margin:0">Vacía. En Claude Code: <code>/flujo contenido ${esc(proys[0]||"mi-proyecto")}</code>, o anotá una abajo.</p>`}</section>
-    ${card("Cola",X.Cola.length?X.Cola.length+"":"",X.Cola.map(x=>row(x,[["↑","up","","","Subir"],["↓","down","","","Bajar"],["Empezar","move","Producción","primary"],["Quitar","move","Descartadas"]])).join(""),"Lo que aprobás queda acá, en el orden en que lo vas a hacer.")}
-    ${X["Producción"].length?card("En producción","",X["Producción"].map(x=>row(x,[["Publicado","move","Publicado","primary"],["A la cola","move","Cola"]])).join("")):""}
+    ${card("Cola",X.Cola.length?X.Cola.length+"":"",X.Cola.map(x=>row(x,[["↑","up","","","Subir"],["↓","down","","","Bajar"],...prodBtn(x),["Empezar","move","Producción",prodFlow()?"":"primary"],["Quitar","move","Descartadas"]])).join(""),"Lo que aprobás queda acá, en el orden en que lo vas a hacer.")}
+    ${X["Producción"].length?card("En producción","",X["Producción"].map(x=>row(x,[...prodBtn(x),["Publicado","move","Publicado"],["A la cola","move","Cola"]])).join("")):""}
     ${X.Publicado.length?card("Publicado",X.Publicado.length+"",X.Publicado.slice(-10).reverse().map(x=>row(x,[])).join("")):""}
     ${X.Descartadas.length?`<details class="card idea-desc"><summary>Descartadas · ${X.Descartadas.length} <span class="faint">(el agente no las vuelve a proponer)</span></summary>${X.Descartadas.map(x=>row(x,[["Recuperar","move","Bandeja"],["Borrar","delete"]])).join("")}</details>`:""}
     <section class="card"><div class="card-head"><h2>Anotar una idea</h2></div>
@@ -1842,6 +1848,8 @@ document.addEventListener("click",async e=>{
   else if(act.startsWith("fl"))flAct(act,b);
   else if(act==="cang"){ui.cAng=b.dataset.k||null;ui.cSel=0;render()}
   else if(act==="copen"){const k=b.dataset.k;ui.cOpen=ui.cOpen===k?null:k;const r=b.closest("[data-idea]");if(r)ui.cSel=Number(r.dataset.idea);render()}
+  else if(act==="cmove"&&b.dataset.op==="prod"){const x=Object.values(S.contenido.secs).flat().find(i=>i.raw===b.dataset.raw),f=prodFlow();
+    const cmd=`/flujo ${flSlug(f.name)} ${(x.gancho||x.idea).replace(/[":]/g,"")}`;navigator.clipboard.writeText(cmd).then(()=>toast("Copiado: pegalo en Claude Code, en la carpeta de "+alias(x.proyecto))).catch(()=>toast("No pude copiar"))}
   else if(act==="cmove"){const {op,to,line,raw}=b.dataset;post("/api/contenido",{op,to,line:Number(line),raw}).then(()=>{if(op==="move")toast(to==="Cola"?"A la cola":to==="Descartadas"?"Descartada":to==="Publicado"?"¡Publicado!":"Movida")}).catch(()=>{})}
   else if(act==="ncomi")post("/api/nutricion",{op:"comi",comida:b.dataset.comida,que:b.dataset.que}).then(()=>toast("Anotado")).catch(()=>{});
   else if(act==="ldel")confirmOr(b.dataset.key,()=>post("/api/"+b.dataset.f,{op:"delete",line:Number(b.dataset.line),raw:b.dataset.raw}).then(()=>toast("Borrado")).catch(()=>{}));

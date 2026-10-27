@@ -4,6 +4,7 @@
 #   ds contenido add <proyecto> "<idea>" ["<gancho>"] ["<flujo>"] ["<ángulo>"] ["<tratamiento>"]
 #     idea = título corto · gancho = la frase que abre el video · tratamiento = cómo filmarlo/editarlo
 #   ds contenido list [bandeja|cola|produccion|publicado|descartadas]
+#   ds contenido mover "<parte del título o gancho>" <bandeja|cola|produccion|publicado|descartadas>
 #
 # contenido.md (al lado de finanzas.md; $DUBLIN_CONTENIDO lo cambia), una idea por línea:
 #   ## Bandeja      - 2026-10-27 | mi-app | La idea | El gancho | Contenido para proyectos | dolor | Cómo filmarlo
@@ -57,8 +58,35 @@ cmd_list() {
     show && /^- / { print "  " substr($0, 3) }' "$FILE"
 }
 
+cmd_mover() {
+  local q="${1:-}" to sec n
+  [ -n "$q" ] && [ -n "${2:-}" ] || die "Uso: ds contenido mover \"<parte del título o gancho>\" <bandeja|cola|produccion|publicado|descartadas>"
+  case "$(printf '%s' "$2" | tr 'A-Z' 'a-z')" in
+    bandeja) sec="Bandeja" ;; cola) sec="Cola" ;; produccion|producción) sec="Producción" ;;
+    publicado|publicada) sec="Publicado" ;; descartadas|descartada) sec="Descartadas" ;; *) die "Sección desconocida: $2" ;;
+  esac
+  [ -f "$FILE" ] || die "No hay ideas todavía"
+  n="$(grep "^- [0-9]" "$FILE" | grep -ciF -- "$q" || true)"
+  [ "$n" -eq 1 ] || die "«${q}» coincide con ${n} ideas: escribí un pedazo más preciso del título o el gancho."
+  awk -v q="$q" -v sec="$sec" '
+    { a[NR] = $0 }
+    END {
+      lq = tolower(q)
+      for (i = 1; i <= NR; i++) if (a[i] ~ /^- [0-9]/ && index(tolower(a[i]), lq)) { m = a[i]; skip = i; break }
+      for (i = 1; i <= NR; i++) { if (i == skip) continue; out[++n] = a[i] }
+      # al final de la sección destino (antes de la siguiente "## ")
+      for (i = 1; i <= n; i++) if (out[i] == "## " sec) { s = i; break }
+      if (!s) { out[++n] = ""; out[++n] = "## " sec; s = n }
+      e = n + 1; for (i = s + 1; i <= n; i++) if (out[i] ~ /^## /) { e = i; break }
+      k = e - 1; while (k > s && out[k] ~ /^[ \t]*$/) k--
+      for (i = 1; i <= k; i++) print out[i]; print m; for (i = k + 1; i <= n; i++) print out[i]
+    }' "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
+  echo "✓ a ${sec}: $q"
+}
+
 case "${1:-list}" in
   add) shift; cmd_add "$@" ;;
   list) shift || true; cmd_list "${1:-}" ;;
+  mover) shift; cmd_mover "$@" ;;
   *) die "Uso: ds contenido add|list" ;;
 esac
