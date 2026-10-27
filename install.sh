@@ -130,6 +130,9 @@ ${L_USAGE}:
   ds daily <path> [--projects=<dir>]    # scaffold a cockpit / daily driver (task-breakdown + daily rollup)
   ds status [<projects-dir>]            # daily rollup → STATUS.md (in a cockpit) or stdout (with a path)
   ds voz ["<texto>"]                    # anotar/marcar tareas hablando (whisper + Ollama, local); con texto salta el mic
+  ds cerebro new|add|sync|ask|list      # cerebros de estudio: carpeta markdown ⇄ notebook de NotebookLM
+  ds panel                              # panel local en el navegador: proyectos, cerebros, MCPs, finanzas
+  ds factura emitir|pagar|list          # facturas electrónicas ARCA (wsfe) registradas en finanzas.md
   ds install                            # install/upgrade the FULL environment in existing project (asks tool + scope)
   ds install <project-path>             # full environment into a project
   ds install --tool=claude --scope=project # non-interactive
@@ -1123,7 +1126,7 @@ parse_args() {
             --remote) REMOTE_FLAG=1 ;;
             --dry-run|-n) DRY_RUN_FLAG=1 ;;
             --help|-h) print_usage; exit 0 ;;
-            agent|update|list|team|install|new|app|daily|status|voz|doctor|git-clean)
+            agent|update|list|team|install|new|app|daily|status|voz|cerebro|panel|factura|doctor|git-clean)
                 if [[ -z "$COMMAND" ]]; then
                     COMMAND="$arg"
                 else
@@ -1227,6 +1230,20 @@ main() {
     fi
 
     # --- Subcommand: doctor (check install freshness) ---
+    if [[ "$COMMAND" == "panel" ]]; then
+        command -v bun >/dev/null || { echo "${RED}Falta bun: brew install oven-sh/bun/bun${NC}"; exit 1; }
+        (sleep 1; open "http://127.0.0.1:${PANEL_PORT:-4321}" 2>/dev/null || xdg-open "http://127.0.0.1:${PANEL_PORT:-4321}") >/dev/null 2>&1 &
+        exec bun "$ENV_SOURCE/panel/panel.ts"
+    fi
+
+    if [[ "$COMMAND" == "cerebro" ]]; then
+        bash "$ENV_SOURCE/cerebro/cerebro.sh" "${POSITIONAL[@]}"; exit $?
+    fi
+
+    if [[ "$COMMAND" == "factura" ]]; then
+        bash "$ENV_SOURCE/factura/factura.sh" "${POSITIONAL[@]}"; exit $?
+    fi
+
     if [[ "$COMMAND" == "voz" ]]; then
         bash "$ENV_SOURCE/voice/voz.sh" "${POSITIONAL[@]}"; exit $?
     fi
