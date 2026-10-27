@@ -24,7 +24,7 @@ norm() { perl -CSD -MUnicode::Normalize -pe '$_ = lc NFD($_); s/\pM//g; s/[^a-z0
 # nombre ␟ tipo ␟ disparo ␟ skills ␟ cerebros ␟ pasos (líneas separadas por ␞), en orden de recorrido.
 records() {
   [ -f "$FILE" ] || return 0
-  awk -v root="$ROOT" '
+  awk -v root="$ROOT" -v sk="$HOME/.claude/skills" '
     function flush(   q,h,t,i,j,id,nx,par,br,out,cers) {
       if (name == "") return
       h = 1; t = 0; q[1] = "inicio"; seen["inicio"] = 1; out = ""; cers = ""
@@ -37,8 +37,9 @@ records() {
         nx = par (par != "" && index(par, " y ") ? " (en paralelo)" : "")
         if (br != "") nx = nx (nx == "" ? "" : "; ") "elegí la rama que aplique: " br
         if (id == "inicio") { out = "  Arrancá por " (nx == "" ? "[1]" : nx); continue }
-        cers = cers " " cer[id]
-        out = out "\x1e  [" num[id] "] ds cerebro ask " cer[id] " \"" (pq[id] == "" ? "<pregunta concreta sobre este caso>" : pq[id]) "\"" (nx == "" ? "  → fin" : "  → después: " nx) }
+        if (cer[id] ~ /^skill:/) out = out "\x1e  [" num[id] "] Skill " substr(cer[id], 7) ": cargala con el tool Skill y hacé este paso con su método" (pq[id] == "" ? "" : " — " pq[id]) (nx == "" ? "  → fin" : "  → después: " nx)
+        else { cers = cers " " cer[id]
+          out = out "\x1e  [" num[id] "] ds cerebro ask " cer[id] " \"" (pq[id] == "" ? "<pregunta concreta sobre este caso>" : pq[id]) "\"" (nx == "" ? "  → fin" : "  → después: " nx) } }
       if (h > 1) printf "%s\x1f%s\x1f%s\x1f%s\x1f%s\x1f%s\n", name, (tipo == "" ? "consulta" : tipo), trig, sks, cers, out
       name = ""; tipo = ""; trig = ""; sks = ""; ne = 0; split("", cer); split("", pq); split("", seen); split("", num)
     }
@@ -47,7 +48,8 @@ records() {
     /^disparo:/ { trig = substr($0, 9); next }
     /^skills:/ { sks = substr($0, 8); next }
     /^- [A-Za-z0-9_]+ [^ ]+/ && name != "" { l = $0; sub(/ @ -?[0-9]+,-?[0-9]+[ \t]*$/, "", l); id = $2; c = $3
-      if (system("test -f \"" root "/" c "/cerebro.md\"") != 0) next
+      if (c ~ /^skill:/) { if (substr(c, 7) !~ /^(dataviz|artifact-design|artifact-diagramming|code-review|simplify)$/ && system("test -f \"" sk "/" substr(c, 7) "/SKILL.md\"") != 0) next }   # incluidas en Claude Code: sin carpeta
+      else if (system("test -f \"" root "/" c "/cerebro.md\"") != 0) next
       cer[id] = c; p = index(l, " | "); pq[id] = p ? substr(l, p + 3) : ""; next }
     /^> [A-Za-z0-9_]+ [A-Za-z0-9_]+/ && name != "" { ne++; ef[ne] = $2; et[ne] = $3; p = index($0, " | "); ec[ne] = p ? substr($0, p + 3) : ""; next }
     END { flush() }' "$FILE"
@@ -76,24 +78,53 @@ angulos_of() {
 #   steps nombre tipo pasos cerebros-del-flujo "proyectos" "forzados" "excluidos"
 steps() {
   local flow="$1" tipo="$2" text="$3" encamino="$4" proys="$5" mas="$6" menos="$7" indic="${8:-}" c q cand=""
-  echo "🧭 Flujo «${flow}»${proys:+ para: ${proys// /, }}. Consultá estos cerebros siguiendo el camino, aplicando cada pregunta a este caso y usando cada respuesta en lo que sigue:"
+  if [ "$tipo" = produccion ]; then
+    # En producción lo que sigue al nombre es la idea a producir, no proyectos.
+    echo "🎬 Flujo «${flow}» — producir la pieza de ${proys:+la idea «${proys}»}${proys:-la idea que elija el usuario}. Seguí el camino paso a paso; cada paso usa lo que salió del anterior."
+    # Qué idea producir la elige SIEMPRE el usuario: sin idea, o si la palabra coincide con varias, se le pregunta.
+    local lista; lista="$(bash "$(dirname "$0")/../contenido/contenido.sh" list produccion 2>/dev/null; bash "$(dirname "$0")/../contenido/contenido.sh" list cola 2>/dev/null)"
+    echo "ELEGIR LA IDEA — la elige el usuario, nunca vos. ${proys:+Si «${proys}» coincide con más de una idea, o con ninguna, p}${proys:-P}reguntale con la herramienta de preguntas (AskUserQuestion): una opción por idea con el gancho como texto y el ángulo y el título como descripción, primero las de En producción y después las de la Cola (máximo 4; si hay más, las 4 primeras y que escriba otra en «Other»). No arranques hasta que elija. Ideas disponibles:"
+    printf '%s\n' "${lista:-  (no hay ideas en Cola ni En producción: decile que apruebe alguna en ds panel → Contenido)}"
+    echo "Antes de empezar: buscala con \`ds contenido list\` (título, gancho y tratamiento son el brief) y pasala a producción: ds contenido mover \"<parte del título o gancho>\" produccion"
+    echo "  [0] IDENTIDAD DEL PROYECTO — obligatorio, antes de cualquier skill. Estás en la carpeta del proyecto (si no, preguntá cuál es). Leé DESIGN.md (colores, tipografía, espaciado, movimiento), PRESSKIT.md si existe (voz, qué sí / qué no, assets), los logos (buscá public/brand, assets, *logo*), los tokens del código (globals.css, tailwind/theme) y las pantallas reales de la feature que muestra la idea (rutas y componentes de la app). Todo color, fuente, forma y pantalla sale de ahí: nada inventado, nada de paletas genéricas. Si no hay PRESSKIT.md, armalo primero con la skill presskit (le preguntás al usuario lo que falte). Prohibido: SESSION.md, TASKS.md y datos reales de clientes en pantalla (usá datos de ejemplo verosímiles)."
+    # El formato (con qué skill se hace) lo elige el usuario y va ANTES del guion: no se escribe igual
+    # un video de producto que un papercut o un avatar hablando.
+    local fmt="" k d
+    for k in "onetake|Video de producto: la app real animada, tipografía en movimiento, sin persona en cámara" \
+             "papercut-explainer|Explicativo en papel recortado, estilo collage, vertical" \
+             "ugc-scriptwriter+ai-avatar-director|Avatar IA hablando a cámara (HeyGen, Hedra…), tipo testimonio o UGC" \
+             "ugc-video-prompting|Escenas generativas con Veo 3 o Seedance: el campo, el productor, situaciones reales" \
+             "remotion-video|Animación programada a medida en React" \
+             "comic10|Reel papercut de fútbol desde una noticia"; do
+      d="${k%%|*}"; [ -f "$HOME/.claude/skills/${d%%+*}/SKILL.md" ] && fmt+="      · ${d//+/ → } — ${k#*|}"$'\n'
+    done
+    echo "  [0b] FORMATO — lo elige el usuario, antes del guion. Preguntale con AskUserQuestion qué tipo de pieza quiere, con estas opciones (las instaladas; marcá como recomendada la que mejor sirve a esta idea y decí por qué en la descripción). Esa skill hace el render al final del camino y el guion se escribe para ese formato:"
+    printf '%s' "$fmt"
+  else
+    echo "🧭 Flujo «${flow}»${proys:+ para: ${proys// /, }}. Consultá estos cerebros siguiendo el camino, aplicando cada pregunta a este caso y usando cada respuesta en lo que sigue:"
+  fi
   [ -n "$indic" ] && echo "📝 Indicación del usuario — manda sobre todo lo demás: aplicala al formular cada pregunta a los cerebros y en cada idea: «${indic}»"
   # [0] Cerebro del tema: aporta los hechos (datos reales, problemas, cómo habla esa audiencia);
   # el resto del flujo aporta el método.
   q="¿Qué datos reales, problemas concretos y forma de hablar de esta audiencia sirven para ${proys:-este proyecto}?"
   for c in $mas; do echo "  [0] Cerebro del tema (lo pidió el usuario): ds cerebro ask $c \"$q\"  → después: [1]"; done
-  if [ -z "$mas" ]; then
+  if [ -z "$mas" ] && [ "$tipo" != produccion ]; then
     for d in "$ROOT"/*/cerebro.md; do c="$(basename "$(dirname "$d")")"
       case " $encamino $menos " in *" $c "*) continue ;; esac
       cand+="      · $c — $(title_of "$c")$(sed -n 's/^temas: *//p' "$d" | head -1 | cut -d, -f1-5 | sed 's/^./ (&/;s/.$/&…)/')"$'\n'
     done
     if [ -n "$cand" ]; then
-      echo "  [0] Cerebro del tema (decidilo vos): leé el SESSION.md del proyecto; si es de un rubro que tiene cerebro en esta lista, consultalo primero con: ds cerebro ask <cerebro> \"$q\" y avisale al usuario en una línea cuál sumaste y por qué. Si ninguno es del rubro, no sumes nada."
+      echo "  [0] Cerebro del tema (decidilo vos): mirá el README y el código del proyecto; si es de un rubro que tiene cerebro en esta lista, consultalo primero con: ds cerebro ask <cerebro> \"$q\" y avisale al usuario en una línea cuál sumaste y por qué. Si ninguno es del rubro, no sumes nada."
       printf '%s' "$cand"
     fi
   fi
   printf '%s\n' "${text//$'\x1e'/$'\n'}"
   echo "Después decile al usuario en una línea qué tomaste de cada cerebro (y qué rama elegiste, si hubo)."
+  if [ "$tipo" = produccion ]; then
+    echo "Último paso: hacé la pieza con la skill del formato que eligió el usuario en [0b] (cargala con el tool Skill), usando la identidad de [0] y lo que salió de cada paso. Primero un borrador; el final solo cuando lo apruebe."
+    echo "EL USUARIO ELIGE EN CADA PASO CREATIVO, con la herramienta de preguntas (AskUserQuestion), y no avanzás hasta que conteste: (1) concepto: 2 o 3 opciones distintas, cada una en una línea; (2) guion y escenas: los mostrás y aprueba o pide cambios; (3) borrador del video: lo mira y aprueba antes del render final. Si en otro paso hay una decisión de gusto (estilo, música, voz), también le das opciones."
+    echo "Al terminar el render: pasale al usuario la ruta del video y marcala publicada recién cuando él lo confirme: ds contenido mover \"<parte del título o gancho>\" publicado"
+  fi
   if [ "$tipo" = ideas ]; then
     if [ -n "$proys" ]; then echo "Es un flujo de IDEAS: no implementes nada. Proyectos: ${proys// /, }."
     else echo "Es un flujo de IDEAS: no implementes nada. El usuario no dijo para qué proyectos: si estás dentro de un proyecto (hay SESSION.md o TASKS.md acá), usá ese; si no, preguntáselo antes de empezar."; fi

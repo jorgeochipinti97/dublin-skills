@@ -501,15 +501,19 @@ function flujoBlocks() {
   for (const b of out) { while (b.end > b.start + 1 && lines[b.end - 1].trim() === "") b.end--; b.raw = lines.slice(b.start, b.end).join("\n"); }
   return { lines, blocks: out };
 }
+// Un nodo es un cerebro (slug) o una skill ("skill:onetake", instalada en ~/.claude/skills).
+// Skills que vienen con Claude Code (no tienen carpeta en ~/.claude/skills).
+const SKILLS_INCLUIDAS = ["dataviz", "artifact-design", "artifact-diagramming", "code-review", "simplify"];
+const nodoOk = (c: string, cer: Set<string>) => c.startsWith("skill:") ? SKILLS_INCLUIDAS.includes(c.slice(6)) || existsSync(join(SKILLS_DIR, c.slice(6), "SKILL.md")) : cer.has(c);
 function flujos() {
   const cer = new Set(CEREBROS ? dirs(CEREBROS) : []);
   const list = flujoBlocks().blocks.map(({ raw }) => {
     const ls = raw.split("\n"), get = (k: string) => (ls.find(l => l.startsWith(k + ":"))?.slice(k.length + 1) ?? "").split(",").map(s => s.trim()).filter(Boolean);
-    const nodes = ls.map(l => l.match(NODO)).filter(Boolean).map((m, k) => ({ id: m![1], cerebro: m![2], pregunta: (m![3] ?? "").trim(), x: m![4] != null ? Math.max(274, Number(m![4])) : 344 + 300 * k, y: m![5] != null ? Number(m![5]) : 40, ok: cer.has(m![2]) }));
+    const nodes = ls.map(l => l.match(NODO)).filter(Boolean).map((m, k) => ({ id: m![1], cerebro: m![2], pregunta: (m![3] ?? "").trim(), x: m![4] != null ? Math.max(274, Number(m![4])) : 344 + 300 * k, y: m![5] != null ? Number(m![5]) : 40, ok: nodoOk(m![2], cer) }));
     const edges = ls.map(l => l.match(CABLE)).filter(Boolean).map(m => ({ from: m![1], to: m![2], cond: (m![3] ?? "").trim() }));
-    return { raw, name: ls[0].slice(3).trim(), tipo: get("tipo")[0] === "ideas" ? "ideas" : "consulta", angulos: ls.some(l => l.startsWith("angulos:")) ? get("angulos") : null, disparo: get("disparo"), skills: get("skills"), nodes, edges };
+    return { raw, name: ls[0].slice(3).trim(), tipo: ["ideas", "produccion"].includes(get("tipo")[0]) ? get("tipo")[0] : "consulta", angulos: ls.some(l => l.startsWith("angulos:")) ? get("angulos") : null, disparo: get("disparo"), skills: get("skills"), nodes, edges };
   });
-  return { file: FLUJOS, list, cer: cerebroInfo(), skills: dirs(SKILLS_DIR).filter(d => existsSync(join(SKILLS_DIR, d, "SKILL.md"))) };
+  return { file: FLUJOS, list, cer: cerebroInfo(), skills: [...dirs(SKILLS_DIR).filter(d => existsSync(join(SKILLS_DIR, d, "SKILL.md"))), ...SKILLS_INCLUIDAS].sort() };
 }
 // Título y notebook de cada cerebro: van en el texto al compartir, así el otro sabe qué pedir.
 function cerebroInfo() {
@@ -527,12 +531,14 @@ function flujoImport(text: string) {
   const end = ls.findIndex((l, i) => i > h && l.startsWith("## ")), body = ls.slice(h + 1, end < 0 ? ls.length : end);
   const nodes = body.map(l => l.match(NODO)).filter(Boolean).map(m => ({ id: m![1], cerebro: m![2], pregunta: m![3] ?? "", x: Number(m![4] ?? 344), y: Number(m![5] ?? 40) }));
   const edges = body.map(l => l.match(CABLE)).filter(Boolean).map(m => ({ from: m![1], to: m![2], cond: m![3] ?? "" }));
-  if (nodes.some(n => !/^[a-z0-9-]+$/.test(n.cerebro))) throw new Error("El flujo tiene un cerebro con nombre inválido");
+  if (nodes.some(n => !/^(skill:)?[a-z0-9-]+$/.test(n.cerebro))) throw new Error("El flujo tiene un cerebro con nombre inválido");
+  const faltanSkills = [...new Set(nodes.filter(n => n.cerebro.startsWith("skill:") && !nodoOk(n.cerebro, new Set())).map(n => n.cerebro.slice(6)))];
+  if (faltanSkills.length) throw new Error("Te faltan estas skills (instalá dublin-skills con ./install.sh install): " + faltanSkills.join(", "));
   const get = (k: string) => body.find(l => l.startsWith(k + ":"))?.slice(k.length + 1) ?? "";
   const info = Object.fromEntries(ls.map(l => l.match(CER_LINE)).filter(Boolean).map(m => [m![1], { title: m![2], notebook: m![3] }]));
   const have = new Set(dirs(CEREBROS)), created: string[] = [], slugs: string[] = [], missing: string[] = [];
   for (const c of new Set(nodes.map(n => n.cerebro))) {
-    if (have.has(c)) continue;
+    if (have.has(c) || c.startsWith("skill:")) continue;
     const i = info[c];
     if (!i?.notebook) { missing.push(i?.title || c); continue; }
     mkdirSync(join(CEREBROS, c), { recursive: true });
@@ -555,7 +561,7 @@ async function flujoShare(b: any) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Mail inválido");
   const f = flujos().list.find(x => x.raw === b.old); if (!f) throw new Error("El archivo cambió — recargá");
   const info = cerebroInfo(), shared: string[] = [], failed: string[] = [];
-  for (const c of new Set(f.nodes.map(n => n.cerebro))) {
+  for (const c of new Set(f.nodes.map(n => n.cerebro).filter(c => !c.startsWith("skill:")))) {
     const i = info[c]; if (!i?.notebook) { failed.push(i?.title || c); continue; }
     const out = await run(["notebooklm", "--quiet", "share", "add", email, "--permission", "viewer", "-n", i.notebook], CEREBROS, 60000);
     (out == null ? failed : shared).push(i.title);
@@ -573,7 +579,7 @@ function flujosOp(b: any) {
     if (blocks.some(x => x !== old && x.raw.split("\n")[0].slice(3).trim().toLowerCase() === name.toLowerCase())) throw new Error("Ya hay un flujo con ese nombre");
     const nodes = (Array.isArray(b.nodes) ? b.nodes : []).filter((n: any) => /^\w+$/.test(n?.id ?? "") && n.id !== "inicio");
     if (!nodes.length) throw new Error("Sumá al menos un cerebro");
-    if (nodes.some((n: any) => !cer.has(n.cerebro))) throw new Error("Hay un nodo sin cerebro elegido");
+    if (nodes.some((n: any) => !nodoOk(String(n.cerebro ?? ""), cer))) throw new Error("Hay un nodo sin cerebro o skill elegido");
     const ids = new Set(nodes.map((n: any) => n.id)); if (ids.size !== nodes.length) throw new Error("Nodos repetidos");
     const seen = new Set<string>(), edges = (Array.isArray(b.edges) ? b.edges : []).filter((e: any) => {
       const k = e?.from + ">" + e?.to; if (seen.has(k)) return false; seen.add(k);
@@ -584,7 +590,7 @@ function flujosOp(b: any) {
     const out = (id: string) => edges.filter((e: any) => e.from === id).map((e: any) => e.to), st: Record<string, number> = {};
     const loop = (id: string): boolean => { if (st[id] === 1) return true; if (st[id] === 2) return false; st[id] = 1; const r = out(id).some(loop); st[id] = 2; return r; };
     if (loop("inicio") || nodes.some((n: any) => loop(n.id))) throw new Error("Hay una vuelta en el flujo: los cables tienen que ir siempre hacia adelante");
-    const block = [`## ${name}`, `tipo: ${b.tipo === "ideas" ? "ideas" : "consulta"}`, ...(b.tipo === "ideas" ? [`angulos: ${csv(b.angulos)}`] : []), `disparo: ${csv(b.disparo)}`, `skills: ${csv(b.skills)}`,
+    const block = [`## ${name}`, `tipo: ${["ideas", "produccion"].includes(b.tipo) ? b.tipo : "consulta"}`, ...(b.tipo === "ideas" ? [`angulos: ${csv(b.angulos)}`] : []), `disparo: ${csv(b.disparo)}`, `skills: ${csv(b.skills)}`,
       ...nodes.map((n: any) => { const q = oneLine(n.pregunta); return `- ${n.id} ${n.cerebro}${q ? " | " + q : ""} @ ${Math.max(0, Math.round(Number(n.x) || 0))},${Math.max(0, Math.round(Number(n.y) || 0))}`; }),
       ...edges.map((e: any) => { const c = oneLine(e.cond); return `> ${e.from} ${e.to}${c ? " | " + c : ""}`; })];
     if (old) lines.splice(old.start, old.end - old.start, ...block);
