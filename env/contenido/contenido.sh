@@ -27,6 +27,11 @@ cmd_add() {
   local proy idea gancho flujo angulo det line
   proy="$(clean "${1:-}")"; idea="$(clean "${2:-}")"; gancho="$(clean "${3:-}")"; flujo="$(clean "${4:-}")"; angulo="$(clean "${5:-}")"; det="$(clean "${6:-}")"
   [ -n "$proy" ] && [ -n "$idea" ] || die "Uso: ds contenido add <proyecto> \"<idea>\" [\"<gancho>\"] [\"<flujo>\"] [\"<ángulo>\"] [\"<tratamiento>\"]"
+  # Filtro duro: lo que suena a error interno no es contenido, lo mande quien lo mande.
+  local todo; todo="$(printf '%s %s %s' "$idea" "$gancho" "$det" | perl -CSD -MUnicode::Normalize -pe '$_ = lc NFD($_); s/\pM//g')"
+  if grep -qE '\b(bugs?|error(es)?|falla(s|ron)?|fallo|crash|incidentes?|hotfix|deuda tecnica|migracion|mal (cargad|anotad|importad)|(se|fue) (anoto|cargo|importo) (mal|distinto)|duplicad[oa]s?|inconsistenc|datos? (sucio|corrupt|rot))' <<< "$todo"; then
+    die "No va a la bandeja: parece salir de un error interno del sistema (bug, dato mal cargado, incidente). El contenido sale de lo que el producto le resuelve al cliente, no de los problemas del sistema."
+  fi
   ensure
   # Ya propuesta (en cualquier sección, incluidas las descartadas): no se repite.
   grep -qiF "| $proy | $idea |" "$FILE" && { echo "· ya estaba: $idea"; return 0; }
