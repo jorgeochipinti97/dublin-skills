@@ -1,4 +1,4 @@
-// `ds panel` — tu panel personal, local: proyectos + tareas, MCPs y finanzas.
+// `ds panel` — tu panel personal, local: proyectos + tareas, MCPs, finanzas, estudio y nutrición.
 // Lee y escribe los mismos archivos de siempre (TASKS.md, finanzas.md) en cada
 // request, así que nunca se desincroniza. Solo escucha en 127.0.0.1.
 //
@@ -305,6 +305,198 @@ function mascotaOp(b: any) {
   else if (b.op === "delete") lines.splice(b.line, 1);
   else throw new Error("Operación desconocida");
   save();
+}
+
+// estudio.md / nutricion.md: secciones "## X", una línea por registro; se agrega al final de la sección (la crea si falta).
+const mdLines = (file: string, title: string) => { if (!existsSync(file)) writeFileSync(file, `# ${title}\n`); return read(file).split("\n"); };
+function secAdd(lines: string[], name: string, line: string) {
+  if (!finSection(lines, name)) { while (lines.length && lines.at(-1) === "") lines.pop(); lines.push("", "## " + name, ""); }
+  finInsert(lines, name, line);
+}
+function secRows(lines: string[], name: string, re: RegExp) {
+  const r = finSection(lines, name); if (!r) return [];
+  return lines.slice(r[0] + 1, r[1]).map((raw, k) => ({ line: r[0] + 1 + k, raw, m: raw.match(re) })).filter(x => x.m);
+}
+const cleanTxt = (t: unknown) => String(t ?? "").replace(/[\r\n|#]/g, " ").replace(/\s+/g, " ").trim();
+const isDay = (d: unknown) => /^\d{4}-\d{2}-\d{2}$/.test(String(d ?? ""));
+const DIAS = ["dom", "lun", "mar", "mie", "jue", "vie", "sab"];
+const dayOf = (d: string) => DIAS[new Date(d + "T12:00:00").getDay()];
+function delLine(file: string, b: any) {
+  const lines = read(file).split("\n");
+  if (lines[b.line] !== b.raw || !b.raw) throw new Error("El archivo cambió — recargá");
+  lines.splice(b.line, 1); writeFileSync(file, lines.join("\n"));
+}
+
+// ---- Estudio -----------------------------------------------------------------
+// estudio.md:
+//   ## Rutina     - tarjetas chino-practico 15     (lo que hacés todos los días: leer|ver|practicar|tarjetas|examen|libro|curso <tema> [cantidad])
+//   ## Hecho      - 2026-10-27 leer machine-learning  /  - 2026-10-27 tarjetas chino-practico 12   (lo cumplido cada día)
+//   ## Materiales - [ ] lectura datos-y-bases-de-datos | Título | https://… | obligatoria   ([x] … | hecho 2026-10-27)
+//   ## Examen     - 2026-10-27 datos-y-bases-de-datos 7/10      (aciertos/respondidas del día)
+// Los temas son los cerebros de `ds cerebro` (o cualquier palabra); las tarjetas salen de
+// <cerebro>/studio/tarjetas-*.md (Obsidian SR: frente / "?" / dorso, y <!--SR:!fecha,intervalo,facilidad-->)
+// y las preguntas de examen de <cerebro>/studio/examen-*.json (quiz de NotebookLM bajado por `ds cerebro sync`).
+const ESTUDIO = tilde(process.env.DUBLIN_ESTUDIO || join(dirname(FINANZAS), "estudio.md"));
+const CEREBROS = tilde(process.env.DUBLIN_CEREBROS || conf("cerebros-root"));
+const ACTS = ["leer", "ver", "practicar", "tarjetas", "examen", "libro", "curso"];
+const RUT = /^- (leer|ver|practicar|tarjetas|examen|libro|curso) (\S+)(?: (\d+))?\s*$/;
+// libros.md (al lado de estudio.md): recorridos por pasos. Un libro o un curso por "## …" y un paso por línea:
+//   ## Título | tema | archivo.pdf [| obligatoria]        - [ ] Cap. 2 Nombre · Sección | p. 80-98 [| hecho 2026-10-27]
+//   ## Título | tema | https://curso [| obligatoria]      - [ ] Módulo · Paso | https://… [| 10 min] [| hecho 2026-10-27]
+// El módulo es lo de antes del primer " · ". El PDF vive en <cerebro>/libros/.
+const LIBROS = tilde(process.env.DUBLIN_LIBROS || join(dirname(ESTUDIO), "libros.md"));
+const LIBRO = /^## (.+?) \| (\S+) \| (https?:\/\/\S+|.+?\.pdf)( \| obligatoria)?\s*$/;
+const UNIDAD = /^- \[( |x)\] (.+?) \| (?:p\. (\d+)(?:-(\d+))?|(https?:\/\/\S+))(?: \| (\d+) min)?(?: \| hecho (\d{4}-\d{2}-\d{2}))?\s*$/;
+function libros() {
+  const out: any[] = [];
+  read(LIBROS).split("\n").forEach((raw, line) => {
+    let m;
+    if ((m = raw.match(LIBRO))) {
+      const url = /^https?:/.test(m[3]);
+      out.push({ line, titulo: m[1].trim(), tema: m[2], kind: url ? "curso" : "libro", file: url ? "" : m[3], url: url ? m[3] : "", obligatoria: !!m[4], unidades: [] });
+    } else if (out.length && (m = raw.match(UNIDAD))) {
+      const t = m[2].trim(), i = t.indexOf(" · ");
+      out.at(-1).unidades.push({ line, raw, hecho: m[1] === "x", titulo: t, grupo: i > 0 ? t.slice(0, i) : "", paso: i > 0 ? t.slice(i + 3) : t,
+        p0: Number(m[3] ?? 0), p1: Number(m[4] ?? m[3] ?? 0), url: m[5] ?? "", min: Number(m[6] ?? 0), day: m[7] ?? "" });
+    }
+  });
+  return out;
+}
+// El PDF de un libro de un cerebro (solo archivos de <cerebro>/libros/), para abrirlo en el navegador en la página.
+function libroPdf(c: string, f: string) {
+  if (!dirs(CEREBROS).includes(c) || !f || /[\/\\]/.test(f) || !f.endsWith(".pdf")) return null;
+  const p = join(CEREBROS, c, "libros", f); return existsSync(p) ? p : null;
+}
+const HECHO = /^- (\d{4}-\d{2}-\d{2}) (leer|ver|practicar|tarjetas) (\S+)(?: (\d+))?\s*$/;
+const MAT = /^- \[( |x)\] (lectura|video|curso) (\S+) \| (.+?)(?: \| (https?:\/\/\S+))?( \| obligatoria)?(?: \| hecho (\d{4}-\d{2}-\d{2}))?\s*$/;
+const EXA = /^- (\d{4}-\d{2}-\d{2}) (\S+) (\d+)\/(\d+)\s*$/;
+const SR = /<!--SR:!(\d{4}-\d{2}-\d{2}),(\d+),(\d+)-->/;
+const tema = (t: unknown) => cleanTxt(t).toLowerCase().replace(/\s+/g, "-");
+function cards(dir: string) {
+  const out: any[] = [];
+  for (const f of (() => { try { return readdirSync(join(dir, "studio")).filter(n => /^tarjetas-.*\.md$/.test(n)); } catch { return []; } })()) {
+    read(join(dir, "studio", f)).split(/\n\s*\n/).forEach(raw => {
+      const p = raw.split("\n"), q = p.findIndex(l => l.trim() === "?"); if (q < 1) return;
+      const sr = raw.match(SR);
+      out.push({ file: f, raw, front: p.slice(0, q).join("\n").trim(), back: p.slice(q + 1).join("\n").replace(SR, "").trim(), due: sr?.[1] ?? "" });
+    });
+  }
+  return out;
+}
+function examen(dir: string) {
+  const out: any[] = [];
+  for (const f of (() => { try { return readdirSync(join(dir, "studio")).filter(n => /^examen-.*\.json$/.test(n)); } catch { return []; } })()) {
+    try { for (const q of JSON.parse(read(join(dir, "studio", f))).questions ?? [])
+      if (q.question && q.answerOptions?.length) out.push({ q: q.question, hint: q.hint ?? "", opts: q.answerOptions.map((o: any) => ({ text: o.text, ok: !!o.isCorrect, why: o.rationale ?? "" })) });
+    } catch { /* json a medio bajar: se ignora */ }
+  }
+  return out;
+}
+function estudio() {
+  const lines = read(ESTUDIO).split("\n");
+  const rutina = secRows(lines, "Rutina", RUT).map(({ line, raw, m }) => ({ line, raw, tipo: m![1], tema: m![2], n: Number(m![3] ?? 0) }));
+  const hecho = secRows(lines, "Hecho", HECHO).map(({ line, raw, m }) => ({ line, raw, day: m![1], tipo: m![2], tema: m![3], n: Number(m![4] ?? 1) }))
+    .sort((a, b) => b.day.localeCompare(a.day));
+  const cerebros = CEREBROS ? dirs(CEREBROS).filter(d => existsSync(join(CEREBROS, d, "cerebro.md"))).map(slug => {
+    const md = read(join(CEREBROS, slug, "cerebro.md")).split("\n"), c = cards(join(CEREBROS, slug));
+    return { slug, title: md.find(l => l.startsWith("# "))?.slice(2).trim() || slug, fuentes: secRows(md, "Fuentes", /^- (.+)$/).map(x => x.m![1].replace(/\s+\(desde NotebookLM\)$/, "")),
+      total: c.length, due: c.filter(x => !x.due || x.due <= today()).slice(0, 30), examen: examen(join(CEREBROS, slug)) };
+  }) : [];
+  const materiales = secRows(lines, "Materiales", MAT).map(({ line, raw, m }) => ({ line, raw, hecho: m![1] === "x", tipo: m![2], tema: m![3], titulo: m![4].trim(), url: m![5] ?? "", obligatoria: !!m![6], day: m![7] ?? "" }));
+  const examenes = secRows(lines, "Examen", EXA).map(({ line, raw, m }) => ({ line, raw, day: m![1], tema: m![2], ok: Number(m![3]), n: Number(m![4]) })).sort((a, b) => b.day.localeCompare(a.day));
+  return { file: ESTUDIO, librosFile: LIBROS, root: CEREBROS, rutina, hecho, materiales, examenes, cerebros, libros: libros() };
+}
+function estudioOp(b: any) {
+  if (b.op === "delete") return delLine(ESTUDIO, b);
+  if (b.op === "unidad") {
+    // Tildar / destildar un paso de un libro o curso: [x] + fecha, o vuelve a pendiente.
+    const lines = read(LIBROS).split("\n");
+    if (lines[b.line] !== b.raw || !UNIDAD.test(b.raw)) throw new Error("El archivo cambió — recargá");
+    const base = b.raw.replace(/ \| hecho \d{4}-\d{2}-\d{2}\s*$/, "");
+    lines[b.line] = b.raw.startsWith("- [x]") ? base.replace("- [x]", "- [ ]") : base.replace("- [ ]", "- [x]") + ` | hecho ${today()}`;
+    return writeFileSync(LIBROS, lines.join("\n"));
+  }
+  if (b.op === "repaso") {
+    // Repetición espaciada mínima: "la sabía" multiplica el intervalo por la facilidad; "no" vuelve a 1 día.
+    if (!dirs(CEREBROS).includes(b.slug) || !/^tarjetas-[^/]*\.md$/.test(b.file)) throw new Error("Tarjeta desconocida");
+    const file = join(CEREBROS, b.slug, "studio", b.file), txt = read(file), i = txt.indexOf(b.raw);
+    if (!b.raw || i < 0 || txt.indexOf(b.raw, i + 1) >= 0) throw new Error("El archivo cambió — recargá");
+    const m = b.raw.match(SR), iv = Number(m?.[2] ?? 0), ease = Number(m?.[3] ?? 250);
+    const [niv, nease] = b.ok ? [iv ? Math.round(iv * ease / 100) : 3, ease] : [1, Math.max(130, ease - 20)];
+    const sr = `<!--SR:!${addDays(today(), niv)},${niv},${nease}-->`;
+    writeFileSync(file, txt.slice(0, i) + (m ? b.raw.replace(SR, sr) : b.raw + "\n" + sr) + txt.slice(i + b.raw.length));
+    // Cuenta para la actividad "tarjetas <tema>" de hoy.
+    const lines = mdLines(ESTUDIO, "Estudio"), h = secRows(lines, "Hecho", HECHO).find(x => x.m![1] === today() && x.m![2] === "tarjetas" && x.m![3] === b.slug);
+    const line = `- ${today()} tarjetas ${b.slug} ${Number(h?.m![4] ?? 0) + 1}`;
+    if (h) lines[h.line] = line; else secAdd(lines, "Hecho", line);
+    return writeFileSync(ESTUDIO, lines.join("\n"));
+  }
+  const lines = mdLines(ESTUDIO, "Estudio"), t = tema(b.tema);
+  if (b.op === "mhecho") {
+    // Tildar / destildar un material: [x] + fecha, o vuelve a pendiente.
+    if (lines[b.line] !== b.raw) throw new Error("El archivo cambió — recargá");
+    const m = b.raw.match(MAT); if (!m) throw new Error("No es un material");
+    const base = b.raw.replace(/ \| hecho \d{4}-\d{2}-\d{2}\s*$/, "");
+    lines[b.line] = m[1] === "x" ? base.replace("- [x]", "- [ ]") : base.replace("- [ ]", "- [x]") + ` | hecho ${today()}`;
+    return writeFileSync(ESTUDIO, lines.join("\n"));
+  }
+  if (b.op === "material") {
+    const titulo = cleanTxt(b.titulo), url = String(b.url ?? "").trim();
+    if (!["lectura", "video"].includes(b.tipo) || !t || !titulo) throw new Error("Falta tipo, tema o título");
+    if (url && !/^https?:\/\/\S+$/.test(url)) throw new Error("El link tiene que empezar con http");
+    secAdd(lines, "Materiales", `- [ ] ${b.tipo} ${t} | ${titulo}${url ? " | " + url : ""}${b.obligatoria ? " | obligatoria" : ""}`);
+    return writeFileSync(ESTUDIO, lines.join("\n"));
+  }
+  if (b.op === "respuesta") {
+    // Una línea por día y tema en "## Examen": cada respuesta suma a "aciertos/respondidas".
+    if (!t) throw new Error("Falta el tema");
+    const i = secRows(lines, "Examen", EXA).find(x => x.m![1] === today() && x.m![2] === t);
+    const [ok, n] = i ? [Number(i.m![3]), Number(i.m![4])] : [0, 0], line = `- ${today()} ${t} ${ok + (b.ok ? 1 : 0)}/${n + 1}`;
+    if (i) lines[i.line] = line; else secAdd(lines, "Examen", line);
+    return writeFileSync(ESTUDIO, lines.join("\n"));
+  }
+  if (!ACTS.includes(b.tipo) || !t) throw new Error("Falta la actividad o el tema");
+  if (b.op === "actividad") {
+    const n = Math.round(Number(b.n) || 0);
+    secAdd(lines, "Rutina", `- ${b.tipo} ${t}${n > 0 ? " " + n : ""}`);
+  } else if (b.op === "hecho") {
+    // leer / ver / practicar: tildar hoy agrega la línea; destildar la saca.
+    if (!["leer", "ver", "practicar"].includes(b.tipo)) throw new Error("Esta actividad se cuenta sola");
+    const h = secRows(lines, "Hecho", HECHO).find(x => x.m![1] === today() && x.m![2] === b.tipo && x.m![3] === t);
+    if (h) lines.splice(h.line, 1); else secAdd(lines, "Hecho", `- ${today()} ${b.tipo} ${t}`);
+  } else throw new Error("Operación desconocida");
+  writeFileSync(ESTUDIO, lines.join("\n"));
+}
+
+// ---- Nutrición ---------------------------------------------------------------
+// nutricion.md:
+//   ## Plan     - lun | almuerzo | pollo con arroz y ensalada   (lo que pensás comer cada día)
+//   ## Diario   - 2026-10-27 | almuerzo | pollo con arroz        (lo que comiste)
+//   ## Peso     - 2026-10-27 82.5
+const NUTRICION = tilde(process.env.DUBLIN_NUTRICION || join(dirname(FINANZAS), "nutricion.md"));
+const COMIDAS = ["desayuno", "almuerzo", "merienda", "cena", "colación"];
+const PLAN = /^- (dom|lun|mar|mie|jue|vie|sab) \| (\S+) \| (.+)$/;
+const COMI = /^- (\d{4}-\d{2}-\d{2}) \| (\S+) \| (.+)$/;
+const PESO = /^- (\d{4}-\d{2}-\d{2}) (\d+(?:\.\d+)?)\s*$/;
+function nutricion() {
+  const lines = read(NUTRICION).split("\n");
+  return { file: NUTRICION, comidas: COMIDAS,
+    plan: secRows(lines, "Plan", PLAN).map(({ line, raw, m }) => ({ line, raw, dia: m![1], comida: m![2], que: m![3].trim() })),
+    diario: secRows(lines, "Diario", COMI).map(({ line, raw, m }) => ({ line, raw, day: m![1], comida: m![2], que: m![3].trim() })).sort((a, b) => b.day.localeCompare(a.day) || COMIDAS.indexOf(a.comida) - COMIDAS.indexOf(b.comida)),
+    peso: secRows(lines, "Peso", PESO).map(({ line, raw, m }) => ({ line, raw, day: m![1], kg: Number(m![2]) })).sort((a, b) => b.day.localeCompare(a.day)) };
+}
+function nutricionOp(b: any) {
+  if (b.op === "delete") return delLine(NUTRICION, b);
+  const lines = mdLines(NUTRICION, "Nutrición"), que = cleanTxt(b.que);
+  if (b.op === "peso") {
+    const kg = num(b.kg); if (!(kg > 0 && kg < 400)) throw new Error("Peso inválido");
+    secAdd(lines, "Peso", `- ${isDay(b.day) ? b.day : today()} ${kg}`);
+  } else if (b.op === "plan" || b.op === "comi") {
+    if (!COMIDAS.includes(b.comida) || !que) throw new Error("Falta la comida o qué");
+    if (b.op === "plan") { if (!DIAS.includes(b.dia)) throw new Error("Falta el día"); secAdd(lines, "Plan", `- ${b.dia} | ${b.comida} | ${que}`); }
+    else secAdd(lines, "Diario", `- ${isDay(b.day) ? b.day : today()} | ${b.comida} | ${que}`);
+  } else throw new Error("Operación desconocida");
+  writeFileSync(NUTRICION, lines.join("\n"));
 }
 
 // Facturas de `ds factura` (sección "## Facturas"):
@@ -803,7 +995,7 @@ Bun.serve({
       const month = /^\d{4}-\d{2}$/.test(url.searchParams.get("month") ?? "") ? url.searchParams.get("month")! : today().slice(0, 7);
       return json({ today: today(), user: USER, roots: { projects: PROJECTS },
         pinned: readList("pinned"), archived: readList("archived"), order: readList("order"),
-        projects: projects(), mcps: mcps(), finanzas: finanzas(month), facturas: facturas(), mascotas: mascotas(), compu: await compu(), foco: foco(),
+        projects: projects(), mcps: mcps(), finanzas: finanzas(month), facturas: facturas(), mascotas: mascotas(), estudio: estudio(), nutricion: nutricion(), dayOfWeek: dayOf(today()), compu: await compu(), foco: foco(),
         // panel-alias: "carpeta Nombre visible" por línea (ej. "mi_app_v2 Mi App").
         alias: Object.fromEntries(readList("alias").map(l => l.trim().split(/\s+/)).filter(p => p.length > 1).map(([k, ...v]) => [k, v.join(" ")])) });
     }
@@ -818,6 +1010,10 @@ Bun.serve({
       if (url.pathname === "/api/proj/recent") return json(await recent(dir, url.searchParams.get("since") ?? ""));
       if (url.pathname === "/api/proj") return json({ name, git: await gitInfo(dir), ficha: ficha(name), history: history(dir) });
     }
+    if (req.method === "GET" && url.pathname === "/api/libro") {
+      const p = libroPdf(url.searchParams.get("c") ?? "", url.searchParams.get("f") ?? "");
+      return p ? new Response(Bun.file(p), { headers: { "content-type": "application/pdf" } }) : json({ error: "No existe" }, 404);
+    }
     if (req.method === "GET" && url.pathname === "/api/calendar") return json(await calendar());
     if (req.method === "POST") {
       // Solo la propia página: otro sitio abierto en el navegador no puede escribir tus archivos.
@@ -827,6 +1023,8 @@ Bun.serve({
         if (url.pathname === "/api/task") { taskOp(b); return json({ ok: true }); }
         if (url.pathname === "/api/fin") { finOp(b); return json({ ok: true }); }
         if (url.pathname === "/api/mascota") { mascotaOp(b); return json({ ok: true }); }
+        if (url.pathname === "/api/estudio") { estudioOp(b); return json({ ok: true }); }
+        if (url.pathname === "/api/nutricion") { nutricionOp(b); return json({ ok: true }); }
         if (url.pathname === "/api/factura") { await facturaOp(b); return json({ ok: true }); }
         if (url.pathname === "/api/project") { projectOp(b); return json({ ok: true }); }
         if (url.pathname === "/api/cal") { calOp(b); return json({ ok: true }); }

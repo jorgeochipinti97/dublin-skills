@@ -39,6 +39,74 @@ cd dublin-skills && ./install.sh install
 dublin-skills is the **model/source**: the team installs the environment into
 their own working repos and works there, not inside this repo.
 
+## Herramientas personales (`ds panel`, `ds cerebro`, `ds factura`, `ds voz`)
+
+Corren desde este repo y **cada persona usa sus propios datos**. El repo es solo
+el código: nada personal se guarda acá adentro (y `.gitignore` lo bloquea por si
+acaso). Clonás, actualizás con `git pull`, y tus datos quedan intactos.
+
+### Dónde vive cada cosa (todo fuera del repo)
+
+| Qué | Dónde | Cambiarlo con |
+|---|---|---|
+| Carpeta de tus proyectos | `~/.config/dublin/projects-root` (se pregunta la 1ª vez) | `$DUBLIN_PROJECTS` |
+| Finanzas + facturas | `finanzas.md`, al lado de la carpeta de proyectos | `$DUBLIN_FINANZAS` |
+| Estudio / libros / nutrición / mascotas | `estudio.md`, `libros.md`, `nutricion.md`, `mascotas.md`, al lado de `finanzas.md` | `$DUBLIN_ESTUDIO`, `$DUBLIN_LIBROS`, `$DUBLIN_NUTRICION`, `$DUBLIN_MASCOTAS` |
+| Cerebros (NotebookLM) | carpeta que elegís, guardada en `~/.config/dublin/cerebros-root` | `$DUBLIN_CEREBROS` |
+| Calendarios | `~/.config/dublin/calendars` (permisos 600, se cargan desde el panel) | — |
+| Datos de facturación ARCA | `~/.config/dublin/arca` + tu certificado `.crt`/`.key` | — |
+| Ficha de cada proyecto | `<proyecto>/FICHA.local.md` (gitignored) | — |
+| Preferencias del panel (foco, fijados, alias) | `~/.config/dublin/panel-*` | — |
+
+### Puesta en marcha
+
+1. **`ds` en el PATH** — ver [Global command](../README.md#global-command-recommended).
+2. **Panel** — `brew install oven-sh/bun/bun`, después `ds panel` → http://127.0.0.1:4321
+   (otro puerto: `PANEL_PORT=5000 ds panel`). Solo escucha en tu máquina.
+   Antes, decile dónde están tus proyectos (una vez):
+   ```bash
+   mkdir -p ~/.config/dublin && echo ~/proyectos > ~/.config/dublin/projects-root
+   ```
+   Sin eso arranca vacío y guarda `finanzas.md` en tu home. Las secciones vacías
+   se llenan a medida que las usás.
+3. **NotebookLM (`ds cerebro`)** — con tu propia cuenta de Google:
+   ```bash
+   brew install jq
+   uv tool install "notebooklm-py[browser]"
+   notebooklm login --browser chrome      # abre Chrome, iniciás sesión, listo
+   ds cerebro new "Mi tema" https://…     # crea carpeta + notebook
+   ds cerebro sync                        # baja tarjetas, exámenes y reportes al panel
+   ```
+   Cada uno ve solo sus notebooks. Si la sesión vence, repetí `notebooklm login`.
+4. **Facturas ARCA (`ds factura`)** — opcional, solo monotributo/RI con certificado:
+   - Generá el certificado en ARCA y asocialo a **wsfe** (Administrador de Relaciones).
+   - Creá `~/.config/dublin/arca` con tus datos (lista completa en la cabecera de
+     `factura/factura.sh`):
+     ```bash
+     ARCA_DIR=~/.arca          # carpeta con tu .crt y .key
+     ARCA_CUIT=20123456789
+     ARCA_PTOVTA=2             # punto de venta "Web Services"
+     ARCA_TIPO=11              # 11 = Factura C, 6 = Factura B
+     ARCA_ENV=homo             # probá en homologación; "prod" para facturar de verdad
+     ARCA_NOMBRE="APELLIDO NOMBRE"
+     ARCA_DOMICILIO="Calle 123 - Localidad, Provincia"
+     ```
+   - `chmod 600 ~/.config/dublin/arca`. Para el PDF hace falta `uv`.
+   - Emitir es **irreversible** (solo se anula con nota de crédito): el comando
+     siempre pide confirmación.
+5. **Voz (`ds voz`)** — `brew install ollama whisper-cpp ffmpeg` + `ollama pull qwen2.5:1.5b`;
+   el script avisa qué falta.
+
+### Antes de commitear un cambio a estas herramientas
+
+Nunca pongas datos reales en el código, en ejemplos ni en capturas: CUIT, montos,
+clientes, links de calendario, rutas `/Users/<vos>`. Todo lo personal va en
+`~/.config/dublin/` o en los `.md` de datos. Chequeo rápido:
+
+```bash
+git diff --cached | grep -iE 'cuit|/Users/|calendar/ical|api_key|token'
+```
+
 ## engram (persistent memory)
 
 `ds install` wires [engram](https://github.com/Gentleman-Programming/engram) — a

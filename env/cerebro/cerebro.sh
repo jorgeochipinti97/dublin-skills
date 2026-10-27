@@ -4,7 +4,7 @@
 #   ds cerebro new "<Tema>" [fuente…]   crea carpeta + notebook (+ fuentes)
 #   ds cerebro add <tema> <fuente…>     agrega fuentes (URL, YouTube, archivo) y sube
 #   ds cerebro sync [<tema>]            sube lo que falta, trae fuentes nuevas y
-#                                       baja tarjetas + reportes como markdown
+#                                       baja tarjetas, exámenes y reportes
 #   ds cerebro ask <tema> "<pregunta>"  pregunta al notebook; guarda la Q&A en preguntas.md
 #   ds cerebro list
 #
@@ -28,7 +28,8 @@ else
 fi
 mkdir -p "$ROOT"
 
-slug() { printf '%s' "$1" | tr 'A-Z' 'a-z' | iconv -f utf-8 -t ascii//TRANSLIT 2>/dev/null | tr -cs 'a-z0-9' '-' | sed 's/^-//;s/-$//'; }
+# iconv de macOS translitera "é" como "'e": se borran esas marcas antes de armar el slug.
+slug() { printf '%s' "$1" | iconv -f utf-8 -t ascii//TRANSLIT 2>/dev/null | tr -d "'\`^~\"" | tr 'A-Z' 'a-z' | tr -cs 'a-z0-9' '-' | sed 's/^-//;s/-$//'; }
 
 # Carpeta de un tema: exacto, si no la única que lo contenga.
 dir_of() {
@@ -55,7 +56,7 @@ add_line() {  # agrega "- <x>" al final de ## Fuentes
 # Sube una fuente (URL / YouTube / archivo relativo a la carpeta).
 upload() {
   local dir="$1" nb="$2" src="$3" out
-  if [ -f "$dir/$src" ]; then out="$(nlm source add -n "$nb" "$dir/$src" --json 2>/dev/null)"
+  if [ -f "$dir/$src" ]; then out="$(nlm source add -n "$nb" "$dir/$src" --follow-symlinks --json 2>/dev/null)"  # symlink = libro que vive en otra carpeta
   else out="$(nlm source add -n "$nb" "$src" --json 2>/dev/null)"; fi
   if jq -e '.source.id' <<< "$out" >/dev/null 2>&1; then echo "  ${G}↑${N} $src"
   else echo "  ${Y}⚠ no se pudo subir (o quedó en duda): $src${N}"; fi
@@ -101,24 +102,28 @@ cmd_sync_one() {
   done <<< "$(local_sources "$dir")"
 
   # 2. NotebookLM → local: fuentes agregadas allá (web, research) que no figuran acá.
-  local have; have="$(local_sources "$dir")"
+  local have; have="$(local_sources "$dir")"; have="$have"$'\n'"$(sed 's|.*/||' <<< "$have")"  # archivos: también por nombre, sin carpeta
   jq -r '.sources[] | select(.status == "ready") | (.url // .title)' <<< "$remote" | while IFS= read -r s; do
     grep -qxF "$s" <<< "$have" || { add_line "$dir" "$s  (desde NotebookLM)"; echo "  ${G}↓${N} fuente: $s"; }
   done
 
-  # 3. Artefactos de Studio → markdown (tarjetas para repasar, reportes para leer).
+  # 3. Artefactos de Studio → archivos (tarjetas para repasar, exámenes, reportes para leer).
+  # studio/.bajados = ids ya bajados (dos artefactos con el mismo título no se pisan: el segundo lleva el id).
   mkdir -p "$dir/studio"
-  local arts id title type tmp; arts="$(nlm artifact list -n "$nb" --json 2>/dev/null)"
+  local arts id title type tmp out seen="$dir/studio/.bajados"; arts="$(nlm artifact list -n "$nb" --json 2>/dev/null)"
+  [ -f "$seen" ] || : > "$seen"
   jq -r '.artifacts[]? | select(.status == "completed") | [.id, .title, .type_id] | @tsv' <<< "$arts" |
   while IFS=$'\t' read -r id title type; do
+    grep -qxF "$id" "$seen" && continue
     case "$type" in
-      flashcards) out="$dir/studio/tarjetas-$(slug "$title").md"
-        [ -f "$out" ] && continue; tmp="$(mktemp)"
+      flashcards) out="$dir/studio/tarjetas-$(slug "$title").md"; [ -f "$out" ] && out="${out%.md}-${id:0:8}.md"
+        tmp="$(mktemp)"
         nlm download flashcards -n "$nb" -a "$id" --format json --force "$tmp" >/dev/null 2>&1 \
-          && cards_md "$tmp" > "$out" && echo "  ${G}↓${N} tarjetas: $title"; rm -f "$tmp" ;;
-      report) out="$dir/studio/reporte-$(slug "$title").md"
-        [ -f "$out" ] && continue
-        nlm download report -n "$nb" -a "$id" --force "$out" >/dev/null 2>&1 && echo "  ${G}↓${N} reporte: $title" ;;
+          && cards_md "$tmp" > "$out" && echo "$id" >> "$seen" && echo "  ${G}↓${N} tarjetas: $title"; rm -f "$tmp" ;;
+      quiz) out="$dir/studio/examen-$(slug "$title").json"; [ -f "$out" ] && out="${out%.json}-${id:0:8}.json"   # preguntas tipo examen, las toma ds panel
+        nlm download quiz -n "$nb" -a "$id" --format json --force "$out" >/dev/null 2>&1 && echo "$id" >> "$seen" && echo "  ${G}↓${N} examen: $title" ;;
+      report) out="$dir/studio/reporte-$(slug "$title").md"; [ -f "$out" ] && out="${out%.md}-${id:0:8}.md"
+        nlm download report -n "$nb" -a "$id" --force "$out" >/dev/null 2>&1 && echo "$id" >> "$seen" && echo "  ${G}↓${N} reporte: $title" ;;
     esac
   done
 }

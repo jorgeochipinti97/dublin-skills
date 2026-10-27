@@ -475,6 +475,52 @@ a.pp-row .pp-ic,a.pp-ic{color:var(--faint)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 @media (max-width:760px){.toast{bottom:calc(84px + env(safe-area-inset-bottom))}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ---------- Estudio: "Ahora" + la cola de hoy; las secciones quedan como links discretos ---------- */
+.est-nav{display:flex;flex-wrap:wrap;gap:var(--s1)}
+.est-nav a{display:inline-flex;align-items:center;min-height:32px;padding:0 var(--s3);border-radius:var(--r2);color:var(--muted);text-decoration:none;font-size:14px;font-weight:500}
+.est-nav a:hover{color:var(--text);background:var(--hover)}
+.est-nav a[aria-current="page"]{color:var(--text);background:var(--chip)}
+.est-prog,.est-hero,.est-cola{max-width:760px}
+.est-prog{margin-bottom:var(--s4)}
+.est-prog p{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:var(--s1) var(--s3);margin:0 0 var(--s2);font-size:14px}
+.est-prog b{font-variant-numeric:tabular-nums}
+.est-hero{padding:var(--s5);box-shadow:var(--shadow);scroll-margin-top:var(--s4)}
+.est-hero.in{animation:est-in .4s cubic-bezier(.16,1,.3,1)}
+@keyframes est-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.est-k{font-size:13px;font-weight:600;letter-spacing:-.08px;color:var(--muted);margin:0 0 var(--s1);font-variant-numeric:tabular-nums}
+.est-h{font-size:22px;font-weight:600;letter-spacing:-.4px;line-height:1.25;margin:0 0 var(--s2);overflow-wrap:anywhere}
+.est-q{font-size:18px;line-height:1.45;margin:var(--s4) 0;white-space:pre-line;overflow-wrap:anywhere}
+.est-back{padding:var(--s3) var(--s4);margin:0 0 var(--s2);border-radius:var(--r2);background:var(--sunken);white-space:pre-line;overflow-wrap:anywhere}
+.est-go{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s2) var(--s3);margin-top:var(--s4)}
+.est-go:empty{display:none}
+.est-go .link{min-height:44px;font-size:14px}
+.est-later{margin-left:auto;color:var(--muted)}
+.est .btn.big{height:44px;padding:0 var(--s5);font-size:15px}
+.est .btn{transition:box-shadow .15s,filter .15s,transform .12s}
+.est .btn:active:not(:disabled){transform:scale(.98)}
+.est-opt{display:flex;width:100%;height:auto;min-height:44px;padding:10px var(--s3);margin-bottom:var(--s2);justify-content:flex-start;align-items:flex-start;text-align:left;white-space:normal;line-height:1.4}
+.est-opt svg{margin-top:2px}
+.est-opt:disabled{opacity:1;cursor:default}
+.est-opt.ok{box-shadow:inset 0 0 0 1.5px var(--pos);color:var(--pos);font-weight:600}
+.est-opt.no{box-shadow:inset 0 0 0 1.5px var(--line);color:var(--muted)}
+.est-opt.off{color:var(--faint)}
+.est-cola{margin-top:var(--s4)}
+.eq{display:flex;align-items:center;gap:var(--s3);min-height:52px;border-top:1px solid var(--sep)}
+.eq:first-of-type{border-top:0}
+.eq .tick{position:relative}.eq button.tick::after{content:"";position:absolute;inset:-11px}
+.eq span.tick{cursor:default}.eq span.tick:hover{border-color:var(--tick);color:transparent}
+.eq span.tick[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.tick.now{border-color:var(--accent)}.tick.now::before{content:"";position:absolute;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.eq-go{flex:1;min-width:0;min-height:44px;display:flex;flex-direction:column;justify-content:center;gap:1px;padding:var(--s1) 0;border:0;background:none;text-align:left;color:inherit}
+.eq-go b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eq-go small{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+button.eq-go:hover b{text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.eq.done .eq-go b{color:var(--faint);text-decoration:line-through}
+.eq.now .eq-go b{font-weight:600}
+.eq-tag{flex:none;font-size:13px;color:var(--faint);font-variant-numeric:tabular-nums}
+.eq.now .eq-tag{color:var(--text);font-weight:600}
+@media (max-width:760px){.est-nav a{min-height:44px}.est-hero{padding:var(--s4)}.est-h{font-size:20px}.est-go .btn.big{flex:1 1 auto}}
+@media (prefers-reduced-motion:reduce){.est-hero.in{animation:none}.est .btn:active:not(:disabled){transform:none}}
 </style>
 </head>
 <body>
@@ -499,7 +545,8 @@ const I={
   moon:'<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/>',
   arrow:'<path d="M5 12h14M13 6l6 6-6 6"/>',check:'<path d="M20 6 9 17l-5-5"/>',undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
   edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',trash:'<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
-  ext:'<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',plus:'<path d="M12 5v14M5 12h14"/>',pin:'<path d="M12 17v5M9 3h6l-1 6 4 4H6l4-4z"/>',archive:'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/>',cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>'
+  ext:'<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',plus:'<path d="M12 5v14M5 12h14"/>',pin:'<path d="M12 17v5M9 3h6l-1 6 4 4H6l4-4z"/>',archive:'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/>',cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',leaf:'<path d="M11 20A7 7 0 0 1 4 13c0-6 7-10 16-10 0 9-4 16-10 16"/><path d="M4 21c4-4 7-7 11-10"/>'
 };
 const svg=n=>`<svg viewBox="0 0 24 24">${I[n]}</svg>`;
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -510,7 +557,7 @@ const store={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:
 const BK={pains:"Dolores del cliente",backlog:"Backlog",doing:"Haciendo",done:"Hecho",ideas:"Mejoras / ideas"};
 const NEXT={pains:["backlog","Al backlog","arrow"],backlog:["doing","Empezar","arrow"],doing:["done","Terminar","check"],ideas:["backlog","Al backlog","arrow"],done:["doing","Reabrir","undo"]};
 const STALE=30;
-let S=null,CAL=null,month="",ui={ptab:store.get("panel-ptab")||"tareas",groups:JSON.parse(store.get("panel-groups")||"{}"),finTab:store.get("panel-fintab")||"resumen",scope:"shared",showDone:false,editing:null,confirm:null,q:""},BOARD=[],dragI=null;
+let S=null,CAL=null,month="",ui={ptab:store.get("panel-ptab")||"tareas",groups:JSON.parse(store.get("panel-groups")||"{}"),finTab:store.get("panel-fintab")||"resumen",estTab:store.get("panel-esttab")||"hoy",scope:"shared",showDone:false,editing:null,confirm:null,q:""},BOARD=[],dragI=null;
 
 // Un ítem: tags [cliente] al frente → chips; **negrita** inicial → título, el resto → cuerpo.
 function shape(text){
@@ -547,7 +594,7 @@ function route(){const [,page="inicio",arg="",sec=""]=location.hash.split("/");r
 
 function renderNav(){
   const {page:pg}=route(),page=pg==="p"?"proyectos":pg,a=S?active():[];
-  const items=[["inicio","Inicio","home",""],["proyectos","Proyectos","board",a.length],["calendario","Calendario","cal",""],["mcps","MCPs","plug",S?.mcps.length??""],["finanzas","Finanzas","wallet",""],["mascotas","Mascotas","paw",S?.mascotas.pets.length||""]];
+  const items=[["inicio","Inicio","home",""],["proyectos","Proyectos","board",a.length],["calendario","Calendario","cal",""],["mcps","MCPs","plug",S?.mcps.length??""],["finanzas","Finanzas","wallet",""],["mascotas","Mascotas","paw",S?.mascotas.pets.length||""],["estudio","Estudio","book",S?S.estudio.cerebros.reduce((n,c)=>n+c.due.length,0)||"":""],["nutricion","Nutrición","leaf",""]];
   document.getElementById("nav").innerHTML=items.map(([k,l,ic,c])=>`<a href="#/${k}" ${page===k?'aria-current="page"':""} title="${l}">${svg(ic)}<span class="label">${l}</span><span class="count">${c}</span></a>`).join("");
   const dark=getComputedStyle(document.documentElement).colorScheme==="dark";
   document.getElementById("themeIcon").innerHTML=dark?I.sun:I.moon;
@@ -558,7 +605,7 @@ function render(){
   renderNav();
   const {page}=route(),el=document.getElementById("page");document.documentElement.dataset.page=page;
   const sx=document.querySelector(".board")?.scrollLeft??0;
-  el.innerHTML=({inicio:pInicio,proyectos:pProyectos,p:()=>{location.replace(`#/proyectos/${encodeURIComponent(route().arg)}/codigo`);return ""},calendario:pCalendario,mcps:pMcps,finanzas:pFinanzas,mascotas:pMascotas}[page]||pInicio)();
+  el.innerHTML=({inicio:pInicio,proyectos:pProyectos,p:()=>{location.replace(`#/proyectos/${encodeURIComponent(route().arg)}/codigo`);return ""},calendario:pCalendario,mcps:pMcps,finanzas:pFinanzas,mascotas:pMascotas,estudio:pEstudio,nutricion:pNutricion}[page]||pInicio)();
   const b=document.querySelector(".board");if(b)b.scrollLeft=sx;
   drawCharts();
   if(ui.editing!=null){const ta=document.querySelector(".task textarea");if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}}
@@ -1031,6 +1078,257 @@ function gastosMascotas(){
       :`<p class="muted">Anotá gastos en Finanzas con la categoría <code>mascotas</code> y aparecen acá.</p>`}</section>`;
 }
 
+/* ---------------- Estudio ---------------- */
+// Todo vive en estudio.md: rutina diaria (actividades, no horario), lo hecho, materiales y exámenes.
+// Las tarjetas y las preguntas salen de los cerebros de `ds cerebro`.
+const temaLbl=t=>S.estudio.cerebros.find(c=>c.slug===t)?.title||t;
+const delBtn=(key,data)=>`<button class="act ${ui.confirm===key?"sure":""}" data-act="ldel" data-key="${key}" ${data} aria-label="Borrar">${ui.confirm===key?"¿Borrar?":svg("trash")}</button>`;
+const ACT={leer:"Leer",ver:"Ver un video",libro:"Leer el libro",curso:"Seguir el curso",practicar:"Practicar",tarjetas:"Repasar tarjetas",examen:"Preguntas de examen"};
+// Libros y cursos (libros.md): recorridos por pasos. El próximo paso de un tema sale primero de los obligatorios, en el orden del archivo.
+const proxUni=(tema,kind)=>{const L=S.estudio.libros.filter(b=>b.tema===tema&&b.kind===kind),o=[...L.filter(b=>b.obligatoria),...L.filter(b=>!b.obligatoria)];
+  for(const b of o){const u=b.unidades.find(u=>!u.hecho);if(u)return{b,u}}return null};
+const pdfUrl=(b,u)=>`/api/libro?c=${encodeURIComponent(b.tema)}&f=${encodeURIComponent(b.file)}#page=${u.p0}`;
+const uniUrl=(b,u)=>b.kind==="curso"?u.url:pdfUrl(b,u);
+const uniPags=u=>u.p1>u.p0?`${u.p1-u.p0+1} páginas`:"1 página";
+// Dónde estás: paso i de n del módulo y k de N del recorrido. "Regresión lineal 3 de 8 · Curso 3 de 86 · 10 min".
+function pos(b,u){
+  const U=b.unidades,G=u.grupo?U.filter(x=>x.grupo===u.grupo):[],k=U.indexOf(u)+1;
+  return{i:G.indexOf(u)+1,n:G.length,k,N:U.length,txt:[u.grupo?`${u.grupo} ${G.indexOf(u)+1} de ${G.length}`:"",`${b.kind==="curso"?"Curso":"Libro"} ${k} de ${U.length}`,
+    u.min?`${u.min} min`:b.kind==="libro"?uniPags(u):""].filter(Boolean).join(" · ")};
+}
+// Estado de hoy de una actividad: cuánto llevás, la meta y si está cumplida.
+function actHoy(a){
+  const E=S.estudio,h=E.hecho.find(x=>x.day===S.today&&x.tipo===a.tipo&&x.tema===a.tema);
+  if(a.tipo==="tarjetas"){const n=h?.n||0,meta=a.n||10,quedan=E.cerebros.find(c=>c.slug===a.tema)?.due.length??0;return{n,meta,ok:n>=meta||quedan===0,quedan}}
+  if(a.tipo==="examen"){const x=E.examenes.find(x=>x.day===S.today&&x.tema===a.tema),n=x?.n||0,meta=a.n||5;return{n,meta,ok:n>=meta,aciertos:x?.ok||0}}
+  if(a.tipo==="libro"||a.tipo==="curso"){const n=E.libros.filter(b=>b.tema===a.tema&&b.kind===a.tipo).reduce((s,b)=>s+b.unidades.filter(u=>u.hecho&&u.day===S.today).length,0),meta=a.n||1;
+    return{n,meta,ok:n>=meta||!proxUni(a.tema,a.tipo)}}
+  return{ok:!!h};
+}
+// Lo próximo para leer/ver de un tema: primero las obligatorias, en el orden del archivo.
+const proxMat=(tema,tipos)=>{const M=S.estudio.materiales.filter(m=>m.tema===tema&&!m.hecho&&tipos.includes(m.tipo));return M.find(m=>m.obligatoria)||M[0]};
+// Orden de hoy: el archivo manda; "Después" manda una actividad al final. Una pregunta ya respondida
+// se queda en pantalla hasta tocar "Seguir", así se ve la explicación aunque esa respuesta cierre la actividad.
+const aKey=a=>a.tipo+" "+a.tema;
+function focoHoy(R,st){
+  if(ui.exPick!=null){const j=R.findIndex(a=>a.tipo==="examen"&&a.tema===ui.exTema);if(j>=0)return j}
+  const f=R.findIndex(a=>aKey(a)===ui.estFoco);if(f>=0&&!st[f].ok)return f;
+  const skip=ui.estSkip||[],free=R.findIndex((a,j)=>!st[j].ok&&!skip.includes(aKey(a)));
+  return free>=0?free:st.findIndex(s=>!s.ok);
+}
+function pEstudio(){
+  const E=S.estudio,R=E.rutina;
+  // Días con algo hecho (actividades, examen o pasos de libros y cursos). Racha que perdona: un día salteado no la corta, dos seguidos sí.
+  const dias=new Set([...E.hecho.map(x=>x.day),...E.examenes.map(x=>x.day),...E.libros.flatMap(b=>b.unidades.filter(u=>u.hecho&&u.day).map(u=>u.day))]);let racha=0,miss=0;
+  for(let k=0;k<400;k++){const d=addDay(S.today,-k);if(dias.has(d)){racha++;miss=0}else if(k>0&&++miss>1)break}
+  const mes=[...dias].filter(d=>d.startsWith(S.today.slice(0,7))).length;
+  const temas=[...new Set([...E.cerebros.map(c=>c.slug),...R.map(x=>x.tema),...E.materiales.map(x=>x.tema),...E.libros.map(x=>x.tema)])];
+  const dl=`<datalist id="temas">${temas.map(t=>`<option value="${esc(t)}">${esc(temaLbl(t))}</option>`).join("")}</datalist>`;
+  const tabs=[["hoy","Hoy"],["libros","Libros y cursos"],["materiales","Lecturas y videos"],["examen","Examen"],["rutina","Rutina"],["cerebros","Cerebros"]];
+  const want=route().arg||ui.estTab,t=tabs.some(x=>x[0]===want)?want:"hoy";ui.estTab=t;store.set("panel-esttab",t);
+  const nav=`<nav class="est-nav" aria-label="Secciones de Estudio">${tabs.map(([k,l])=>`<a href="#/estudio/${k}" ${k===t?`aria-current="page"`:""}>${l}</a>`).join("")}</nav>`;
+  const sub={hoy:"Hacé lo que dice <b>Ahora</b>. Cuando lo terminás, pasa solo a lo siguiente.",materiales:"Lo de arriba de cada tema es lo próximo que te toca. Tildá lo que ya terminaste.",
+    libros:"Cada libro y cada curso partido en pasos chicos. Arriba de cada uno, lo que te toca y en qué módulo vas.",
+    examen:"Preguntas de tus cerebros. Cada respuesta suma a la actividad de examen de hoy.",rutina:"Pocas cosas chicas todos los días rinden más que muchas de vez en cuando.",cerebros:"Las fuentes de cada cerebro de NotebookLM."}[t];
+  const body=t==="libros"?librosTab():t==="materiales"?materiales():t==="examen"?examenCard():t==="cerebros"?cerebrosCard():t==="rutina"?rutinaCard():hoyEst(R,racha,mes);
+  return `<div class="est"><div class="head"><div><h1>Estudio</h1><p class="sub">${sub}</p></div>${nav}</div>${dl}${body}</div>`;
+}
+function hoyEst(R,racha,mes){
+  if(!R.length)return `<section class="card est-hero"><p class="est-k">Para empezar</p><h2 class="est-h">Armá tu rutina</h2>
+    <p class="muted" style="margin:0">Elegí dos o tres cosas chicas que puedas hacer todos los días: leer un rato, repasar tarjetas, unas preguntas.</p>
+    <div class="est-go"><a class="btn big primary" href="#/estudio/rutina">Armar la rutina</a></div></section>`;
+  const st=R.map(actHoy),hechas=st.filter(s=>s.ok).length,j=focoHoy(R,st);
+  const key=j<0?"listo":aKey(R[j]),anim=ui.heroKey!==key;ui.heroKey=key;
+  const prog=`<div class="est-prog"><p><span><b>${hechas} de ${R.length}</b> hechas hoy</span><span class="faint">${racha>1?`Racha de ${racha} días · un día libre no la corta`:mes?`${mes} ${mes===1?"día":"días"} con estudio este mes`:""}</span></p>${meter(hechas/R.length*100,hechas===R.length?"good":"")}</div>`;
+  return prog+(j<0?listoHero(anim):heroEst(R[j],st[j],j,R.length,anim))+`<section class="card est-cola"><div class="card-head"><h2>Hoy</h2><a class="link" href="#/estudio/rutina">Cambiar la rutina</a></div>
+    ${R.map((a,i)=>colaRow(a,st[i],i===j)).join("")}</section>`;
+}
+function listoHero(anim){
+  const due=S.estudio.cerebros.reduce((n,c)=>n+c.due.length,0);
+  return `<section class="card est-hero${anim?" in":""}" id="est-hero"><p class="est-k">Listo por hoy</p><h2 class="est-h">Hiciste todo lo de hoy</h2>
+    <p class="muted" style="margin:0">Mañana la rutina arranca de nuevo.${due&&!ui.estExtra?` Si te quedan ganas, hay ${due} ${due===1?"tarjeta":"tarjetas"} para repasar.`:""}</p>
+    ${due&&!ui.estExtra?`<div class="est-go"><button class="btn big" data-act="eextra">Repasar un poco más</button></div>`:""}</section>${ui.estExtra?repaso():""}`;
+}
+// La actividad de ahora, con el trabajo adentro: la tarjeta, la pregunta o la lectura.
+function heroEst(a,st,j,tot,anim){
+  const lbl=`${ACT[a.tipo]} <span class="faint">· ${esc(temaLbl(a.tema))}</span>`,later=tot>1&&!st.ok?`<button class="link est-later" data-act="eskip" data-k="${esc(aKey(a))}">Después</button>`:"";
+  const top=`<p class="est-k">Ahora · ${j+1} de ${tot}</p><h2 class="est-h">${lbl}</h2>`;
+  let inner="";
+  if(a.tipo==="tarjetas"){
+    const c=S.estudio.cerebros.find(x=>x.slug===a.tema)?.due[0];
+    if(!c)inner=`<p class="muted" style="margin:0">No quedan tarjetas de este tema para hoy.</p><div class="est-go">${later}</div>`;
+    else inner=`<p class="muted" style="margin:0">Leé la pregunta, pensá la respuesta y recién ahí mirala. Llevás ${Math.min(st.n,st.meta)} de ${st.meta}.</p>
+      <p class="est-q">${md(c.front)}</p>
+      ${ui.showBack?`<p class="est-back">${md(c.back)}</p><div class="est-go"><button class="btn big primary" data-act="erep" data-tema="${esc(a.tema)}" data-ok="1">La sabía</button><button class="btn big" data-act="erep" data-tema="${esc(a.tema)}" data-ok="">No me salió</button>${later}</div>`
+        :`<div class="est-go"><button class="btn big primary" data-act="eback">Mostrar respuesta</button>${later}</div>`}`;
+  }else if(a.tipo==="examen"){
+    const c=S.estudio.cerebros.find(x=>x.slug===a.tema&&x.examen.length);
+    if(!c)inner=`<p class="muted" style="margin:0">Este tema todavía no tiene preguntas. En NotebookLM: Studio → Cuestionario, y después <code>ds cerebro sync</code>.</p><div class="est-go">${later}</div>`;
+    else{if(ui.exTema!==c.slug){ui.exTema=c.slug;ui.exQ=null;ui.exPick=null}
+      inner=`<p class="muted" style="margin:0">Elegí la respuesta que te parezca. Llevás ${Math.min(st.n,st.meta)} de ${st.meta}${st.n?`, ${st.aciertos} bien`:""}.</p>${pregunta(c,st.ok?"Seguir":"Otra pregunta",later)}`}
+  }else if(a.tipo==="libro"||a.tipo==="curso"){
+    const x=proxUni(a.tema,a.tipo),cur=a.tipo==="curso";
+    if(!x)inner=`<p class="muted" style="margin:0">Terminaste ${cur?"los cursos":"los libros"} de este tema.</p><div class="est-go">${later}</div>`;
+    else{const p=pos(x.b,x.u),h=x.b.unidades.filter(u=>u.hecho).length,sig=st.n+1<st.meta&&x.b.unidades.some(u=>!u.hecho&&u!==x.u);
+      inner=`<p class="muted" style="margin:0">${esc(x.b.titulo)}${st.meta>1?` · hoy ${Math.min(st.n,st.meta)} de ${st.meta} pasos`:""}</p>
+      <p class="est-q">${esc(x.u.paso)}</p><p class="faint" style="margin:0 0 var(--s2)">${esc(p.txt)}${cur?"":` · p. ${x.u.p0}–${x.u.p1} del PDF`}</p>${meter(h/p.N*100)}
+      <div class="est-go"><a class="btn big primary" href="${esc(uniUrl(x.b,x.u))}" target="_blank" rel="noopener">${svg("ext")}${cur?"Abrir":"Abrir en la página "+x.u.p0}</a>
+        <button class="btn big" data-act="euni" data-line="${x.u.line}" data-raw="${esc(x.u.raw)}">${svg("check")}${sig?"Listo, siguiente":"Listo"}</button>${later}</div>`}
+  }else{
+    const m=a.tipo==="leer"?proxMat(a.tema,["lectura"]):a.tipo==="ver"?proxMat(a.tema,["video"]):null;
+    const ya={leer:"Ya leí por hoy",ver:"Ya lo vi",practicar:"Ya practiqué"}[a.tipo],hint={leer:"Leé un rato y marcalo cuando cortes por hoy.",ver:"Mirá el video y marcalo cuando termines.",practicar:"Practicá un rato y marcalo."}[a.tipo];
+    const done=`data-act="ehecho" data-tipo="${a.tipo}" data-tema="${esc(a.tema)}"`;
+    inner=`<p class="muted" style="margin:0">${hint}</p>
+      ${m?`<p class="est-q">${m.url?`<a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.titulo)}</a>`:esc(m.titulo)}${m.obligatoria?` <span class="faint" style="font-size:13px">· obligatoria</span>`:""}</p>`
+        :a.tipo==="practicar"?"":`<p class="faint" style="margin:var(--s3) 0 0">No quedan ${a.tipo==="leer"?"lecturas":"videos"} pendientes de este tema. Podés sumar en <a href="#/estudio/materiales">Lecturas y videos</a>.</p>`}
+      <div class="est-go">${m?.url?`<a class="btn big primary" href="${esc(m.url)}" target="_blank" rel="noopener">${svg("ext")}${a.tipo==="ver"?"Abrir el video":"Abrir la lectura"}</a><button class="btn big" ${done}>${svg("check")}${ya}</button>`
+        :`<button class="btn big primary" ${done}>${svg("check")}${ya}</button>`}
+        ${m?`<button class="link" data-act="eterm" data-line="${m.line}" data-raw="${esc(m.raw)}" data-tipo="${a.tipo}" data-tema="${esc(a.tema)}" title="Lo marca como visto y cuenta para hoy">Lo terminé entero</button>`:""}${later}</div>`;
+  }
+  return `<section class="card est-hero${anim?" in":""}" id="est-hero">${top}${inner}</section>`;
+}
+// Fila de la cola: estado (hecha / ahora / pendiente), qué es, y tocarla la trae a "Ahora".
+function colaRow(a,st,now){
+  const manual=["leer","ver","practicar"].includes(a.tipo);
+  const tick=manual&&st.ok?`<button class="tick" data-act="ehecho" data-tipo="${a.tipo}" data-tema="${esc(a.tema)}" aria-pressed="true" aria-label="Desmarcar">${svg("check")}</button>`
+    :`<span class="tick${now?" now":""}" aria-pressed="${st.ok}" aria-hidden="true">${svg("check")}</span>`;
+  const m=a.tipo==="leer"?proxMat(a.tema,["lectura"]):a.tipo==="ver"?proxMat(a.tema,["video"]):null;
+  const det=st.ok?"hecho":now?"ahora":["tarjetas","examen"].includes(a.tipo)||st.meta>1?`${Math.min(st.n,st.meta)} de ${st.meta}`:"";
+  const lu=(a.tipo==="libro"||a.tipo==="curso")&&!st.ok?proxUni(a.tema,a.tipo):null,lp=lu&&pos(lu.b,lu.u);
+  const txt=`<b>${ACT[a.tipo]} <span class="faint">· ${esc(temaLbl(a.tema))}</span></b>${m&&!st.ok?`<small>${esc(m.titulo)}</small>`:lu?`<small>${esc(lu.u.paso)} · ${lp.n?`${lp.i}/${lp.n}`:`${lp.k}/${lp.N}`}</small>`:""}`;
+  return `<div class="eq${st.ok?" done":""}${now?" now":""}">${tick}${st.ok||now?`<span class="eq-go">${txt}</span>`:`<button class="eq-go" data-act="efoco" data-k="${esc(aKey(a))}" title="Hacerla ahora">${txt}</button>`}<span class="eq-tag">${det}</span></div>`;
+}
+function rutinaCard(){
+  const R=S.estudio.rutina;
+  return `<section class="card" style="max-width:760px"><div class="card-head"><h2>Rutina diaria</h2></div>
+    <p class="muted" style="margin:0 0 var(--s3)">Lo que hacés todos los días, sin horario. Tarjetas y examen se cuentan solos; libro y curso, al tildar pasos; leer, ver y practicar los marcás vos.</p>
+    ${R.map((a,j)=>`<div class="mov"><span class="t"><b>${ACT[a.tipo]}</b> <span class="faint">· ${esc(temaLbl(a.tema))}${a.n?` · ${a.n}`:""}</span></span>${delBtn("er"+j,`data-f="estudio" data-line="${a.line}" data-raw="${esc(a.raw)}"`)}</div>`).join("")
+      ||`<p class="muted">Todavía no hay actividades.</p>`}
+    <form class="row" data-form="eactividad" style="margin-top:var(--s3)"><select class="field" name="tipo" aria-label="Actividad" style="flex:1 1 150px">${Object.entries(ACT).map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select>
+      <input class="field" style="flex:2 1 150px" name="tema" list="temas" placeholder="Tema" required aria-label="Tema">
+      <input class="field" style="flex:1 1 90px" name="n" inputmode="numeric" placeholder="Cantidad" aria-label="Cantidad (tarjetas, preguntas o pasos)" title="Para tarjetas, preguntas o pasos por día"><button class="btn">${svg("plus")}Agregar</button></form></section>`;
+}
+// Libros y cursos: por recorrido, cuánto llevás, lo próximo con su módulo y todos los pasos por módulo (los hechos, tachados).
+function uniRow(b,u){
+  return `<div class="mov"><button class="tick" data-act="euni" data-line="${u.line}" data-raw="${esc(u.raw)}" aria-pressed="${u.hecho}" aria-label="${u.hecho?"Marcar pendiente":"Listo"}">${svg("check")}</button>
+    <span class="t" style="${u.hecho?"color:var(--faint);text-decoration:line-through":""}"><a href="${esc(uniUrl(b,u))}" target="_blank" rel="noopener">${esc(u.paso)}</a> <span class="faint">· ${b.kind==="curso"?(u.min?u.min+" min":""):`p. ${u.p0}–${u.p1}`}${u.hecho&&u.day?" · "+dm(u.day):""}</span></span></div>`;
+}
+function uniList(b){
+  let g=null;return b.unidades.map(u=>{const h=u.grupo!==g?`<p class="t-label" style="padding:var(--s3) 0 var(--s1)"><span>${esc(u.grupo||"Sin módulo")}</span></p>`:"";g=u.grupo;return h+uniRow(b,u)}).join("");
+}
+function librosTab(){
+  const L=S.estudio.libros,temas=[...new Set(L.map(b=>b.tema))];
+  if(!L.length)return `<section class="card"><p class="muted">Todavía no hay libros ni cursos. Viven en <code>${esc(S.estudio.librosFile)}</code>.</p></section>`;
+  return temas.map(t=>`<p class="t-label" style="padding:var(--s4) 0 var(--s2)"><span>${esc(temaLbl(t))}</span></p>`+L.filter(b=>b.tema===t).map(b=>{
+    const U=b.unidades,h=U.filter(u=>u.hecho).length,n=U.find(u=>!u.hecho),p=n&&pos(b,n),open=ui.libOpen===b.titulo,cur=b.kind==="curso";
+    return `<section class="card" style="margin-bottom:var(--s3)"><div class="card-head"><h2>${cur&&b.url?`<a href="${esc(b.url)}" target="_blank" rel="noopener">${esc(b.titulo)}</a>`:esc(b.titulo)}</h2><span class="faint" style="font-size:12.5px">${cur?"Curso":"Libro"} · ${h} de ${U.length}${b.obligatoria?" · obligatorio":""}</span></div>
+      ${meter(U.length?h/U.length*100:0,U.length&&h===U.length?"good":"")}
+      ${n?`<p style="margin:var(--s3) 0 0"><span class="faint">Lo próximo:</span> <a href="${esc(uniUrl(b,n))}" target="_blank" rel="noopener">${esc(n.paso)}</a> <span class="faint">· ${esc(p.txt)}</span></p>`:`<p class="muted" style="margin:var(--s3) 0 0">Lo terminaste.</p>`}
+      <details ${open?"open":""} data-lib="${esc(b.titulo)}" style="margin-top:var(--s2)"><summary class="muted" style="cursor:pointer;font-size:13px;min-height:32px">Ver todos los pasos (${U.length})</summary>${open?uniList(b):""}</details></section>`}).join("")).join("");
+}
+// Material: tick + tipo + título (link) + chip obligatoria.
+const TIPO={lectura:"Lectura",video:"Video",curso:"Curso"};
+function matRow(m){
+  return `<div class="mov"><button class="tick" data-act="emat" data-line="${m.line}" data-raw="${esc(m.raw)}" aria-pressed="${m.hecho}" aria-label="${m.hecho?"Marcar pendiente":"Lo vi"}">${svg("check")}</button>
+    <span class="t" style="${m.hecho?"color:var(--faint);text-decoration:line-through":""}"><span class="faint">${TIPO[m.tipo]} ·</span> ${m.url?`<a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.titulo)}</a>`:esc(m.titulo)}${m.hecho&&m.day?` <span class="faint">· ${dm(m.day)}</span>`:""}</span>
+    ${m.obligatoria&&!m.hecho?`<span class="state warn" style="margin:0">obligatoria</span>`:""}</div>`;
+}
+function materiales(){
+  const M=S.estudio.materiales,temas=[...new Set(M.map(m=>m.tema))];
+  return `<div class="fin">${temas.map(t=>{const L=M.filter(m=>m.tema===t),pend=L.filter(m=>!m.hecho),done=L.filter(m=>m.hecho);
+      return `<section class="card"><div class="card-head"><h2>${esc(temaLbl(t))}</h2><span class="faint" style="font-size:12.5px">${done.length} de ${L.length}</span></div>
+        ${pend.map(matRow).join("")||`<p class="muted">Viste todo lo de este tema.</p>`}
+        ${done.length?`<details style="margin-top:var(--s2)"><summary class="muted" style="cursor:pointer;font-size:13px">Vistos (${done.length})</summary>${done.map(matRow).join("")}</details>`:""}</section>`}).join("")
+    ||`<section class="card"><p class="muted">Todavía no hay materiales. Agregá la primera lectura o video acá abajo.</p></section>`}</div>
+  <section class="card" style="margin-top:var(--s4)"><div class="card-head"><h2>Agregar</h2></div><form class="row" data-form="ematerial">
+    <select class="field" name="tipo" aria-label="Tipo" style="flex:1 1 100px">${["lectura","video"].map(k=>`<option value="${k}">${TIPO[k]}</option>`).join("")}</select>
+    <input class="field" style="flex:1 1 150px" name="tema" list="temas" placeholder="Tema" required aria-label="Tema">
+    <input class="field" style="flex:2 1 180px" name="titulo" placeholder="Título" required aria-label="Título">
+    <input class="field" style="flex:2 1 180px" name="url" type="url" placeholder="Link (opcional)" aria-label="Link">
+    <label class="muted" style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" name="obligatoria" value="1">Obligatoria</label>
+    <button class="btn primary">${svg("plus")}Agregar</button></form></section>`;
+}
+// Examen: una pregunta por vez del tema elegido; cada respuesta suma al "aciertos/respondidas" del día.
+// pregunta() la usan la pestaña Examen y el "Ahora" de Hoy.
+function pregunta(c,next,extra=""){
+  if(ui.exQ==null||ui.exQ>=c.examen.length)ui.exQ=Math.floor(Math.random()*c.examen.length);
+  const q=c.examen[ui.exQ],r=ui.exPick;
+  return `<p class="est-q">${md(q.q)}</p>
+    ${q.opts.map((o,j)=>{const cls=r==null?"":o.ok?" ok":j===r?" no":" off";
+      return `<button class="btn est-opt${cls}" data-act="exans" data-j="${j}" ${r!=null?"disabled":""}>${r!=null&&o.ok?svg("check"):""}<span>${md(o.text)}</span></button>
+        ${r!=null&&(o.ok||j===r)&&o.why?`<p class="muted" style="margin:0 0 var(--s3);font-size:13.5px">${md(o.why)}</p>`:""}`}).join("")}
+    ${r==null&&q.hint?`<details><summary class="muted" style="cursor:pointer;font-size:13px;min-height:32px">Pista</summary><p class="muted">${md(q.hint)}</p></details>`:""}
+    <div class="est-go">${r!=null?`<button class="btn big primary" data-act="exnext">${next}</button>`:""}${extra}</div>`;
+}
+function examenCard(){
+  const C=S.estudio.cerebros.filter(c=>c.examen.length),c=C.find(x=>x.slug===ui.exTema)||C[0];
+  const hist=S.estudio.examenes.slice(0,8);
+  if(!c)return `<section class="card" style="max-width:760px"><p class="muted">Todavía no hay preguntas. En NotebookLM: Studio → Cuestionario, y después <code>ds cerebro sync</code>.</p></section>`;
+  if(ui.exTema!==c.slug){ui.exTema=c.slug;ui.exQ=null;ui.exPick=null}
+  return `<div class="fin"><section class="card"><div class="card-head" style="flex-wrap:wrap"><h2>Pregunta</h2>
+      <select class="field" data-input="extema" aria-label="Tema">${C.map(x=>`<option value="${esc(x.slug)}" ${x===c?"selected":""}>${esc(x.title)} (${x.examen.length})</option>`).join("")}</select></div>
+    ${pregunta(c,"Otra pregunta")}</section>
+    <section class="card"><div class="card-head"><h2>Resultados</h2></div>
+      ${hist.map(x=>`<div class="mov"><span class="d">${dm(x.day)}</span><span class="t">${esc(temaLbl(x.tema))}</span><span class="a">${x.ok}/${x.n}</span></div>`).join("")||`<p class="muted">Acá vas a ver cuántas acertaste cada día.</p>`}</section></div>`;
+}
+// Tarjetas para hoy; si elegiste un tema desde la actividad, solo las de ese tema.
+const dueList=()=>{const all=S.estudio.cerebros.flatMap(c=>c.due.map(x=>({...x,slug:c.slug,title:c.title})));const f=all.filter(x=>x.slug===ui.repTema);return f.length?f:all};
+function repaso(){
+  const due=dueList(),c=due[0],only=ui.repTema&&c?.slug===ui.repTema;
+  return `<section class="card" id="repaso"><div class="card-head"><h2>Repasar</h2><span class="faint" style="font-size:12.5px">${due.length?`${due.length} ${due.length===1?"tarjeta":"tarjetas"}${only?" de "+esc(c.title):" para hoy"}`:""}</span></div>
+    ${c?`<p class="faint" style="font-size:12.5px;margin:0 0 var(--s2)">${esc(c.title)}${only?` · <button class="link" data-act="erept" data-tema="">ver todas</button>`:""}</p><p style="font-size:17px;margin:0 0 var(--s3);white-space:pre-line">${md(c.front)}</p>
+      ${ui.showBack?`<p class="muted" style="white-space:pre-line;margin:0 0 var(--s4)">${md(c.back)}</p><div class="row"><button class="btn primary" data-act="erep" data-ok="1">La sabía</button><button class="btn" data-act="erep" data-ok="">No me salió</button></div>`
+        :`<button class="btn" data-act="eback">Mostrar respuesta</button>`}`
+      :`<p class="muted">No hay tarjetas para hoy. Generalas en NotebookLM (Studio → Tarjetas) y corré <code>ds cerebro sync</code>.</p>`}</section>`;
+}
+function cerebrosCard(){
+  const C=S.estudio.cerebros;
+  return `<section class="card" style="margin-top:var(--s4)"><div class="card-head"><h2>Cerebros</h2><span class="faint" style="font-size:12.5px">${esc(S.estudio.root||"")}</span></div>
+    ${C.map(c=>`<details class="mov" style="display:block"><summary style="cursor:pointer;display:flex;gap:var(--s2);align-items:baseline"><span class="t"><b>${esc(c.title)}</b></span>
+      <span class="faint" style="font-size:12.5px;margin-left:auto">${c.fuentes.length} fuentes${c.total?` · ${c.total} tarjetas`:""}</span></summary>
+      <div style="padding:var(--s2) 0 var(--s1)">${c.fuentes.map(f=>`<div class="faint" style="font-size:13px;overflow-wrap:anywhere">${/^https?:\/\//.test(f)?`<a href="${esc(f)}" target="_blank" rel="noopener">${esc(f)}</a>`:esc(f)}</div>`).join("")}
+      <p class="faint" style="font-size:12.5px;margin:var(--s2) 0 0">Preguntale: <code>ds cerebro ask ${esc(c.slug)} "…"</code></p></div></details>`).join("")
+      ||`<p class="muted">Todavía no hay cerebros. Creá uno con <code>ds cerebro new "Tema"</code>.</p>`}</section>`;
+}
+
+/* ---------------- Nutrición ---------------- */
+// Todo vive en nutricion.md: el plan de la semana, lo que comiste y el peso.
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const DIAS=[["lun","Lunes"],["mar","Martes"],["mie","Miércoles"],["jue","Jueves"],["vie","Viernes"],["sab","Sábado"],["dom","Domingo"]];
+function pNutricion(){
+  const N=S.nutricion,C=N.comidas,hoy=N.diario.filter(x=>x.day===S.today),plan=N.plan.filter(x=>x.dia===S.dayOfWeek);
+  const mes=N.diario.filter(x=>x.day.startsWith(S.today.slice(0,7))).length;
+  const pasados=[...new Set(N.diario.filter(x=>x.day!==S.today).map(x=>x.day))].slice(0,6);
+  const sel=(name="comida")=>`<select class="field" name="${name}" aria-label="Comida" style="flex:1 1 110px">${C.map(c=>`<option value="${c}">${cap(c)}</option>`).join("")}</select>`;
+  return `<div class="head"><div><h1>Nutrición</h1><p class="sub">Todo vive en <code>${esc(N.file)}</code>: el plan de la semana, lo que comiste y tu peso.</p></div></div>
+  <div class="stats"><div class="stat"><span>Comidas anotadas este mes</span><b>${mes}</b></div><div class="stat"><span>Comidas planeadas por semana</span><b>${N.plan.length}</b></div>
+    <div class="stat"><span>Último peso</span><b>${N.peso[0]?N.peso[0].kg+" kg":"—"}</b>${N.peso[0]?`<small class="faint">${dm(N.peso[0].day)}</small>`:""}</div></div>
+  <div class="fin" style="margin-top:0"><div>
+    <section class="card"><div class="card-head"><h2>Hoy</h2></div>
+      ${C.filter(c=>plan.some(p=>p.comida===c)||hoy.some(x=>x.comida===c)).map(c=>{const pl=plan.filter(p=>p.comida===c),ya=hoy.filter(x=>x.comida===c);
+        return `<p class="t-label" style="padding:var(--s2) 0 var(--s1)"><span>${cap(c)}</span></p>`
+          +ya.map(x=>`<div class="mov"><span class="t">${esc(x.que)}</span>${delBtn("nd"+x.line,`data-f="nutricion" data-line="${x.line}" data-raw="${esc(x.raw)}"`)}</div>`).join("")
+          +(ya.length?"":pl.map(p=>`<div class="mov"><span class="t faint">${esc(p.que)}</span><button class="btn" data-act="ncomi" data-comida="${c}" data-que="${esc(p.que)}">${svg("check")}Comí esto</button></div>`).join(""))}).join("")
+        ||`<p class="muted">Anotá lo que comas, sin contar calorías: con ver qué comés ya te ordenás.</p>`}
+      <form class="row" data-form="ncomi" style="margin-top:var(--s3)">${sel()}<input class="field" style="flex:3 1 180px" name="que" placeholder="Qué comiste" required aria-label="Qué comiste"><button class="btn primary">${svg("plus")}Anotar</button></form>
+      ${pasados.length?`<p class="t-label" style="padding:var(--s4) 0 var(--s1)"><span>Últimos días</span></p>`+pasados.map(d=>`<div class="mov"><span class="d">${dm(d)}</span>
+        <span class="t">${N.diario.filter(x=>x.day===d).map(x=>`<span class="faint">${esc(x.comida)}:</span> ${esc(x.que)}`).join(" · ")}</span></div>`).join(""):""}</section>
+    <section class="card" style="margin-top:var(--s4)"><div class="card-head"><h2>Peso</h2></div>
+      ${N.peso.slice(0,8).map((x,j)=>{const prev=N.peso[j+1],dif=prev?Math.round((x.kg-prev.kg)*10)/10:null;return `<div class="mov"><span class="d">${dm(x.day)}/${x.day.slice(2,4)}</span>
+        <span class="t">${x.kg} kg${dif?` <span class="faint">· ${dif>0?"+":""}${dif}</span>`:""}</span>${delBtn("np"+j,`data-f="nutricion" data-line="${x.line}" data-raw="${esc(x.raw)}"`)}</div>`}).join("")
+        ||`<p class="muted">Una vez por semana, mismo día y en ayunas, alcanza.</p>`}
+      <form class="row" data-form="npeso" style="margin-top:var(--s3)"><input class="field" style="flex:1 1 140px" name="day" type="date" value="${S.today}" aria-label="Fecha">
+        <input class="field" style="flex:1 1 90px" name="kg" inputmode="decimal" placeholder="Kg" required aria-label="Peso en kg"><button class="btn">${svg("plus")}Anotar</button></form></section>
+  </div><div>
+    <section class="card"><div class="card-head"><h2>Plan de la semana</h2></div>
+      ${N.plan.length?DIAS.filter(([k])=>N.plan.some(p=>p.dia===k)).map(([k,l])=>`<p class="t-label" style="padding:var(--s2) 0 var(--s1)"><span>${l}</span></p>`
+        +N.plan.filter(p=>p.dia===k).sort((a,b)=>C.indexOf(a.comida)-C.indexOf(b.comida)).map(p=>`<div class="mov"><span class="t"><span class="faint">${cap(p.comida)}:</span> ${esc(p.que)}</span>${delBtn("npl"+p.line,`data-f="nutricion" data-line="${p.line}" data-raw="${esc(p.raw)}"`)}</div>`).join("")).join("")
+        :`<p class="muted">Arrancá por una sola comida, por ejemplo el almuerzo de lunes a viernes, y sumá de a poco.</p>`}
+      <form class="row" data-form="nplan" style="margin-top:var(--s3)"><select class="field" name="dia" aria-label="Día" style="flex:1 1 110px">${DIAS.map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select>
+        ${sel()}<input class="field" style="flex:3 1 180px" name="que" placeholder="Qué vas a comer" required aria-label="Qué vas a comer"><button class="btn">${svg("plus")}Agregar</button></form></section>
+  </div></div>`;
+}
+
 /* ---------------- Finanzas ---------------- */
 const compact=n=>new Intl.NumberFormat("es-AR",{notation:"compact",maximumFractionDigits:1}).format(n);
 const ymLabel=m=>new Date(m+"-15").toLocaleDateString("es-AR",{month:"short",year:"2-digit"});
@@ -1268,6 +1566,24 @@ document.addEventListener("click",async e=>{
   else if(act==="mhecho"){const p=S.mascotas.pets[b.dataset.pet],r=p.recos[b.dataset.j];post("/api/mascota",{op:"hecho",pet:p.name,line:r.line,raw:r.raw}).then(()=>toast(r.what+": hecho hoy")).catch(()=>{})}
   else if(act==="mdia"){const p=S.mascotas.pets[b.dataset.pet];post("/api/mascota",{op:"dia",pet:p.name,ex:b.dataset.ex}).catch(()=>{})}
   else if(act==="mdel"){const {pet,k,j}=b.dataset;confirmOr(`m${pet}${k}${j}`,()=>{const p=S.mascotas.pets[pet],x=({r:p.recos,s:p.salud,u:p.rutina})[k][j];post("/api/mascota",{op:"delete",pet:p.name,line:x.line,raw:x.raw}).then(()=>toast("Borrado")).catch(()=>{})})}
+  else if(act==="esttab")location.hash="#/estudio/"+b.dataset.v;
+  else if(act==="emat")post("/api/estudio",{op:"mhecho",line:Number(b.dataset.line),raw:b.dataset.raw}).catch(()=>{});
+  else if(act==="exans"){const c=S.estudio.cerebros.find(x=>x.slug===ui.exTema),j=Number(b.dataset.j),ok=c.examen[ui.exQ].opts[j].ok;ui.exPick=j;render();
+    post("/api/estudio",{op:"respuesta",tema:c.slug,ok}).then(()=>toast(ok?"¡Bien!":"Esta no")).catch(()=>{})}
+  else if(act==="exnext"){const c=S.estudio.cerebros.find(x=>x.slug===ui.exTema),n=c.examen.length;ui.exPick=null;ui.exQ=n>1?(ui.exQ+1+Math.floor(Math.random()*(n-1)))%n:0;render()}
+  else if(act==="euni")post("/api/estudio",{op:"unidad",line:Number(b.dataset.line),raw:b.dataset.raw}).then(()=>toast(b.getAttribute("aria-pressed")==="true"?"Vuelve a pendiente":"Listo")).catch(()=>{});
+  else if(act==="ehecho")post("/api/estudio",{op:"hecho",tipo:b.dataset.tipo,tema:b.dataset.tema}).catch(()=>{});
+  else if(act==="erept"){ui.repTema=b.dataset.tema;ui.showBack=false;render();document.getElementById("repaso")?.scrollIntoView({behavior:"smooth",block:"start"})}
+  else if(act==="eexam"){ui.exTema=b.dataset.tema;ui.exQ=null;ui.exPick=null;location.hash="#/estudio/examen"}
+  else if(act==="eback"){ui.showBack=true;render()}
+  else if(act==="efoco"){ui.estFoco=b.dataset.k;ui.exPick=null;ui.showBack=false;render();document.getElementById("est-hero")?.scrollIntoView({behavior:"smooth",block:"start"})}
+  else if(act==="eskip"){const k=b.dataset.k;ui.estSkip=[...(ui.estSkip||[]).filter(x=>x!==k),k];if(ui.estFoco===k)ui.estFoco=null;if(k.startsWith("examen "))ui.exPick=null;ui.showBack=false;render()}
+  else if(act==="eterm")post("/api/estudio",{op:"mhecho",line:Number(b.dataset.line),raw:b.dataset.raw}).then(()=>post("/api/estudio",{op:"hecho",tipo:b.dataset.tipo,tema:b.dataset.tema})).then(()=>toast("Terminado y anotado por hoy")).catch(()=>{});
+  else if(act==="eextra"){ui.estExtra=true;ui.repTema="";ui.showBack=false;render()}
+  else if(act==="erep"){const t=b.dataset.tema,cb=t&&S.estudio.cerebros.find(x=>x.slug===t),c=cb?.due[0]?{...cb.due[0],slug:t}:dueList()[0];if(!c)return;ui.showBack=false;
+    post("/api/estudio",{op:"repaso",slug:c.slug,file:c.file,raw:c.raw,ok:!!b.dataset.ok}).then(()=>toast(b.dataset.ok?"Bien, vuelve más adelante":"Vuelve mañana")).catch(()=>{})}
+  else if(act==="ncomi")post("/api/nutricion",{op:"comi",comida:b.dataset.comida,que:b.dataset.que}).then(()=>toast("Anotado")).catch(()=>{});
+  else if(act==="ldel")confirmOr(b.dataset.key,()=>post("/api/"+b.dataset.f,{op:"delete",line:Number(b.dataset.line),raw:b.dataset.raw}).then(()=>toast("Borrado")).catch(()=>{}));
   else if(act==="cprompt"){const x=pend[Number(b.dataset.n)];navigator.clipboard.writeText(promptOf(x.p,x.items)).then(()=>toast("Prompt de "+alias(x.p.name)+" copiado")).catch(()=>toast("No pude copiar"))}
   else if(act==="foco"||act==="funfoco"){const {p:project,s:scope,k:key}=b.dataset;post("/api/foco",{op:act==="foco"?"add":"remove",project,scope,key}).then(()=>toast(act==="foco"?"Al foco de hoy":"Fuera del foco")).catch(()=>{})}
   else if(act==="pedit"){ui.pEdit=b.dataset.v;render();document.querySelector(".pp-form input")?.focus()}
@@ -1305,6 +1621,7 @@ document.addEventListener("change",e=>{
   const k=e.target.dataset?.input;
   if(k==="pick")location.hash=phref(e.target.value,ui.ptab);
   if(k==="month"){month=e.target.value;load()}
+  if(k==="extema"){ui.exTema=e.target.value;ui.exQ=null;ui.exPick=null;render()}
 });
 document.addEventListener("submit",async e=>{
   const f=e.target,k=f.dataset.form;if(!k)return;e.preventDefault();
@@ -1317,6 +1634,9 @@ document.addEventListener("submit",async e=>{
       await post("/api/task",{op:"add",project:d.project,scope,bucket,text:d.text});toast(`Anotada en ${d.project}`)}
     if(k==="mpet"){await post("/api/mascota",{op:"add",...d});toast(d.name+" agregada")}
     if(["mficha","msalud","mreco","mrutina","mnota"].includes(k)){const pet=S.mascotas.pets[f.dataset.pet].name;await post("/api/mascota",{op:k.slice(1),pet,...d});toast("Guardado")}
+    if(k==="ematerial"){await post("/api/estudio",{op:"material",...d,obligatoria:!!d.obligatoria});toast("Agregado")}
+    if(k==="eactividad"){await post("/api/estudio",{op:"actividad",...d});toast("Actividad agregada")}
+    if(k==="ncomi"||k==="nplan"||k==="npeso"){await post("/api/nutricion",{op:k.slice(1),...d});toast("Anotado")}
     if(k==="inv"){await post("/api/fin",{op:"inv",...d});toast("Inversión agregada")}
     if(k==="invact"){const v=S.finanzas.inversiones[Number(f.dataset.i)];await post("/api/fin",{op:"invact",line:v.line,raw:v.raw,actual:d.actual});toast("Valor actualizado")}
     if(k==="fin"){await post("/api/fin",{op:"add",tipo:ui.tipo||"-",...d});toast("Anotado");document.querySelector('[name="monto"]')?.focus()}
@@ -1358,7 +1678,9 @@ function toggleTheme(btn){
   const r=btn.getBoundingClientRect(),x=r.left+r.width/2,y=r.top+r.height/2,R=Math.hypot(Math.max(x,innerWidth-x),Math.max(y,innerHeight-y));
   document.startViewTransition(apply).ready.then(()=>document.documentElement.animate({clipPath:[`circle(0 at ${x}px ${y}px)`,`circle(${R}px at ${x}px ${y}px)`]},{duration:650,easing:"cubic-bezier(.65,0,.35,1)",pseudoElement:"::view-transition-new(root)"}));
 }
-document.addEventListener("toggle",e=>{const g=e.target.dataset?.g;if(g&&!ui.q){ui.groups[g]=e.target.open;store.set("panel-groups",JSON.stringify(ui.groups))}},true);
+document.addEventListener("toggle",e=>{const g=e.target.dataset?.g;if(g&&!ui.q){ui.groups[g]=e.target.open;store.set("panel-groups",JSON.stringify(ui.groups))}
+  // Pasos de un libro/curso: se dibujan solo al abrir. El <details open> recién dibujado también dispara toggle: ahí no se re-renderiza.
+  const l=e.target.dataset?.lib;if(l!=null){if(e.target.open&&ui.libOpen!==l){ui.libOpen=l;render()}else if(!e.target.open&&ui.libOpen===l)ui.libOpen=null}},true);
 addEventListener("resize",()=>{clearTimeout(drawCharts.t);drawCharts.t=setTimeout(drawCharts,120)});
 addEventListener("hashchange",()=>{ui.editing=null;ui.confirm=null;ui.showDone=false;ui.pEdit=null;ui.histAll=false;render();scrollTo(0,0)});
 addEventListener("focus",()=>{if(ui.editing==null&&!ui.pEdit)load()});

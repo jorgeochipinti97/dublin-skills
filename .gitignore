@@ -8,3 +8,18 @@ __pycache__/
 
 # Skill bundles empaquetados (build artifacts de skill-creator)
 *.skill
+
+# Datos personales de ds panel / factura / cerebro — viven FUERA del repo;
+# esto es una red por si alguno cae adentro por error.
+finanzas.md
+estudio.md
+libros.md
+nutricion.md
+mascotas.md
+*.local.md
+*.crt
+*.key
+*.p12
+*.pem
+.env
+.env.*
