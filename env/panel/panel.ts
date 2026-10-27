@@ -507,7 +507,7 @@ function flujos() {
     const ls = raw.split("\n"), get = (k: string) => (ls.find(l => l.startsWith(k + ":"))?.slice(k.length + 1) ?? "").split(",").map(s => s.trim()).filter(Boolean);
     const nodes = ls.map(l => l.match(NODO)).filter(Boolean).map((m, k) => ({ id: m![1], cerebro: m![2], pregunta: (m![3] ?? "").trim(), x: m![4] != null ? Math.max(274, Number(m![4])) : 344 + 300 * k, y: m![5] != null ? Number(m![5]) : 40, ok: cer.has(m![2]) }));
     const edges = ls.map(l => l.match(CABLE)).filter(Boolean).map(m => ({ from: m![1], to: m![2], cond: (m![3] ?? "").trim() }));
-    return { raw, name: ls[0].slice(3).trim(), tipo: get("tipo")[0] === "ideas" ? "ideas" : "consulta", disparo: get("disparo"), skills: get("skills"), nodes, edges };
+    return { raw, name: ls[0].slice(3).trim(), tipo: get("tipo")[0] === "ideas" ? "ideas" : "consulta", angulos: ls.some(l => l.startsWith("angulos:")) ? get("angulos") : null, disparo: get("disparo"), skills: get("skills"), nodes, edges };
   });
   return { file: FLUJOS, list, cer: cerebroInfo(), skills: dirs(SKILLS_DIR).filter(d => existsSync(join(SKILLS_DIR, d, "SKILL.md"))) };
 }
@@ -543,7 +543,7 @@ function flujoImport(text: string) {
   const taken = new Set(flujoBlocks().blocks.map(b => b.raw.split("\n")[0].slice(3).trim().toLowerCase()));
   let name = cleanTxt(ls[h].slice(3)), k = 2; const base = name;
   while (taken.has(name.toLowerCase())) name = `${base} (${k++})`;
-  flujosOp({ op: "save", old: "", name, tipo: get("tipo").trim(), disparo: get("disparo"), skills: get("skills"), nodes, edges });
+  flujosOp({ op: "save", old: "", name, tipo: get("tipo").trim(), angulos: get("angulos"), disparo: get("disparo"), skills: get("skills"), nodes, edges });
   // Los cerebros nuevos nacen con la lista de fuentes vacía: se trae de NotebookLM en segundo plano
   // (de a uno; si todavía no le dieron acceso falla sin romper nada y queda para `ds cerebro sync`).
   const sync = join(import.meta.dir, "..", "cerebro", "cerebro.sh");
@@ -584,7 +584,7 @@ function flujosOp(b: any) {
     const out = (id: string) => edges.filter((e: any) => e.from === id).map((e: any) => e.to), st: Record<string, number> = {};
     const loop = (id: string): boolean => { if (st[id] === 1) return true; if (st[id] === 2) return false; st[id] = 1; const r = out(id).some(loop); st[id] = 2; return r; };
     if (loop("inicio") || nodes.some((n: any) => loop(n.id))) throw new Error("Hay una vuelta en el flujo: los cables tienen que ir siempre hacia adelante");
-    const block = [`## ${name}`, `tipo: ${b.tipo === "ideas" ? "ideas" : "consulta"}`, `disparo: ${csv(b.disparo)}`, `skills: ${csv(b.skills)}`,
+    const block = [`## ${name}`, `tipo: ${b.tipo === "ideas" ? "ideas" : "consulta"}`, ...(b.tipo === "ideas" ? [`angulos: ${csv(b.angulos)}`] : []), `disparo: ${csv(b.disparo)}`, `skills: ${csv(b.skills)}`,
       ...nodes.map((n: any) => { const q = oneLine(n.pregunta); return `- ${n.id} ${n.cerebro}${q ? " | " + q : ""} @ ${Math.max(0, Math.round(Number(n.x) || 0))},${Math.max(0, Math.round(Number(n.y) || 0))}`; }),
       ...edges.map((e: any) => { const c = oneLine(e.cond); return `> ${e.from} ${e.to}${c ? " | " + c : ""}`; })];
     if (old) lines.splice(old.start, old.end - old.start, ...block);
@@ -599,11 +599,11 @@ function flujosOp(b: any) {
 //   ## Bandeja   - 2026-10-27 | rumen | La idea | El gancho | Contenido para proyectos
 const CONTENIDO = tilde(process.env.DUBLIN_CONTENIDO || join(dirname(FINANZAS), "contenido.md"));
 const CSECS = ["Bandeja", "Cola", "Producción", "Publicado", "Descartadas"];
-const IDEA = /^- (\d{4}-\d{2}-\d{2}) \| ([^|]*)\| ([^|]*)\|?([^|]*)\|?(.*)$/;
+const IDEA = /^- (\d{4}-\d{2}-\d{2}) \| ([^|]*)\| ([^|]*)\|?([^|]*)\|?([^|]*)\|?(.*)$/;   // … | gancho | flujo | ángulo
 function contenido() {
   const lines = existsSync(CONTENIDO) ? read(CONTENIDO).split("\n") : [];
   return { file: CONTENIDO, secs: Object.fromEntries(CSECS.map(n => [n, secRows(lines, n, IDEA).map(({ line, raw, m }) =>
-    ({ line, raw, day: m![1], proyecto: m![2].trim(), idea: m![3].trim(), gancho: m![4].trim(), flujo: m![5].trim() }))])) };
+    ({ line, raw, day: m![1], proyecto: m![2].trim(), idea: m![3].trim(), gancho: m![4].trim(), flujo: m![5].trim(), angulo: m![6].trim() }))])) };
 }
 function contenidoOp(b: any) {
   if (!existsSync(CONTENIDO)) writeFileSync(CONTENIDO, "# Contenido\n" + CSECS.map(n => `\n## ${n}\n`).join(""));
@@ -611,7 +611,8 @@ function contenidoOp(b: any) {
   if (b.op === "add") {
     const proy = cleanTxt(b.proyecto), idea = cleanTxt(b.idea);
     if (!proy || !idea) throw new Error("Falta el proyecto o la idea");
-    secAdd(lines, "Bandeja", `- ${today()} | ${proy} | ${idea} | ${cleanTxt(b.gancho)} | `);
+    const ang = cleanTxt(b.angulo);
+    secAdd(lines, "Bandeja", `- ${today()} | ${proy} | ${idea} | ${cleanTxt(b.gancho)} | ${ang ? " | " + ang : ""}`);
     return writeFileSync(CONTENIDO, lines.join("\n"));
   }
   if (lines[b.line] !== b.raw || !b.raw) throw new Error("El archivo cambió — recargá");

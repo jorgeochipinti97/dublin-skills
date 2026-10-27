@@ -2,10 +2,13 @@
 # `ds flujo` — corre un flujo de cerebros (se arman en ds panel → Flujos). Lo llama el comando
 # /flujo de Claude Code, que es la forma de activarlos: explícita, con nombre, nunca por adivinar.
 #   ds flujo                              lista los flujos
-#   ds flujo <nombre> [proyecto…] [+cerebro] [-cerebro]
+#   ds flujo <nombre> [proyecto…] [+cerebro] [-cerebro] [: indicación libre]
 #                                         imprime los pasos para el agente (nombre parcial: "contenido").
 #                                         El cerebro del tema (Ganadero para un proyecto del agro) lo suma el
 #                                         agente como paso [0] si aplica; +cerebro lo fuerza, -cerebro lo saca.
+#                                         Lo que va después de ":" es la indicación del usuario ("5 ideas, con humor").
+#                                         /flujo pasa todo como UN solo argumento entre comillas (así paréntesis o "¿?"
+#                                         no rompen la shell) y acá se separa.
 #   ds flujo records                      una línea por flujo, para env/cerebro/cerebro-nudge.sh
 #
 # flujos.md: cada "## Nombre" es un grafo. Nodos "- id cerebro | pregunta @ x,y" y cables
@@ -62,12 +65,19 @@ cerebro_of() {
   return 1
 }
 title_of() { head -1 "$ROOT/$1/cerebro.md" | sed 's/^# //'; }
+# Ángulos de venta de un flujo de ideas (línea "angulos:" de su bloque). Sin la línea: los de siempre;
+# con la línea vacía: ninguno (el usuario los sacó a propósito).
+ANGULOS_DEFAULT="dolor, resultado, prueba social, objeción, comparación, oferta"
+angulos_of() {
+  awk -v n="$1" -v d="$ANGULOS_DEFAULT" '/^## /{on=(substr($0,4)==n); next} on && /^angulos:/{sub(/^angulos: */,""); print; f=1; exit} END{if(!f) print d}' "$FILE"
+}
 
 # Los pasos de un flujo, listos para el agente.
 #   steps nombre tipo pasos cerebros-del-flujo "proyectos" "forzados" "excluidos"
 steps() {
-  local flow="$1" tipo="$2" text="$3" encamino="$4" proys="$5" mas="$6" menos="$7" c q cand=""
+  local flow="$1" tipo="$2" text="$3" encamino="$4" proys="$5" mas="$6" menos="$7" indic="${8:-}" c q cand=""
   echo "🧭 Flujo «${flow}»${proys:+ para: ${proys// /, }}. Consultá estos cerebros siguiendo el camino, aplicando cada pregunta a este caso y usando cada respuesta en lo que sigue:"
+  [ -n "$indic" ] && echo "📝 Indicación del usuario — manda sobre todo lo demás: aplicala al formular cada pregunta a los cerebros y en cada idea: «${indic}»"
   # [0] Cerebro del tema: aporta los hechos (datos reales, problemas, cómo habla esa audiencia);
   # el resto del flujo aporta el método.
   q="¿Qué datos reales, problemas concretos y forma de hablar de esta audiencia sirven para ${proys:-este proyecto}?"
@@ -87,13 +97,29 @@ steps() {
   if [ "$tipo" = ideas ]; then
     if [ -n "$proys" ]; then echo "Es un flujo de IDEAS: no implementes nada. Proyectos: ${proys// /, }."
     else echo "Es un flujo de IDEAS: no implementes nada. El usuario no dijo para qué proyectos: si estás dentro de un proyecto (hay SESSION.md o TASKS.md acá), usá ese; si no, preguntáselo antes de empezar."; fi
+    local ang; ang="$(angulos_of "$flow")"
+    if [ -n "$ang" ]; then
+      echo "Ángulos de venta: repartí las ideas entre estos ángulos, al menos una por ángulo: ${ang}. Cada ángulo es una puerta distinta a la misma venta (qué le duele, qué quiere lograr, qué prueba le alcanza, qué lo frena, contra qué te compara, qué le hace decir que sí ahora): usá lo que dijeron los cerebros para que cada una sea concreta de este proyecto, no genérica."
+    fi
     echo "Leé el SESSION.md y el TASKS.md de cada proyecto, mirá \`ds contenido list\` para no repetir (tampoco las descartadas) y dejá cada idea en la bandeja con:"
-    echo "  ds contenido add <proyecto> \"<idea>\" \"<gancho>\" \"${flow}\""
+    echo "  ds contenido add <proyecto> \"<idea>\" \"<gancho>\" \"${flow}\"${ang:+ \"<ángulo>\"}"
     echo "Al final decile cuántas dejaste: las elige en ds panel → Contenido."
   fi
 }
 
 [ -n "$ROOT" ] && [ -d "$ROOT" ] || { echo "No hay carpeta de cerebros configurada."; exit 1; }
+
+# Un solo argumento con espacios o ":" (así llega desde /flujo): separar acá, sin expandir comodines.
+INDIC=""
+if [ $# -eq 1 ] && [[ "$1" == *" "* || "$1" == *:* ]]; then
+  raw="$1"; [[ "$raw" == *:* ]] && INDIC="${raw#*:}"
+  set -f; set -- ${raw%%:*}; set +f
+else  # forma terminal: ds flujo contenido rumen : 5 ideas
+  args=()
+  while [ $# -gt 0 ]; do [ "$1" = ":" ] && { shift; INDIC="$*"; break; }; args+=("$1"); shift; done
+  set -- "${args[@]+"${args[@]}"}"
+fi
+INDIC="$(printf '%s' "$INDIC" | sed 's/^ *//;s/ *$//')"
 
 case "${1:-}" in
   records) records ;;
@@ -121,5 +147,5 @@ case "${1:-}" in
         *) proys+="$a " ;;
       esac
     done
-    steps "$flow" "$tipo" "$text" "$cers" "${proys% }" "${mas% }" "${menos% }" ;;
+    steps "$flow" "$tipo" "$text" "$cers" "${proys% }" "${mas% }" "${menos% }" "$INDIC" ;;
 esac

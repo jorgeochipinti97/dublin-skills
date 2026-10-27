@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # `ds contenido` — bandeja de ideas de contenido. La llenan los flujos de tipo "ideas"
 # (ds panel → Flujos) y se elige en ds panel → Contenido (sí → Cola, no → Descartadas).
-#   ds contenido add <proyecto> "<idea>" ["<gancho>"] ["<flujo>"]
+#   ds contenido add <proyecto> "<idea>" ["<gancho>"] ["<flujo>"] ["<ángulo>"]
 #   ds contenido list [bandeja|cola|produccion|publicado|descartadas]
 #
 # contenido.md (al lado de finanzas.md; $DUBLIN_CONTENIDO lo cambia), una idea por línea:
-#   ## Bandeja      - 2026-10-27 | mi-app | La idea | El gancho | Contenido para proyectos
+#   ## Bandeja      - 2026-10-27 | mi-app | La idea | El gancho | Contenido para proyectos | dolor
 #   ## Cola / ## Producción / ## Publicado / ## Descartadas   (mismas líneas, movidas desde el panel)
 set -euo pipefail
 
@@ -23,13 +23,13 @@ ensure() {
 }
 
 cmd_add() {
-  local proy idea gancho flujo line
-  proy="$(clean "${1:-}")"; idea="$(clean "${2:-}")"; gancho="$(clean "${3:-}")"; flujo="$(clean "${4:-}")"
-  [ -n "$proy" ] && [ -n "$idea" ] || die "Uso: ds contenido add <proyecto> \"<idea>\" [\"<gancho>\"] [\"<flujo>\"]"
+  local proy idea gancho flujo angulo line
+  proy="$(clean "${1:-}")"; idea="$(clean "${2:-}")"; gancho="$(clean "${3:-}")"; flujo="$(clean "${4:-}")"; angulo="$(clean "${5:-}")"
+  [ -n "$proy" ] && [ -n "$idea" ] || die "Uso: ds contenido add <proyecto> \"<idea>\" [\"<gancho>\"] [\"<flujo>\"] [\"<ángulo>\"]"
   ensure
   # Ya propuesta (en cualquier sección, incluidas las descartadas): no se repite.
   grep -qiF "| $proy | $idea |" "$FILE" && { echo "· ya estaba: $idea"; return 0; }
-  line="- $(date +%F) | $proy | $idea | $gancho | $flujo"
+  line="- $(date +%F) | $proy | $idea | $gancho | $flujo${angulo:+ | $angulo}"
   # Al final de ## Bandeja (antes de la próxima sección).
   awk -v l="$line" '
     $0 == "## Bandeja" { on = 1; print; next }
