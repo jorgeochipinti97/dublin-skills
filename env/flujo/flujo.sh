@@ -87,6 +87,19 @@ steps() {
     printf '%s\n' "${lista:-  (no hay ideas en Cola ni En producción: decile que apruebe alguna en ds panel → Contenido)}"
     echo "Antes de empezar: buscala con \`ds contenido list\` (título, gancho y tratamiento son el brief) y pasala a producción: ds contenido mover \"<parte del título o gancho>\" produccion"
     echo "  [0] IDENTIDAD DEL PROYECTO — obligatorio, antes de cualquier skill. Estás en la carpeta del proyecto (si no, preguntá cuál es). Leé DESIGN.md (colores, tipografía, espaciado, movimiento), PRESSKIT.md si existe (voz, qué sí / qué no, assets), los logos (buscá public/brand, assets, *logo*), los tokens del código (globals.css, tailwind/theme) y las pantallas reales de la feature que muestra la idea (rutas y componentes de la app). Todo color, fuente, forma y pantalla sale de ahí: nada inventado, nada de paletas genéricas. Si no hay PRESSKIT.md, armalo primero con la skill presskit (le preguntás al usuario lo que falte). Prohibido: SESSION.md, TASKS.md y datos reales de clientes en pantalla (usá datos de ejemplo verosímiles)."
+    # El formato (con qué skill se hace) lo elige el usuario y va ANTES del guion: no se escribe igual
+    # un video de producto que un papercut o un avatar hablando.
+    local fmt="" k d
+    for k in "onetake|Video de producto: la app real animada, tipografía en movimiento, sin persona en cámara" \
+             "papercut-explainer|Explicativo en papel recortado, estilo collage, vertical" \
+             "ugc-scriptwriter+ai-avatar-director|Avatar IA hablando a cámara (HeyGen, Hedra…), tipo testimonio o UGC" \
+             "ugc-video-prompting|Escenas generativas con Veo 3 o Seedance: el campo, el productor, situaciones reales" \
+             "remotion-video|Animación programada a medida en React" \
+             "comic10|Reel papercut de fútbol desde una noticia"; do
+      d="${k%%|*}"; [ -f "$HOME/.claude/skills/${d%%+*}/SKILL.md" ] && fmt+="      · ${d//+/ → } — ${k#*|}"$'\n'
+    done
+    echo "  [0b] FORMATO — lo elige el usuario, antes del guion. Preguntale con AskUserQuestion qué tipo de pieza quiere, con estas opciones (las instaladas; marcá como recomendada la que mejor sirve a esta idea y decí por qué en la descripción). Esa skill hace el render al final del camino y el guion se escribe para ese formato:"
+    printf '%s' "$fmt"
   else
     echo "🧭 Flujo «${flow}»${proys:+ para: ${proys// /, }}. Consultá estos cerebros siguiendo el camino, aplicando cada pregunta a este caso y usando cada respuesta en lo que sigue:"
   fi
@@ -108,6 +121,7 @@ steps() {
   printf '%s\n' "${text//$'\x1e'/$'\n'}"
   echo "Después decile al usuario en una línea qué tomaste de cada cerebro (y qué rama elegiste, si hubo)."
   if [ "$tipo" = produccion ]; then
+    echo "Último paso: hacé la pieza con la skill del formato que eligió el usuario en [0b] (cargala con el tool Skill), usando la identidad de [0] y lo que salió de cada paso. Primero un borrador; el final solo cuando lo apruebe."
     echo "EL USUARIO ELIGE EN CADA PASO CREATIVO, con la herramienta de preguntas (AskUserQuestion), y no avanzás hasta que conteste: (1) concepto: 2 o 3 opciones distintas, cada una en una línea; (2) guion y escenas: los mostrás y aprueba o pide cambios; (3) borrador del video: lo mira y aprueba antes del render final. Si en otro paso hay una decisión de gusto (estilo, música, voz), también le das opciones."
     echo "Al terminar el render: pasale al usuario la ruta del video y marcala publicada recién cuando él lo confirme: ds contenido mover \"<parte del título o gancho>\" publicado"
   fi
