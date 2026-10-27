@@ -103,6 +103,7 @@ steps() {
     fi
     echo "Leé el SESSION.md y el TASKS.md de cada proyecto, mirá \`ds contenido list\` para no repetir (tampoco las descartadas) y dejá cada idea en la bandeja con:"
     echo "  ds contenido add <proyecto> \"<título>\" \"<gancho>\" \"${flow}\" \"<ángulo>\" \"<tratamiento>\""
+    echo "Qué NO es material de contenido (el SESSION.md y el TASKS.md son contexto interno, no fuente de ideas): bugs, errores de datos, incidentes, métricas que salieron mal por un problema del sistema, deuda técnica, cosas a medio hacer, y nombres o datos de clientes o campos reales. Un número entra solo si es un resultado real que el producto le dio a un cliente, no un dato que sale de un error o de cómo se cargó algo. Ante la duda sobre un dato, dejalo afuera o preguntale al usuario. Cada idea le habla a quien compra o usa el producto (no a founders ni a otros devs), salvo que la indicación del usuario diga otra cosa."
     echo "Formato (se decide en una bandeja, tiene que leerse de un vistazo): título = qué es, en 4 a 10 palabras, sin detalles técnicos; gancho = la frase exacta que abre el video, la que se dice o se lee en el primer segundo; tratamiento = todo lo de cómo hacerlo (estructura, planos, edición, efectos, datos a mostrar), en 1 a 3 frases. Nunca metas el tratamiento en el título."
     echo "Al final decile cuántas dejaste: las elige en ds panel → Contenido."
   fi
