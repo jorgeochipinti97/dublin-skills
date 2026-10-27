@@ -42,8 +42,8 @@ dir_of() {
 nb_of() { sed -n 's/^notebook: *//p' "$1/cerebro.md" | head -1; }
 
 # Fuentes listadas en cerebro.md (sección ## Fuentes), sin el "- " ni comentarios.
-local_sources() {
-  awk '/^## /{on=($0=="## Fuentes"); next} on && /^- /{sub(/^- /,""); sub(/  +\(.*\)$/,""); print}' "$1/cerebro.md"
+local_sources() {  # [mine] = solo las agregadas acá (sin la marca "(desde NotebookLM)")
+  awk -v mine="${2:-}" '/^## /{on=($0=="## Fuentes"); next} on && /^- /{if(mine!="" && /\(desde NotebookLM\)$/) next; sub(/^- /,""); sub(/  +\(.*\)$/,""); print}' "$1/cerebro.md"
 }
 add_line() {  # agrega "- <x>" al final de ## Fuentes
   awk -v l="- $2" '{a[NR]=$0} END{for(i=1;i<=NR;i++) if(a[i]=="## Fuentes"){s=i;break}
@@ -93,13 +93,22 @@ cmd_sync_one() {
   nb="$(nb_of "$dir")"; echo "${B}$(basename "$dir")${N}"
   remote="$(nlm source list -n "$nb" --json)" || { echo "  ${Y}⚠ no pude leer el notebook${N}"; return; }
 
-  # 1. local → NotebookLM: fuentes que no están (por URL o título).
+  # 0. Las que vinieron de NotebookLM ("(desde NotebookLM)") y ya no están allá las borró el dueño:
+  #    se sacan de la lista local. Nunca se vuelven a subir (un lector no puede, y un editor
+  #    reviviría lo que el dueño limpió).
+  local keep; keep="$(jq -r '.sources[] | (.url // empty), (.title // empty)' <<< "$remote")"
+  awk -v K="$keep" 'BEGIN{n=split(K,a,"\n"); for(i=1;i<=n;i++) ok[a[i]]=1}
+    /^## /{on=($0=="## Fuentes")} on && /^- .*  \(desde NotebookLM\)$/ {s=substr($0,3); sub(/  \(desde NotebookLM\)$/,"",s); if(!(s in ok)){gone++; next}}
+    {print} END{if(gone) printf "  - %d fuentes que el dueño borró en NotebookLM\n", gone > "/dev/stderr"}' "$dir/cerebro.md" > "$dir/cerebro.md.tmp" \
+    && mv "$dir/cerebro.md.tmp" "$dir/cerebro.md"
+
+  # 1. local → NotebookLM: las que agregaste vos acá y no están (por URL o título).
   while IFS= read -r s; do
     [ -z "$s" ] && continue
     jq -e --arg s "$s" --arg b "$(basename "$s")" \
       '.sources[] | select(.url == $s or .title == $s or .title == $b)' <<< "$remote" >/dev/null \
       || upload "$dir" "$nb" "$s"
-  done <<< "$(local_sources "$dir")"
+  done <<< "$(local_sources "$dir" mine)"
 
   # 2. NotebookLM → local: fuentes agregadas allá (web, research) que no figuran acá.
   local have; have="$(local_sources "$dir")"; have="$have"$'\n'"$(sed 's|.*/||' <<< "$have")"  # archivos: también por nombre, sin carpeta
