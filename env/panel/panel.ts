@@ -530,20 +530,24 @@ function flujoImport(text: string) {
   if (nodes.some(n => !/^[a-z0-9-]+$/.test(n.cerebro))) throw new Error("El flujo tiene un cerebro con nombre inválido");
   const get = (k: string) => body.find(l => l.startsWith(k + ":"))?.slice(k.length + 1) ?? "";
   const info = Object.fromEntries(ls.map(l => l.match(CER_LINE)).filter(Boolean).map(m => [m![1], { title: m![2], notebook: m![3] }]));
-  const have = new Set(dirs(CEREBROS)), created: string[] = [], missing: string[] = [];
+  const have = new Set(dirs(CEREBROS)), created: string[] = [], slugs: string[] = [], missing: string[] = [];
   for (const c of new Set(nodes.map(n => n.cerebro))) {
     if (have.has(c)) continue;
     const i = info[c];
     if (!i?.notebook) { missing.push(i?.title || c); continue; }
     mkdirSync(join(CEREBROS, c), { recursive: true });
     writeFileSync(join(CEREBROS, c, "cerebro.md"), `# ${cleanTxt(i.title) || c}\n\nnotebook: ${i.notebook}\n\n## Fuentes\n\n## Notas\n`);
-    created.push(cleanTxt(i.title) || c);
+    created.push(cleanTxt(i.title) || c); slugs.push(c);
   }
   if (missing.length) throw new Error("Al texto le faltan los datos de: " + missing.join(", "));
   const taken = new Set(flujoBlocks().blocks.map(b => b.raw.split("\n")[0].slice(3).trim().toLowerCase()));
   let name = cleanTxt(ls[h].slice(3)), k = 2; const base = name;
   while (taken.has(name.toLowerCase())) name = `${base} (${k++})`;
   flujosOp({ op: "save", old: "", name, tipo: get("tipo").trim(), disparo: get("disparo"), skills: get("skills"), nodes, edges });
+  // Los cerebros nuevos nacen con la lista de fuentes vacía: se trae de NotebookLM en segundo plano
+  // (de a uno; si todavía no le dieron acceso falla sin romper nada y queda para `ds cerebro sync`).
+  const sync = join(import.meta.dir, "..", "cerebro", "cerebro.sh");
+  slugs.reduce((p, c) => p.then(() => run(["bash", sync, "sync", c], CEREBROS, 300000)), Promise.resolve<string | null>(null));
   return { name, created };
 }
 async function flujoShare(b: any) {

@@ -1,6 +1,6 @@
 ---
-description: Corre un flujo de cerebros (ds panel → Flujos). Uso: /flujo <nombre> [proyecto…]
-argument-hint: <flujo> [proyecto…]
+description: Corre un flujo de cerebros (ds panel → Flujos). Uso: /flujo <nombre> [proyecto…] [+cerebro] [-cerebro]
+argument-hint: <flujo> [proyecto…] [+cerebro del tema]
 allowed-tools: Bash(ds flujo:*)
 ---
 

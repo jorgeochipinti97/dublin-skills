@@ -1312,7 +1312,7 @@ function cerebrosCard(){
   const C=S.estudio.cerebros;
   return `<section class="card" style="margin-top:var(--s4)"><div class="card-head"><h2>Cerebros</h2><span class="faint" style="font-size:12.5px">${esc(S.estudio.root||"")}</span></div>
     ${C.map(c=>`<details class="mov" style="display:block"><summary style="cursor:pointer;display:flex;gap:var(--s2);align-items:baseline"><span class="t"><b>${esc(c.title)}</b></span>
-      <span class="faint" style="font-size:12.5px;margin-left:auto">${c.fuentes.length} fuentes${c.total?` · ${c.total} tarjetas`:""}</span></summary>
+      <span class="faint" style="font-size:12.5px;margin-left:auto">${c.fuentes.length?`${c.fuentes.length} fuentes`:"fuentes sin bajar · <code>ds cerebro sync</code>"}${c.total?` · ${c.total} tarjetas`:""}</span></summary>
       <div style="padding:var(--s2) 0 var(--s1)">${c.fuentes.map(f=>`<div class="faint" style="font-size:13px;overflow-wrap:anywhere">${/^https?:\/\//.test(f)?`<a href="${esc(f)}" target="_blank" rel="noopener">${esc(f)}</a>`:esc(f)}</div>`).join("")}
       <p class="faint" style="font-size:12.5px;margin:var(--s2) 0 0">Preguntale: <code>ds cerebro ask ${esc(c.slug)} "…"</code></p></div></details>`).join("")
       ||`<p class="muted">Todavía no hay cerebros. Creá uno con <code>ds cerebro new "Tema"</code>.</p>`}</section>`;
@@ -1500,7 +1500,7 @@ async function flAct(act,b){
   else if(act==="flshare"){const i=Number(b.dataset.i);ui.flShare=ui.flShare===i?null:i;render()}
   else if(act==="flcopy"){navigator.clipboard.writeText(flText(F.list[Number(b.dataset.i)])).then(()=>toast("Flujo copiado: pasáselo por donde quieras")).catch(()=>toast("No pude copiar"))}
   else if(act==="flimpok"){try{const r=await post("/api/flujos",{op:"import",text:ui.flImpText||""});ui.flImp=false;ui.flImpText="";
-    ui.flNote=`Importé «${esc(r.name)}».`+(r.created.length?` Creé ${r.created.length===1?"el cerebro":"los cerebros"} ${esc(r.created.join(", "))}: cuando te den acceso, corré <code>ds cerebro sync</code> para traer sus fuentes.`:"");render()}catch{}}
+    ui.flNote=`Importé «${esc(r.name)}».`+(r.created.length?` Creé ${r.created.length===1?"el cerebro":"los cerebros"} ${esc(r.created.join(", "))}: ya estoy trayendo sus fuentes de NotebookLM (tarda unos minutos). Si todavía no te dieron acceso, pedilo y corré <code>ds cerebro sync</code>.`:"");render()}catch{}}
   else if(act==="fldel"){const D=ui.flD;confirmOr("fldel",()=>post("/api/flujos",{op:"delete",old:D.old}).then(()=>{ui.flD=null;render();toast("Flujo borrado")}).catch(()=>{}))}
 }
 

@@ -2,7 +2,10 @@
 # `ds flujo` — corre un flujo de cerebros (se arman en ds panel → Flujos). Lo llama el comando
 # /flujo de Claude Code, que es la forma de activarlos: explícita, con nombre, nunca por adivinar.
 #   ds flujo                              lista los flujos
-#   ds flujo <nombre> [proyecto…]         imprime los pasos para el agente (nombre parcial: "contenido")
+#   ds flujo <nombre> [proyecto…] [+cerebro] [-cerebro]
+#                                         imprime los pasos para el agente (nombre parcial: "contenido").
+#                                         El cerebro del tema (Ganadero para un proyecto del agro) lo suma el
+#                                         agente como paso [0] si aplica; +cerebro lo fuerza, -cerebro lo saca.
 #   ds flujo records                      una línea por flujo, para env/cerebro/cerebro-nudge.sh
 #
 # flujos.md: cada "## Nombre" es un grafo. Nodos "- id cerebro | pregunta @ x,y" y cables
@@ -47,16 +50,43 @@ records() {
     END { flush() }' "$FILE"
 }
 
+# Cerebro por slug exacto o por palabra entera ("ia" no, "ganadero" sí).
+cerebro_of() {
+  local want d hits=()
+  want="$(printf '%s' "$1" | norm)"
+  for d in "$ROOT"/*/cerebro.md; do d="$(basename "$(dirname "$d")")"
+    [ "$d" = "$want" ] && { echo "$d"; return 0; }
+    case "$d" in "$want"-*|*-"$want"|*-"$want"-*) hits+=("$d") ;; esac
+  done
+  [ "${#hits[@]}" -eq 1 ] && { echo "${hits[0]}"; return 0; }
+  return 1
+}
+title_of() { head -1 "$ROOT/$1/cerebro.md" | sed 's/^# //'; }
+
 # Los pasos de un flujo, listos para el agente.
-steps() {  # nombre tipo pasos [proyecto…]
-  local flow="$1" tipo="$2" text="$3"; shift 3
-  local proys="${*:-}"
+#   steps nombre tipo pasos cerebros-del-flujo "proyectos" "forzados" "excluidos"
+steps() {
+  local flow="$1" tipo="$2" text="$3" encamino="$4" proys="$5" mas="$6" menos="$7" c q cand=""
   echo "🧭 Flujo «${flow}»${proys:+ para: ${proys// /, }}. Consultá estos cerebros siguiendo el camino, aplicando cada pregunta a este caso y usando cada respuesta en lo que sigue:"
+  # [0] Cerebro del tema: aporta los hechos (datos reales, problemas, cómo habla esa audiencia);
+  # el resto del flujo aporta el método.
+  q="¿Qué datos reales, problemas concretos y forma de hablar de esta audiencia sirven para ${proys:-este proyecto}?"
+  for c in $mas; do echo "  [0] Cerebro del tema (lo pidió el usuario): ds cerebro ask $c \"$q\"  → después: [1]"; done
+  if [ -z "$mas" ]; then
+    for d in "$ROOT"/*/cerebro.md; do c="$(basename "$(dirname "$d")")"
+      case " $encamino $menos " in *" $c "*) continue ;; esac
+      cand+="      · $c — $(title_of "$c")$(sed -n 's/^temas: *//p' "$d" | head -1 | cut -d, -f1-5 | sed 's/^./ (&/;s/.$/&…)/')"$'\n'
+    done
+    if [ -n "$cand" ]; then
+      echo "  [0] Cerebro del tema (decidilo vos): leé el SESSION.md del proyecto; si es de un rubro que tiene cerebro en esta lista, consultalo primero con: ds cerebro ask <cerebro> \"$q\" y avisale al usuario en una línea cuál sumaste y por qué. Si ninguno es del rubro, no sumes nada."
+      printf '%s' "$cand"
+    fi
+  fi
   printf '%s\n' "${text//$'\x1e'/$'\n'}"
   echo "Después decile al usuario en una línea qué tomaste de cada cerebro (y qué rama elegiste, si hubo)."
   if [ "$tipo" = ideas ]; then
     if [ -n "$proys" ]; then echo "Es un flujo de IDEAS: no implementes nada. Proyectos: ${proys// /, }."
-    else echo "Es un flujo de IDEAS: no implementes nada. El usuario no dijo para qué proyectos: preguntáselo antes de empezar."; fi
+    else echo "Es un flujo de IDEAS: no implementes nada. El usuario no dijo para qué proyectos: si estás dentro de un proyecto (hay SESSION.md o TASKS.md acá), usá ese; si no, preguntáselo antes de empezar."; fi
     echo "Leé el SESSION.md y el TASKS.md de cada proyecto, mirá \`ds contenido list\` para no repetir (tampoco las descartadas) y dejá cada idea en la bandeja con:"
     echo "  ds contenido add <proyecto> \"<idea>\" \"<gancho>\" \"${flow}\""
     echo "Al final decile cuántas dejaste: las elige en ds panel → Contenido."
@@ -82,6 +112,14 @@ case "${1:-}" in
     done < <(records)
     if [ "${#lines[@]}" -eq 0 ]; then echo "No encontré el flujo «${want}». Los que hay:"; "$0"; exit 1; fi
     if [ "${#lines[@]}" -gt 1 ]; then echo "«${want}» coincide con varios: ${hits[*]}. Decime cuál."; exit 1; fi
-    IFS=$'\x1f' read -r flow tipo _ _ _ text <<< "${lines[0]}"
-    steps "$flow" "$tipo" "$text" "$@" ;;
+    IFS=$'\x1f' read -r flow tipo _ _ cers text <<< "${lines[0]}"
+    proys="" mas="" menos=""
+    for a in "$@"; do
+      case "$a" in
+        +*|-*) c="$(cerebro_of "${a:1}")" || { echo "No encontré el cerebro «${a:1}». Los que hay: $(for d in "$ROOT"/*/cerebro.md; do basename "$(dirname "$d")"; done | tr '\n' ' ')"; exit 1; }
+               [ "${a:0:1}" = + ] && mas+="$c " || menos+="$c " ;;
+        *) proys+="$a " ;;
+      esac
+    done
+    steps "$flow" "$tipo" "$text" "$cers" "${proys% }" "${mas% }" "${menos% }" ;;
 esac
