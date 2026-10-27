@@ -599,11 +599,11 @@ function flujosOp(b: any) {
 //   ## Bandeja   - 2026-10-27 | rumen | La idea | El gancho | Contenido para proyectos
 const CONTENIDO = tilde(process.env.DUBLIN_CONTENIDO || join(dirname(FINANZAS), "contenido.md"));
 const CSECS = ["Bandeja", "Cola", "Producción", "Publicado", "Descartadas"];
-const IDEA = /^- (\d{4}-\d{2}-\d{2}) \| ([^|]*)\| ([^|]*)\|?([^|]*)\|?([^|]*)\|?(.*)$/;   // … | gancho | flujo | ángulo
+const IDEA = /^- (\d{4}-\d{2}-\d{2}) \| ([^|]*)\| ([^|]*)\|?([^|]*)\|?([^|]*)\|?([^|]*)\|?(.*)$/;   // … | gancho | flujo | ángulo | tratamiento
 function contenido() {
   const lines = existsSync(CONTENIDO) ? read(CONTENIDO).split("\n") : [];
   return { file: CONTENIDO, secs: Object.fromEntries(CSECS.map(n => [n, secRows(lines, n, IDEA).map(({ line, raw, m }) =>
-    ({ line, raw, day: m![1], proyecto: m![2].trim(), idea: m![3].trim(), gancho: m![4].trim(), flujo: m![5].trim(), angulo: m![6].trim() }))])) };
+    ({ line, raw, day: m![1], proyecto: m![2].trim(), idea: m![3].trim(), gancho: m![4].trim(), flujo: m![5].trim(), angulo: m![6].trim(), detalle: m![7].trim() }))])) };
 }
 function contenidoOp(b: any) {
   if (!existsSync(CONTENIDO)) writeFileSync(CONTENIDO, "# Contenido\n" + CSECS.map(n => `\n## ${n}\n`).join(""));
@@ -611,8 +611,8 @@ function contenidoOp(b: any) {
   if (b.op === "add") {
     const proy = cleanTxt(b.proyecto), idea = cleanTxt(b.idea);
     if (!proy || !idea) throw new Error("Falta el proyecto o la idea");
-    const ang = cleanTxt(b.angulo);
-    secAdd(lines, "Bandeja", `- ${today()} | ${proy} | ${idea} | ${cleanTxt(b.gancho)} | ${ang ? " | " + ang : ""}`);
+    const ang = cleanTxt(b.angulo), det = cleanTxt(b.detalle);
+    secAdd(lines, "Bandeja", `- ${today()} | ${proy} | ${idea} | ${cleanTxt(b.gancho)} | ${ang || det ? " | " + ang : ""}${det ? " | " + det : ""}`);
     return writeFileSync(CONTENIDO, lines.join("\n"));
   }
   if (lines[b.line] !== b.raw || !b.raw) throw new Error("El archivo cambió — recargá");
