@@ -80,8 +80,11 @@ steps() {
   local flow="$1" tipo="$2" text="$3" encamino="$4" proys="$5" mas="$6" menos="$7" indic="${8:-}" c q cand=""
   if [ "$tipo" = produccion ]; then
     # En producción lo que sigue al nombre es la idea a producir, no proyectos.
-    echo "🎬 Flujo «${flow}» — producir la pieza de la idea: «${proys:-?}». Seguí el camino paso a paso; cada paso usa lo que salió del anterior."
-    [ -n "$proys" ] || echo "El usuario no dijo qué idea: mostrale \`ds contenido list cola\` y \`ds contenido list produccion\` y preguntale cuál."
+    echo "🎬 Flujo «${flow}» — producir la pieza de ${proys:+la idea «${proys}»}${proys:-la idea que elija el usuario}. Seguí el camino paso a paso; cada paso usa lo que salió del anterior."
+    # Qué idea producir la elige SIEMPRE el usuario: sin idea, o si la palabra coincide con varias, se le pregunta.
+    local lista; lista="$(bash "$(dirname "$0")/../contenido/contenido.sh" list produccion 2>/dev/null; bash "$(dirname "$0")/../contenido/contenido.sh" list cola 2>/dev/null)"
+    echo "ELEGIR LA IDEA — la elige el usuario, nunca vos. ${proys:+Si «${proys}» coincide con más de una idea, o con ninguna, p}${proys:-P}reguntale con la herramienta de preguntas (AskUserQuestion): una opción por idea con el gancho como texto y el ángulo y el título como descripción, primero las de En producción y después las de la Cola (máximo 4; si hay más, las 4 primeras y que escriba otra en «Other»). No arranques hasta que elija. Ideas disponibles:"
+    printf '%s\n' "${lista:-  (no hay ideas en Cola ni En producción: decile que apruebe alguna en ds panel → Contenido)}"
     echo "Antes de empezar: buscala con \`ds contenido list\` (título, gancho y tratamiento son el brief) y pasala a producción: ds contenido mover \"<parte del título o gancho>\" produccion"
     echo "  [0] IDENTIDAD DEL PROYECTO — obligatorio, antes de cualquier skill. Estás en la carpeta del proyecto (si no, preguntá cuál es). Leé DESIGN.md (colores, tipografía, espaciado, movimiento), PRESSKIT.md si existe (voz, qué sí / qué no, assets), los logos (buscá public/brand, assets, *logo*), los tokens del código (globals.css, tailwind/theme) y las pantallas reales de la feature que muestra la idea (rutas y componentes de la app). Todo color, fuente, forma y pantalla sale de ahí: nada inventado, nada de paletas genéricas. Si no hay PRESSKIT.md, armalo primero con la skill presskit (le preguntás al usuario lo que falte). Prohibido: SESSION.md, TASKS.md y datos reales de clientes en pantalla (usá datos de ejemplo verosímiles)."
   else
@@ -105,6 +108,7 @@ steps() {
   printf '%s\n' "${text//$'\x1e'/$'\n'}"
   echo "Después decile al usuario en una línea qué tomaste de cada cerebro (y qué rama elegiste, si hubo)."
   if [ "$tipo" = produccion ]; then
+    echo "EL USUARIO ELIGE EN CADA PASO CREATIVO, con la herramienta de preguntas (AskUserQuestion), y no avanzás hasta que conteste: (1) concepto: 2 o 3 opciones distintas, cada una en una línea; (2) guion y escenas: los mostrás y aprueba o pide cambios; (3) borrador del video: lo mira y aprueba antes del render final. Si en otro paso hay una decisión de gusto (estilo, música, voz), también le das opciones."
     echo "Al terminar el render: pasale al usuario la ruta del video y marcala publicada recién cuando él lo confirme: ds contenido mover \"<parte del título o gancho>\" publicado"
   fi
   if [ "$tipo" = ideas ]; then
