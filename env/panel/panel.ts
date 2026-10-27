@@ -478,6 +478,151 @@ const COMIDAS = ["desayuno", "almuerzo", "merienda", "cena", "colación"];
 const PLAN = /^- (dom|lun|mar|mie|jue|vie|sab) \| (\S+) \| (.+)$/;
 const COMI = /^- (\d{4}-\d{2}-\d{2}) \| (\S+) \| (.+)$/;
 const PESO = /^- (\d{4}-\d{2}-\d{2}) (\d+(?:\.\d+)?)\s*$/;
+// ---- Flujos ------------------------------------------------------------------
+// flujos.md (en la raíz de los cerebros): qué cerebros consulta el agente, y por qué camino,
+// antes de ciertas tareas. Es un grafo: nodos (cerebro + pregunta + posición en el lienzo) y
+// cables, con condición opcional. Desde un nodo, los cables sin condición se siguen todos (en
+// paralelo); los que tienen condición, solo el que aplique. Lo lee env/cerebro/cerebro-nudge.sh.
+//   ## Ad para cliente
+//   disparo: ad, anuncio, campaña
+//   skills: video-creativo, ugc-scriptwriter
+//   - a marca-personal-tech-en-instagram | ¿a quién le hablo? @ 260,40
+//   - b storytelling-y-viralidad-en-video-corto | ¿qué gancho? @ 520,0
+//   > inicio a
+//   > a b | si es para un cliente
+const FLUJOS = CEREBROS ? join(CEREBROS, "flujos.md") : "";
+const SKILLS_DIR = join(HOME, ".claude", "skills");
+const NODO = /^- (\w+) (\S+)(?: \| (.*?))?(?: @ (-?\d+),(-?\d+))?\s*$/, CABLE = /^> (\w+) (\w+)(?: \| (.*))?$/;
+const csv = (t: unknown) => String(t ?? "").split(",").map(cleanTxt).filter(Boolean).join(", ");
+const oneLine = (t: unknown) => String(t ?? "").replace(/[\r\n|]/g, " ").replace(/\s+/g, " ").trim();
+function flujoBlocks() {
+  const lines = FLUJOS && existsSync(FLUJOS) ? read(FLUJOS).split("\n") : [], out: { start: number; end: number; raw: string }[] = [];
+  lines.forEach((l, i) => { if (l.startsWith("## ")) { if (out.length) out.at(-1)!.end = i; out.push({ start: i, end: lines.length, raw: "" }); } });
+  for (const b of out) { while (b.end > b.start + 1 && lines[b.end - 1].trim() === "") b.end--; b.raw = lines.slice(b.start, b.end).join("\n"); }
+  return { lines, blocks: out };
+}
+function flujos() {
+  const cer = new Set(CEREBROS ? dirs(CEREBROS) : []);
+  const list = flujoBlocks().blocks.map(({ raw }) => {
+    const ls = raw.split("\n"), get = (k: string) => (ls.find(l => l.startsWith(k + ":"))?.slice(k.length + 1) ?? "").split(",").map(s => s.trim()).filter(Boolean);
+    const nodes = ls.map(l => l.match(NODO)).filter(Boolean).map((m, k) => ({ id: m![1], cerebro: m![2], pregunta: (m![3] ?? "").trim(), x: m![4] != null ? Math.max(274, Number(m![4])) : 344 + 300 * k, y: m![5] != null ? Number(m![5]) : 40, ok: cer.has(m![2]) }));
+    const edges = ls.map(l => l.match(CABLE)).filter(Boolean).map(m => ({ from: m![1], to: m![2], cond: (m![3] ?? "").trim() }));
+    return { raw, name: ls[0].slice(3).trim(), tipo: get("tipo")[0] === "ideas" ? "ideas" : "consulta", disparo: get("disparo"), skills: get("skills"), nodes, edges };
+  });
+  return { file: FLUJOS, list, cer: cerebroInfo(), skills: dirs(SKILLS_DIR).filter(d => existsSync(join(SKILLS_DIR, d, "SKILL.md"))) };
+}
+// Título y notebook de cada cerebro: van en el texto al compartir, así el otro sabe qué pedir.
+function cerebroInfo() {
+  return Object.fromEntries((CEREBROS ? dirs(CEREBROS) : []).filter(d => existsSync(join(CEREBROS, d, "cerebro.md"))).map(d => {
+    const md = read(join(CEREBROS, d, "cerebro.md"));
+    return [d, { title: md.match(/^# (.+)$/m)?.[1].trim() || d, notebook: md.match(/^notebook: *(\S+)/m)?.[1] ?? "" }];
+  }));
+}
+// Compartir: el texto del flujo + una línea por cerebro (slug | título | notebook). Importar lo lee
+// y crea los cerebros que falten como carpeta con su notebook (después: ds cerebro sync).
+const CER_LINE = /^<!-- cerebro ([a-z0-9-]+) \| (.*?) \| ([\w-]*) -->$/;
+function flujoImport(text: string) {
+  const ls = String(text ?? "").split(/\r?\n/).map(l => l.trimEnd()), h = ls.findIndex(l => l.startsWith("## "));
+  if (h < 0) throw new Error("No encontré un flujo en ese texto");
+  const end = ls.findIndex((l, i) => i > h && l.startsWith("## ")), body = ls.slice(h + 1, end < 0 ? ls.length : end);
+  const nodes = body.map(l => l.match(NODO)).filter(Boolean).map(m => ({ id: m![1], cerebro: m![2], pregunta: m![3] ?? "", x: Number(m![4] ?? 344), y: Number(m![5] ?? 40) }));
+  const edges = body.map(l => l.match(CABLE)).filter(Boolean).map(m => ({ from: m![1], to: m![2], cond: m![3] ?? "" }));
+  if (nodes.some(n => !/^[a-z0-9-]+$/.test(n.cerebro))) throw new Error("El flujo tiene un cerebro con nombre inválido");
+  const get = (k: string) => body.find(l => l.startsWith(k + ":"))?.slice(k.length + 1) ?? "";
+  const info = Object.fromEntries(ls.map(l => l.match(CER_LINE)).filter(Boolean).map(m => [m![1], { title: m![2], notebook: m![3] }]));
+  const have = new Set(dirs(CEREBROS)), created: string[] = [], missing: string[] = [];
+  for (const c of new Set(nodes.map(n => n.cerebro))) {
+    if (have.has(c)) continue;
+    const i = info[c];
+    if (!i?.notebook) { missing.push(i?.title || c); continue; }
+    mkdirSync(join(CEREBROS, c), { recursive: true });
+    writeFileSync(join(CEREBROS, c, "cerebro.md"), `# ${cleanTxt(i.title) || c}\n\nnotebook: ${i.notebook}\n\n## Fuentes\n\n## Notas\n`);
+    created.push(cleanTxt(i.title) || c);
+  }
+  if (missing.length) throw new Error("Al texto le faltan los datos de: " + missing.join(", "));
+  const taken = new Set(flujoBlocks().blocks.map(b => b.raw.split("\n")[0].slice(3).trim().toLowerCase()));
+  let name = cleanTxt(ls[h].slice(3)), k = 2; const base = name;
+  while (taken.has(name.toLowerCase())) name = `${base} (${k++})`;
+  flujosOp({ op: "save", old: "", name, tipo: get("tipo").trim(), disparo: get("disparo"), skills: get("skills"), nodes, edges });
+  return { name, created };
+}
+async function flujoShare(b: any) {
+  const email = String(b.email ?? "").trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Mail inválido");
+  const f = flujos().list.find(x => x.raw === b.old); if (!f) throw new Error("El archivo cambió — recargá");
+  const info = cerebroInfo(), shared: string[] = [], failed: string[] = [];
+  for (const c of new Set(f.nodes.map(n => n.cerebro))) {
+    const i = info[c]; if (!i?.notebook) { failed.push(i?.title || c); continue; }
+    const out = await run(["notebooklm", "--quiet", "share", "add", email, "--permission", "viewer", "-n", i.notebook], CEREBROS, 60000);
+    (out == null ? failed : shared).push(i.title);
+  }
+  return { shared, failed };
+}
+function flujosOp(b: any) {
+  if (!FLUJOS) throw new Error("No hay carpeta de cerebros configurada");
+  const { lines, blocks } = flujoBlocks(), old = b.old ? blocks.find(x => x.raw === b.old) : null;
+  if (b.old && !old) throw new Error("El archivo cambió — recargá");
+  if (b.op === "delete") { if (!old) throw new Error("Falta el flujo"); lines.splice(old.start, old.end - old.start); }
+  else if (b.op === "save") {
+    const name = cleanTxt(b.name), cer = new Set(dirs(CEREBROS));
+    if (!name) throw new Error("Ponele un nombre al flujo");
+    if (blocks.some(x => x !== old && x.raw.split("\n")[0].slice(3).trim().toLowerCase() === name.toLowerCase())) throw new Error("Ya hay un flujo con ese nombre");
+    const nodes = (Array.isArray(b.nodes) ? b.nodes : []).filter((n: any) => /^\w+$/.test(n?.id ?? "") && n.id !== "inicio");
+    if (!nodes.length) throw new Error("Sumá al menos un cerebro");
+    if (nodes.some((n: any) => !cer.has(n.cerebro))) throw new Error("Hay un nodo sin cerebro elegido");
+    const ids = new Set(nodes.map((n: any) => n.id)); if (ids.size !== nodes.length) throw new Error("Nodos repetidos");
+    const seen = new Set<string>(), edges = (Array.isArray(b.edges) ? b.edges : []).filter((e: any) => {
+      const k = e?.from + ">" + e?.to; if (seen.has(k)) return false; seen.add(k);
+      return (e.from === "inicio" || ids.has(e.from)) && ids.has(e.to) && e.from !== e.to;
+    });
+    if (!edges.some((e: any) => e.from === "inicio")) throw new Error("Uní el disparo con el primer cerebro");
+    // Sin vueltas: un flujo siempre termina.
+    const out = (id: string) => edges.filter((e: any) => e.from === id).map((e: any) => e.to), st: Record<string, number> = {};
+    const loop = (id: string): boolean => { if (st[id] === 1) return true; if (st[id] === 2) return false; st[id] = 1; const r = out(id).some(loop); st[id] = 2; return r; };
+    if (loop("inicio") || nodes.some((n: any) => loop(n.id))) throw new Error("Hay una vuelta en el flujo: los cables tienen que ir siempre hacia adelante");
+    const block = [`## ${name}`, `tipo: ${b.tipo === "ideas" ? "ideas" : "consulta"}`, `disparo: ${csv(b.disparo)}`, `skills: ${csv(b.skills)}`,
+      ...nodes.map((n: any) => { const q = oneLine(n.pregunta); return `- ${n.id} ${n.cerebro}${q ? " | " + q : ""} @ ${Math.max(0, Math.round(Number(n.x) || 0))},${Math.max(0, Math.round(Number(n.y) || 0))}`; }),
+      ...edges.map((e: any) => { const c = oneLine(e.cond); return `> ${e.from} ${e.to}${c ? " | " + c : ""}`; })];
+    if (old) lines.splice(old.start, old.end - old.start, ...block);
+    else { if (!lines.length) lines.push("# Flujos", ""); while (lines.length && lines.at(-1) === "") lines.pop(); lines.push("", ...block); }
+  } else throw new Error("Operación desconocida");
+  writeFileSync(FLUJOS, lines.join("\n").replace(/\n*$/, "\n"));
+}
+
+// ---- Contenido ----------------------------------------------------------------
+// contenido.md (al lado de finanzas.md): ideas que dejan los flujos de tipo "ideas" con
+// `ds contenido add`. Se eligen acá: Bandeja → Cola (sí) o Descartadas (no) → Producción → Publicado.
+//   ## Bandeja   - 2026-10-27 | rumen | La idea | El gancho | Contenido para proyectos
+const CONTENIDO = tilde(process.env.DUBLIN_CONTENIDO || join(dirname(FINANZAS), "contenido.md"));
+const CSECS = ["Bandeja", "Cola", "Producción", "Publicado", "Descartadas"];
+const IDEA = /^- (\d{4}-\d{2}-\d{2}) \| ([^|]*)\| ([^|]*)\|?([^|]*)\|?(.*)$/;
+function contenido() {
+  const lines = existsSync(CONTENIDO) ? read(CONTENIDO).split("\n") : [];
+  return { file: CONTENIDO, secs: Object.fromEntries(CSECS.map(n => [n, secRows(lines, n, IDEA).map(({ line, raw, m }) =>
+    ({ line, raw, day: m![1], proyecto: m![2].trim(), idea: m![3].trim(), gancho: m![4].trim(), flujo: m![5].trim() }))])) };
+}
+function contenidoOp(b: any) {
+  if (!existsSync(CONTENIDO)) writeFileSync(CONTENIDO, "# Contenido\n" + CSECS.map(n => `\n## ${n}\n`).join(""));
+  const lines = read(CONTENIDO).split("\n");
+  if (b.op === "add") {
+    const proy = cleanTxt(b.proyecto), idea = cleanTxt(b.idea);
+    if (!proy || !idea) throw new Error("Falta el proyecto o la idea");
+    secAdd(lines, "Bandeja", `- ${today()} | ${proy} | ${idea} | ${cleanTxt(b.gancho)} | `);
+    return writeFileSync(CONTENIDO, lines.join("\n"));
+  }
+  if (lines[b.line] !== b.raw || !b.raw) throw new Error("El archivo cambió — recargá");
+  if (b.op === "delete") lines.splice(b.line, 1);
+  else if (b.op === "move") {
+    if (!CSECS.includes(b.to)) throw new Error("Sección desconocida");
+    lines.splice(b.line, 1); secAdd(lines, b.to, b.raw);
+  } else if (b.op === "up" || b.op === "down") {   // ordenar dentro de la misma sección
+    const j = b.line + (b.op === "up" ? -1 : 1);
+    if (!lines[j]?.startsWith("- ")) return;
+    [lines[b.line], lines[j]] = [lines[j], lines[b.line]];
+  } else throw new Error("Operación desconocida");
+  writeFileSync(CONTENIDO, lines.join("\n"));
+}
+
 function nutricion() {
   const lines = read(NUTRICION).split("\n");
   return { file: NUTRICION, comidas: COMIDAS,
@@ -995,7 +1140,7 @@ Bun.serve({
       const month = /^\d{4}-\d{2}$/.test(url.searchParams.get("month") ?? "") ? url.searchParams.get("month")! : today().slice(0, 7);
       return json({ today: today(), user: USER, roots: { projects: PROJECTS },
         pinned: readList("pinned"), archived: readList("archived"), order: readList("order"),
-        projects: projects(), mcps: mcps(), finanzas: finanzas(month), facturas: facturas(), mascotas: mascotas(), estudio: estudio(), nutricion: nutricion(), dayOfWeek: dayOf(today()), compu: await compu(), foco: foco(),
+        projects: projects(), mcps: mcps(), finanzas: finanzas(month), facturas: facturas(), mascotas: mascotas(), estudio: estudio(), nutricion: nutricion(), flujos: flujos(), contenido: contenido(), dayOfWeek: dayOf(today()), compu: await compu(), foco: foco(),
         // panel-alias: "carpeta Nombre visible" por línea (ej. "mi_app_v2 Mi App").
         alias: Object.fromEntries(readList("alias").map(l => l.trim().split(/\s+/)).filter(p => p.length > 1).map(([k, ...v]) => [k, v.join(" ")])) });
     }
@@ -1025,6 +1170,12 @@ Bun.serve({
         if (url.pathname === "/api/mascota") { mascotaOp(b); return json({ ok: true }); }
         if (url.pathname === "/api/estudio") { estudioOp(b); return json({ ok: true }); }
         if (url.pathname === "/api/nutricion") { nutricionOp(b); return json({ ok: true }); }
+        if (url.pathname === "/api/contenido") { contenidoOp(b); return json({ ok: true }); }
+        if (url.pathname === "/api/flujos") {
+          if (b.op === "import") return json(flujoImport(b.text));
+          if (b.op === "share") return json(await flujoShare(b));
+          flujosOp(b); return json({ ok: true });
+        }
         if (url.pathname === "/api/factura") { await facturaOp(b); return json({ ok: true }); }
         if (url.pathname === "/api/project") { projectOp(b); return json({ ok: true }); }
         if (url.pathname === "/api/cal") { calOp(b); return json({ ok: true }); }

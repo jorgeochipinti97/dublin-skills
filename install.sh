@@ -133,6 +133,8 @@ ${L_USAGE}:
   ds cerebro new|add|sync|ask|list      # cerebros de estudio: carpeta markdown ⇄ notebook de NotebookLM
   ds panel                              # panel local en el navegador: proyectos, cerebros, MCPs, finanzas
   ds factura emitir|pagar|list          # facturas electrónicas ARCA (wsfe) registradas en finanzas.md
+  ds contenido add|list                 # bandeja de ideas de contenido (la llenan los flujos de tipo ideas)
+  ds flujo [<nombre> [proyecto…]]       # pasos de un flujo de cerebros (en Claude Code: /flujo); sin nombre los lista
   ds install                            # install/upgrade the FULL environment in existing project (asks tool + scope)
   ds install <project-path>             # full environment into a project
   ds install --tool=claude --scope=project # non-interactive
@@ -675,6 +677,32 @@ install_hooks() {
     fi
 }
 
+# Cerebros y flujos (Claude Code, siempre user scope: los cerebros son de la persona, no del
+# proyecto). Comando /flujo + hook cerebro-nudge en cada pedido y después de cada skill.
+# Idempotente: no duplica el hook si ya está.
+install_cerebro_hooks() {
+    local tool="$1"
+    [[ "$tool" == "claude" ]] || return 0
+    local cmd="$ENV_SOURCE/cerebro/cerebro-nudge.sh" dest="$HOME/.claude/settings.json"
+    mkdir -p "$HOME/.claude/commands"
+    if [[ -f "$HOME/.claude/commands/flujo.md" ]] && ! cmp -s "$ENV_SOURCE/flujo/flujo.command.md" "$HOME/.claude/commands/flujo.md"; then
+        backup_file "$HOME/.claude/commands/flujo.md"
+    fi
+    cp "$ENV_SOURCE/flujo/flujo.command.md" "$HOME/.claude/commands/flujo.md"
+    echo "${GREEN}  ✓ /flujo → ~/.claude/commands/flujo.md${NC}"
+    if ! command -v jq >/dev/null 2>&1; then
+        echo "${YELLOW}  • jq no está instalado — agregá a mano el hook $cmd (UserPromptSubmit + PostToolUse Skill)${NC}"
+        return 0
+    fi
+    if [[ -f "$dest" ]]; then backup_file "$dest"; else echo '{}' > "$dest"; fi
+    jq --arg c "$cmd" '
+      def add(ev; entry): .hooks[ev] = ((.hooks[ev] // []) | if any(.[]?; any(.hooks[]?; .command == $c)) then . else . + [entry] end);
+      add("UserPromptSubmit"; {hooks: [{type: "command", command: $c}]})
+      | add("PostToolUse"; {matcher: "Skill", hooks: [{type: "command", command: $c}]})' "$dest" > "$dest.tmp" && mv "$dest.tmp" "$dest"
+    chmod +x "$cmd" "$ENV_SOURCE/flujo/flujo.sh" "$ENV_SOURCE/contenido/contenido.sh"
+    echo "${GREEN}  ✓ hook de cerebros y flujos → ~/.claude/settings.json${NC}"
+}
+
 # Branch hygiene for one repo. A branch is "done" when its PR is MERGED or
 # CLOSED (and no PR for it is still OPEN), or git sees it merged into the
 # default branch. Squash merges are invisible to `git branch --merged`, which is
@@ -907,6 +935,7 @@ install_team() {
 
     echo "${BLUE}5/6 Installing hooks…${NC}"
     install_hooks "$tool" "$scope" "$base"
+    install_cerebro_hooks "$tool"
     echo ""
 
     echo "${BLUE}6/6 Wiring engram (persistent memory)…${NC}"
@@ -1126,7 +1155,7 @@ parse_args() {
             --remote) REMOTE_FLAG=1 ;;
             --dry-run|-n) DRY_RUN_FLAG=1 ;;
             --help|-h) print_usage; exit 0 ;;
-            agent|update|list|team|install|new|app|daily|status|voz|cerebro|panel|factura|doctor|git-clean)
+            agent|update|list|team|install|new|app|daily|status|voz|cerebro|panel|factura|contenido|flujo|doctor|git-clean)
                 if [[ -z "$COMMAND" ]]; then
                     COMMAND="$arg"
                 else
@@ -1163,9 +1192,9 @@ main() {
     done
     set -- "${clean_args[@]}"
 
-    print_header
-
     parse_args "$@"
+    # flujo/contenido los lee el agente (o /flujo): sin banner, solo su salida.
+    [[ "$COMMAND" == "flujo" || "$COMMAND" == "contenido" ]] || print_header
     validate_flags
 
     # --- Subcommand: list ---
@@ -1238,6 +1267,14 @@ main() {
 
     if [[ "$COMMAND" == "cerebro" ]]; then
         bash "$ENV_SOURCE/cerebro/cerebro.sh" "${POSITIONAL[@]}"; exit $?
+    fi
+
+    if [[ "$COMMAND" == "flujo" ]]; then
+        bash "$ENV_SOURCE/flujo/flujo.sh" "${POSITIONAL[@]}"; exit $?
+    fi
+
+    if [[ "$COMMAND" == "contenido" ]]; then
+        bash "$ENV_SOURCE/contenido/contenido.sh" "${POSITIONAL[@]}"; exit $?
     fi
 
     if [[ "$COMMAND" == "factura" ]]; then
