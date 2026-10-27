@@ -502,7 +502,9 @@ function flujoBlocks() {
   return { lines, blocks: out };
 }
 // Un nodo es un cerebro (slug) o una skill ("skill:onetake", instalada en ~/.claude/skills).
-const nodoOk = (c: string, cer: Set<string>) => c.startsWith("skill:") ? existsSync(join(SKILLS_DIR, c.slice(6), "SKILL.md")) : cer.has(c);
+// Skills que vienen con Claude Code (no tienen carpeta en ~/.claude/skills).
+const SKILLS_INCLUIDAS = ["dataviz", "artifact-design", "artifact-diagramming", "code-review", "simplify"];
+const nodoOk = (c: string, cer: Set<string>) => c.startsWith("skill:") ? SKILLS_INCLUIDAS.includes(c.slice(6)) || existsSync(join(SKILLS_DIR, c.slice(6), "SKILL.md")) : cer.has(c);
 function flujos() {
   const cer = new Set(CEREBROS ? dirs(CEREBROS) : []);
   const list = flujoBlocks().blocks.map(({ raw }) => {
@@ -511,7 +513,7 @@ function flujos() {
     const edges = ls.map(l => l.match(CABLE)).filter(Boolean).map(m => ({ from: m![1], to: m![2], cond: (m![3] ?? "").trim() }));
     return { raw, name: ls[0].slice(3).trim(), tipo: ["ideas", "produccion"].includes(get("tipo")[0]) ? get("tipo")[0] : "consulta", angulos: ls.some(l => l.startsWith("angulos:")) ? get("angulos") : null, disparo: get("disparo"), skills: get("skills"), nodes, edges };
   });
-  return { file: FLUJOS, list, cer: cerebroInfo(), skills: dirs(SKILLS_DIR).filter(d => existsSync(join(SKILLS_DIR, d, "SKILL.md"))) };
+  return { file: FLUJOS, list, cer: cerebroInfo(), skills: [...dirs(SKILLS_DIR).filter(d => existsSync(join(SKILLS_DIR, d, "SKILL.md"))), ...SKILLS_INCLUIDAS].sort() };
 }
 // Título y notebook de cada cerebro: van en el texto al compartir, así el otro sabe qué pedir.
 function cerebroInfo() {

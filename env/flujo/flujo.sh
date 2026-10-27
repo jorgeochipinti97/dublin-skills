@@ -48,7 +48,7 @@ records() {
     /^disparo:/ { trig = substr($0, 9); next }
     /^skills:/ { sks = substr($0, 8); next }
     /^- [A-Za-z0-9_]+ [^ ]+/ && name != "" { l = $0; sub(/ @ -?[0-9]+,-?[0-9]+[ \t]*$/, "", l); id = $2; c = $3
-      if (c ~ /^skill:/) { if (system("test -f \"" sk "/" substr(c, 7) "/SKILL.md\"") != 0) next }
+      if (c ~ /^skill:/) { if (substr(c, 7) !~ /^(dataviz|artifact-design|artifact-diagramming|code-review|simplify)$/ && system("test -f \"" sk "/" substr(c, 7) "/SKILL.md\"") != 0) next }   # incluidas en Claude Code: sin carpeta
       else if (system("test -f \"" root "/" c "/cerebro.md\"") != 0) next
       cer[id] = c; p = index(l, " | "); pq[id] = p ? substr(l, p + 3) : ""; next }
     /^> [A-Za-z0-9_]+ [A-Za-z0-9_]+/ && name != "" { ne++; ef[ne] = $2; et[ne] = $3; p = index($0, " | "); ec[ne] = p ? substr($0, p + 3) : ""; next }
