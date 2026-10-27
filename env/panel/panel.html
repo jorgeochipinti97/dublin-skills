@@ -481,10 +481,25 @@ a.pp-row .pp-ic,a.pp-ic{color:var(--faint)}
 .fl-paste{width:100%;height:160px;padding:var(--s3);font-family:var(--mono);font-size:12.5px;resize:vertical;box-sizing:border-box}
 .fl-node.sink{border-color:var(--accent);border-style:dashed;text-decoration:none;color:var(--text)}.fl-wire.end{stroke-dasharray:4 4}
 .fl-tipo{font-size:13px;font-weight:500;margin-left:var(--s2)}
-.idea{display:flex;gap:var(--s3);align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--sep);flex-wrap:wrap}
-.idea-t{display:grid;gap:2px;min-width:0;flex:1 1 260px}.idea-t .faint{font-size:12.5px}.idea-t .muted{font-size:13.5px}
-.idea-ang{color:var(--accent);font-weight:600}
-.idea-a{display:flex;gap:var(--s2);flex-wrap:wrap}.idea-a .btn{height:32px}
+.idea{display:flex;gap:var(--s4);align-items:flex-start;justify-content:space-between;padding:14px var(--s3);margin:0 calc(-1*var(--s3));border-top:1px solid var(--sep);border-radius:var(--r2)}
+.idea:first-of-type{border-top-color:transparent}.idea.sel{background:var(--sel)}.idea.sel+.idea{border-top-color:transparent}
+.idea-main{min-width:0;flex:1}.idea-main[data-act]{cursor:pointer}
+.idea-tags{display:flex;gap:6px;margin-bottom:6px;min-height:0}.idea-tags:empty{display:none}
+.ang,.tag{font-size:11.5px;font-weight:600;line-height:1;padding:4px 8px;border-radius:999px;letter-spacing:.1px}
+.tag{background:var(--chip);color:var(--muted)}
+.ang{--c:var(--muted);color:var(--c);background:color-mix(in srgb,var(--c) 13%,transparent)}
+.ang-dolor{--c:var(--danger)}.ang-resultado{--c:var(--pos)}.ang-prueba-social{--c:var(--accent)}.ang-objecion{--c:var(--warn-text)}.ang-comparacion{--c:var(--series-1)}.ang-oferta{--c:var(--series-2)}
+.idea-hook{margin:0;font-size:15.5px;font-weight:550;line-height:1.35;letter-spacing:-.15px;color:var(--text);text-wrap:pretty}
+.idea-title{margin:3px 0 0;font-size:13.5px;line-height:1.4;color:var(--muted)}
+.idea-det{margin-top:var(--s2);padding-top:var(--s2);border-top:1px dashed var(--sep);font-size:13.5px;line-height:1.5;color:var(--text)}.idea-det p{margin:0 0 4px}
+.idea-a{display:flex;gap:6px;flex:none;padding-top:2px;opacity:0;transition:opacity .12s}
+.idea:hover .idea-a,.idea.sel .idea-a,.idea:focus-within .idea-a{opacity:1}@media (hover:none){.idea-a{opacity:1}}
+.idea-a .btn{height:30px;padding:0 12px;font-size:13px}
+.fpills{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 var(--s2)}
+.fpill{height:28px;padding:0 10px;border:0;border-radius:999px;background:var(--chip);color:var(--muted);font-size:12.5px;font-weight:500;display:inline-flex;gap:6px;align-items:center}
+.fpill span{color:var(--faint);font-variant-numeric:tabular-nums}.fpill.on{background:var(--text);color:var(--bg)}.fpill.on span{color:inherit;opacity:.7}
+.idea-keys{margin:var(--s3) 0 0;font-size:12px}.idea-keys kbd{font:500 11px var(--mono);padding:1px 5px;border-radius:4px;background:var(--chip);margin-right:2px}
+.cform{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}.cform .wide{grid-column:1/-1}.cform .btn{justify-self:start}
 .idea-desc summary{cursor:pointer;font-weight:600}.idea-desc[open] summary{margin-bottom:var(--s2)}
 .fl-insp{display:grid;gap:var(--s2);margin-top:var(--s3);max-width:560px}.fl-insp label{display:grid;gap:var(--s1);font-size:13px;font-weight:600;color:var(--muted)}
 .mov .a{font-variant-numeric:tabular-nums;font-weight:600}
@@ -1508,29 +1523,68 @@ async function flAct(act,b){
 }
 
 /* ---------------- Contenido ---------------- */
-// contenido.md: las ideas que dejan los flujos de tipo ideas (ds contenido add). Vos elegís:
-// sí → Cola, no → Descartadas; después Producción → Publicado.
-function ideaRow(x,sec,acts){
-  return `<div class="idea"><div class="idea-t"><span class="faint">${x.angulo?`<span class="idea-ang">${esc(cap(x.angulo))}</span> · `:""}${esc(alias(x.proyecto))}${x.flujo?" · "+esc(x.flujo):""}</span><b>${esc(x.idea)}</b>${x.gancho?`<span class="muted">${esc(x.gancho)}</span>`:""}</div>
-    <div class="idea-a">${acts.map(([lbl,op,to,cls])=>`<button class="btn ${cls||""}" data-act="cmove" data-op="${op}" data-to="${to||""}" data-line="${x.line}" data-raw="${esc(x.raw)}">${lbl}</button>`).join("")}</div></div>`;
+// contenido.md: las ideas que dejan los flujos de tipo ideas (ds contenido add). Se decide como
+// en un mail: el gancho manda, el tratamiento (cómo filmarlo) aparece al abrir la idea, y se
+// opera con el teclado (j/k, a sí, x no, e abrir). sí → Cola, no → Descartadas.
+const ANG_ORDEN=["dolor","resultado","prueba social","objeción","comparación","oferta"];
+const angKey=a=>String(a||"").toLowerCase().normalize("NFD").replace(/\p{M}/gu,"").replace(/\s+/g,"-");
+// Ideas viejas traen el tratamiento pegado al título: se separa en el primer ";" o ". " para mostrarlas.
+function ideaParts(x){
+  if(x.detalle||x.idea.length<=90)return {titulo:x.idea,detalle:x.detalle};
+  const m=x.idea.match(/^(.{12,75}?):\s+(.+)$/)||x.idea.match(/^(.{20,110}?)(?:;\s+|\.\s+)(.+)$/);
+  if(m)return {titulo:m[1],detalle:m[2]};
+  const c=x.idea.lastIndexOf(" ",80);return {titulo:x.idea.slice(0,c)+"…",detalle:x.idea};
 }
+function ideaRow(x,acts,o={}){
+  const {titulo,detalle}=ideaParts(x),open=o.open,hook=x.gancho||titulo;
+  return `<div class="idea ${o.sel?"sel":""} ${open?"open":""}" ${o.k!=null?`data-idea="${o.k}"`:""}>
+    <div class="idea-main" ${detalle?`data-act="copen" data-k="${esc(x.raw)}"`:""}>
+      <div class="idea-tags">${x.angulo?`<span class="ang ang-${angKey(x.angulo)}">${esc(cap(x.angulo))}</span>`:""}${o.proy?`<span class="tag">${esc(alias(x.proyecto))}</span>`:""}</div>
+      <p class="idea-hook">${esc(hook)}</p>${x.gancho?`<p class="idea-title">${esc(titulo)}</p>`:""}
+      ${open&&detalle?`<div class="idea-det"><p>${esc(detalle)}</p><p class="faint">${x.flujo?esc(x.flujo)+" · ":""}${dm(x.day)}</p></div>`:""}
+    </div>
+    <div class="idea-a">${acts.map(([lbl,op,to,cls,tip])=>`<button class="btn ${cls||""}" data-act="cmove" data-op="${op}" data-to="${to||""}" data-line="${x.line}" data-raw="${esc(x.raw)}" ${tip?`title="${tip}"`:""}>${lbl}</button>`).join("")}</div></div>`;
+}
+const cBandeja=()=>{const B=S.contenido.secs.Bandeja;return ui.cAng?B.filter(x=>angKey(x.angulo||"sin")===ui.cAng):B};
 function pContenido(){
-  const C=S.contenido,X=C.secs,proys=[...new Set(S.projects.map(p=>p.name))];
+  const C=S.contenido,X=C.secs,proys=[...new Set(S.projects.map(p=>p.name))],B=cBandeja();
+  const varios=new Set(X.Bandeja.map(x=>x.proyecto)).size>1,unico=!varios&&X.Bandeja[0]?alias(X.Bandeja[0].proyecto):"";
+  if(ui.cSel==null||ui.cSel>=B.length)ui.cSel=Math.max(0,Math.min(ui.cSel??0,B.length-1));
+  const angs=[...new Set(X.Bandeja.map(x=>x.angulo||""))].sort((a,b)=>(ANG_ORDEN.indexOf(a.toLowerCase())+99)%99-(ANG_ORDEN.indexOf(b.toLowerCase())+99)%99);
+  const pill=(k,l,n)=>`<button class="fpill ${ui.cAng===k?"on":""}" data-act="cang" data-k="${k??""}">${l}<span>${n}</span></button>`;
   const card=(t,sub,body,empty)=>`<section class="card"><div class="card-head"><h2>${t}</h2>${sub?`<span class="faint">${sub}</span>`:""}</div>${body||`<p class="muted" style="margin:0">${empty}</p>`}</section>`;
-  return `<div class="head"><div><h1>Contenido</h1><p class="sub">Las ideas que te dejan los flujos de tipo ideas. Decís sí o no y lo que aprobás pasa a la cola. Vive en <code>${esc(C.file)}</code>.</p></div></div>
-  <div style="display:grid;gap:var(--s4);max-width:820px">
-    ${card("Bandeja",X.Bandeja.length?X.Bandeja.length+" por decidir":"",X.Bandeja.map(x=>ideaRow(x,"Bandeja",[["Sí","move","Cola","primary"],["No","move","Descartadas"]])).join(""),
-      `Vacía. Pedile al agente, por ejemplo, “ideas de contenido para ${esc(alias(proys[0]||"rumen"))}”, o anotá una abajo.`)}
-    ${card("Cola","",X.Cola.map(x=>ideaRow(x,"Cola",[["↑","up"],["↓","down"],["Empezar","move","Producción","primary"],["Quitar","move","Descartadas"]])).join(""),"Lo que aprobás queda acá, en el orden en que lo vas a hacer.")}
-    ${X["Producción"].length?card("En producción","",X["Producción"].map(x=>ideaRow(x,"Producción",[["Publicado","move","Publicado","primary"],["A la cola","move","Cola"]])).join("")):""}
-    ${X.Publicado.length?card("Publicado",X.Publicado.length+"",X.Publicado.slice(-10).reverse().map(x=>ideaRow(x,"Publicado",[])).join("")):""}
-    ${X.Descartadas.length?`<details class="card idea-desc"><summary>Descartadas · ${X.Descartadas.length} <span class="faint">(el agente no las vuelve a proponer)</span></summary>${X.Descartadas.map(x=>ideaRow(x,"Descartadas",[["Recuperar","move","Bandeja"],["Borrar","delete"]])).join("")}</details>`:""}
+  const row=(x,acts)=>ideaRow(x,acts,{proy:true,open:ui.cOpen===x.raw});
+  return `<div class="head"><div><h1>Contenido</h1><p class="sub">Las ideas que te dejan los flujos. Decís sí o no; lo que aprobás pasa a la cola. Vive en <code>${esc(C.file)}</code>.</p></div></div>
+  <div style="display:grid;gap:var(--s4);max-width:880px">
+    <section class="card idea-inbox"><div class="card-head"><h2>Bandeja${unico?` <span class="faint fl-tipo">${esc(unico)}</span>`:""}</h2>${X.Bandeja.length?`<span class="faint">${X.Bandeja.length} por decidir</span>`:""}</div>
+      ${X.Bandeja.length?`<div class="fpills">${pill(null,"Todas",X.Bandeja.length)}${angs.map(a=>pill(angKey(a||"sin"),a?cap(a):"Sin ángulo",X.Bandeja.filter(x=>(x.angulo||"")===a).length)).join("")}</div>
+        ${B.map((x,k)=>ideaRow(x,[["Sí","move","Cola","primary","a"],["No","move","Descartadas","","x"]],{k,sel:k===ui.cSel,proy:varios,open:ui.cOpen===x.raw})).join("")}
+        <p class="idea-keys faint"><kbd>j</kbd><kbd>k</kbd> moverte · <kbd>a</kbd> sí · <kbd>x</kbd> no · <kbd>e</kbd> ver cómo filmarlo</p>`
+      :`<p class="muted" style="margin:0">Vacía. En Claude Code: <code>/flujo contenido ${esc(proys[0]||"mi-proyecto")}</code>, o anotá una abajo.</p>`}</section>
+    ${card("Cola",X.Cola.length?X.Cola.length+"":"",X.Cola.map(x=>row(x,[["↑","up","","","Subir"],["↓","down","","","Bajar"],["Empezar","move","Producción","primary"],["Quitar","move","Descartadas"]])).join(""),"Lo que aprobás queda acá, en el orden en que lo vas a hacer.")}
+    ${X["Producción"].length?card("En producción","",X["Producción"].map(x=>row(x,[["Publicado","move","Publicado","primary"],["A la cola","move","Cola"]])).join("")):""}
+    ${X.Publicado.length?card("Publicado",X.Publicado.length+"",X.Publicado.slice(-10).reverse().map(x=>row(x,[])).join("")):""}
+    ${X.Descartadas.length?`<details class="card idea-desc"><summary>Descartadas · ${X.Descartadas.length} <span class="faint">(el agente no las vuelve a proponer)</span></summary>${X.Descartadas.map(x=>row(x,[["Recuperar","move","Bandeja"],["Borrar","delete"]])).join("")}</details>`:""}
     <section class="card"><div class="card-head"><h2>Anotar una idea</h2></div>
-      <form class="row" data-form="cidea"><select class="field" name="proyecto" aria-label="Proyecto" style="flex:1 1 140px">${proys.map(n=>`<option value="${esc(n)}">${esc(alias(n))}</option>`).join("")}</select>
-        <input class="field" style="flex:3 1 200px" name="idea" placeholder="La idea" required aria-label="La idea"><input class="field" style="flex:2 1 160px" name="gancho" placeholder="Gancho (opcional)" aria-label="Gancho">
+      <form class="cform" data-form="cidea">
+        <select class="field" name="proyecto" aria-label="Proyecto">${proys.map(n=>`<option value="${esc(n)}">${esc(alias(n))}</option>`).join("")}</select>
+        <select class="field" name="angulo" aria-label="Ángulo"><option value="">Sin ángulo</option>${ANG_ORDEN.map(a=>`<option value="${a}">${cap(a)}</option>`).join("")}</select>
+        <input class="field wide" name="gancho" placeholder="Gancho: la frase que abre el video" aria-label="Gancho">
+        <input class="field wide" name="idea" placeholder="Título corto" required aria-label="Título">
+        <input class="field wide" name="detalle" placeholder="Cómo filmarlo (opcional)" aria-label="Tratamiento">
         <button class="btn">${svg("plus")}A la bandeja</button></form></section>
   </div>`;
 }
+// Triage con teclado, solo en Contenido y fuera de los campos de texto.
+document.addEventListener("keydown",e=>{
+  if(route().page!=="contenido"||e.metaKey||e.ctrlKey||e.altKey||e.target.closest?.("input,select,textarea"))return;
+  const B=cBandeja(),x=B[ui.cSel];if(!B.length)return;
+  const k=e.key.toLowerCase(),go=d=>{ui.cSel=Math.max(0,Math.min(B.length-1,ui.cSel+d));render();document.querySelector(".idea.sel")?.scrollIntoView({block:"nearest"})};
+  if(k==="j"||e.key==="ArrowDown"){e.preventDefault();go(1)}
+  else if(k==="k"||e.key==="ArrowUp"){e.preventDefault();go(-1)}
+  else if(k==="e"||e.key===" "){e.preventDefault();ui.cOpen=ui.cOpen===x.raw?null:x.raw;render()}
+  else if(k==="a"||k==="x"){e.preventDefault();const to=k==="a"?"Cola":"Descartadas";post("/api/contenido",{op:"move",to,line:x.line,raw:x.raw}).then(()=>toast(k==="a"?"A la cola":"Descartada")).catch(()=>{})}
+});
 
 /* ---------------- Finanzas ---------------- */
 const compact=n=>new Intl.NumberFormat("es-AR",{notation:"compact",maximumFractionDigits:1}).format(n);
@@ -1786,6 +1840,8 @@ document.addEventListener("click",async e=>{
   else if(act==="erep"){const t=b.dataset.tema,cb=t&&S.estudio.cerebros.find(x=>x.slug===t),c=cb?.due[0]?{...cb.due[0],slug:t}:dueList()[0];if(!c)return;ui.showBack=false;
     post("/api/estudio",{op:"repaso",slug:c.slug,file:c.file,raw:c.raw,ok:!!b.dataset.ok}).then(()=>toast(b.dataset.ok?"Bien, vuelve más adelante":"Vuelve mañana")).catch(()=>{})}
   else if(act.startsWith("fl"))flAct(act,b);
+  else if(act==="cang"){ui.cAng=b.dataset.k||null;ui.cSel=0;render()}
+  else if(act==="copen"){const k=b.dataset.k;ui.cOpen=ui.cOpen===k?null:k;const r=b.closest("[data-idea]");if(r)ui.cSel=Number(r.dataset.idea);render()}
   else if(act==="cmove"){const {op,to,line,raw}=b.dataset;post("/api/contenido",{op,to,line:Number(line),raw}).then(()=>{if(op==="move")toast(to==="Cola"?"A la cola":to==="Descartadas"?"Descartada":to==="Publicado"?"¡Publicado!":"Movida")}).catch(()=>{})}
   else if(act==="ncomi")post("/api/nutricion",{op:"comi",comida:b.dataset.comida,que:b.dataset.que}).then(()=>toast("Anotado")).catch(()=>{});
   else if(act==="ldel")confirmOr(b.dataset.key,()=>post("/api/"+b.dataset.f,{op:"delete",line:Number(b.dataset.line),raw:b.dataset.raw}).then(()=>toast("Borrado")).catch(()=>{}));

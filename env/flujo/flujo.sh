@@ -102,7 +102,8 @@ steps() {
       echo "Ángulos de venta: repartí las ideas entre estos ángulos, al menos una por ángulo: ${ang}. Cada ángulo es una puerta distinta a la misma venta (qué le duele, qué quiere lograr, qué prueba le alcanza, qué lo frena, contra qué te compara, qué le hace decir que sí ahora): usá lo que dijeron los cerebros para que cada una sea concreta de este proyecto, no genérica."
     fi
     echo "Leé el SESSION.md y el TASKS.md de cada proyecto, mirá \`ds contenido list\` para no repetir (tampoco las descartadas) y dejá cada idea en la bandeja con:"
-    echo "  ds contenido add <proyecto> \"<idea>\" \"<gancho>\" \"${flow}\"${ang:+ \"<ángulo>\"}"
+    echo "  ds contenido add <proyecto> \"<título>\" \"<gancho>\" \"${flow}\" \"<ángulo>\" \"<tratamiento>\""
+    echo "Formato (se decide en una bandeja, tiene que leerse de un vistazo): título = qué es, en 4 a 10 palabras, sin detalles técnicos; gancho = la frase exacta que abre el video, la que se dice o se lee en el primer segundo; tratamiento = todo lo de cómo hacerlo (estructura, planos, edición, efectos, datos a mostrar), en 1 a 3 frases. Nunca metas el tratamiento en el título."
     echo "Al final decile cuántas dejaste: las elige en ds panel → Contenido."
   fi
 }
