@@ -483,6 +483,7 @@ a.pp-row .pp-ic,a.pp-ic{color:var(--faint)}
 .fl-tipo{font-size:13px;font-weight:500;margin-left:var(--s2)}
 .idea{display:flex;gap:var(--s3);align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--sep);flex-wrap:wrap}
 .idea-t{display:grid;gap:2px;min-width:0;flex:1 1 260px}.idea-t .faint{font-size:12.5px}.idea-t .muted{font-size:13.5px}
+.idea-ang{color:var(--accent);font-weight:600}
 .idea-a{display:flex;gap:var(--s2);flex-wrap:wrap}.idea-a .btn{height:32px}
 .idea-desc summary{cursor:pointer;font-weight:600}.idea-desc[open] summary{margin-bottom:var(--s2)}
 .fl-insp{display:grid;gap:var(--s2);margin-top:var(--s3);max-width:560px}.fl-insp label{display:grid;gap:var(--s1);font-size:13px;font-weight:600;color:var(--muted)}
@@ -1407,6 +1408,7 @@ function pFlujos(){
       <input class="field" data-fl="name" value="${esc(D.name)}" placeholder="Nombre del flujo, ej. Ad para cliente" aria-label="Nombre del flujo">
       <select class="field" data-fl="tipo" aria-label="Qué produce"><option value="consulta" ${D.tipo!=="ideas"?"selected":""}>Consulta: el agente aprende y hace el trabajo</option><option value="ideas" ${D.tipo==="ideas"?"selected":""}>Ideas: el agente deja ideas en la bandeja</option></select>
       <input class="field" data-fl="disparo" value="${esc(D.disparo)}" placeholder="Sugerirlo si el pedido dice… (ad, campaña)" aria-label="Palabras para sugerirlo">
+      ${D.tipo==="ideas"?`<input class="field" data-fl="angulos" value="${esc(D.angulos)}" placeholder="Ángulos de venta (dolor, prueba social…)" aria-label="Ángulos de venta">`:""}
       <input class="field" data-fl="skills" list="fl-skills" value="${esc(D.skills)}" placeholder="Correrlo si el agente usa la skill (solo consulta)" aria-label="Skills que lo activan"></div>
     ${flCanvas(D,true)}${flInspector(D)}
     <div class="row" style="margin-top:var(--s4)"><button class="btn primary" data-act="flsave">${svg("check")}Guardar</button><button class="btn" data-act="flcancel">Cancelar</button>
@@ -1438,8 +1440,9 @@ function flBandeja(f){
   const x=Math.max(FIN.x,...f.nodes.map(n=>n.x))+FW+90,ends=f.nodes.filter(n=>!f.edges.some(e=>e.from===n.id)),y=ends.length?Math.round(ends.reduce((a,n)=>a+n.y,0)/ends.length):FIN.y;
   const w=ends.map(n=>{const x1=n.x+FW,y1=n.y+FH/2,y2=y+FH/2,d=Math.max(40,(x-x1)/2);return `<path class="fl-wire end" d="M${x1},${y1} C${x1+d},${y1} ${x-d},${y2} ${x},${y2}"/>`}).join("");
   return `<svg class="fl-wires" width="${x+FW}" height="${y+FH+40}" style="width:${x+FW}px;height:${y+FH+40}px">${w}</svg>
-    <a class="fl-node sink" href="#/contenido" style="left:${x}px;top:${y}px"><b>Bandeja de contenido</b><small>Las ideas esperan tu sí o no</small></a>`;
+    <a class="fl-node sink" href="#/contenido" style="left:${x}px;top:${y}px"><b>Bandeja de contenido</b><small>${(f.angulos??ANGULOS.split(", ")).length?`${(f.angulos??ANGULOS.split(", ")).length} ángulos de venta · vos elegís`:"Las ideas esperan tu sí o no"}</small></a>`;
 }
+const ANGULOS="dolor, resultado, prueba social, objeción, comparación, oferta";   // mismos de ds flujo
 const flId=D=>{let k=D.nodes.length;while(D.nodes.some(n=>n.id==="n"+k))k++;return "n"+k};
 function flAddNode(D){
   const from=D.sel?.t==="n"?D.nodes.find(n=>n.id===D.sel.id):null,src=from||(D.nodes.length?null:{id:"inicio",...FIN});
@@ -1474,8 +1477,8 @@ document.addEventListener("pointerup",e=>{
 });
 document.addEventListener("input",e=>{
   const k=e.target.dataset?.fl,D=ui.flD;if(k==="imp"){ui.flImpText=e.target.value;return}if(!k||!D)return;
-  if(k==="name"||k==="disparo"||k==="skills"){D[k]=e.target.value;return}
-  if(k==="tipo"){D.tipo=e.target.value;render();return}
+  if(k==="name"||k==="disparo"||k==="skills"||k==="angulos"){D[k]=e.target.value;return}
+  if(k==="tipo"){D.tipo=e.target.value;if(D.tipo==="ideas"&&!D.angulos)D.angulos=ANGULOS;render();return}
   const n=D.sel?.t==="n"&&D.nodes.find(x=>x.id===D.sel.id),ed=D.sel?.t==="e"&&D.edges.find(x=>x.from+">"+x.to===D.sel.k);
   if(k==="pregunta"&&n){n.pregunta=e.target.value;const s=document.querySelector(`.fl-node[data-node="${n.id}"] small`);if(s)s.textContent=n.pregunta||"sin pregunta"}
   if(k==="cerebro"&&n){n.cerebro=e.target.value;render()}
@@ -1489,12 +1492,12 @@ function flRemove(D){const s=D.sel;if(!s)return;
   if(s.t==="n"){D.nodes=D.nodes.filter(n=>n.id!==s.id);D.edges=D.edges.filter(x=>x.from!==s.id&&x.to!==s.id)}else D.edges=D.edges.filter(x=>x.from+">"+x.to!==s.k);D.sel=null}
 async function flAct(act,b){
   const F=S.flujos;
-  if(act==="flnew"){ui.flD={old:"",name:"",tipo:"consulta",disparo:"",skills:"",nodes:[],edges:[],sel:null};flAddNode(ui.flD);render()}
-  else if(act==="fledit"){const f=F.list[Number(b.dataset.i)];ui.flD={old:f.raw,name:f.name,tipo:f.tipo,disparo:f.disparo.join(", "),skills:f.skills.join(", "),nodes:f.nodes.map(n=>({...n})),edges:f.edges.map(x=>({...x})),sel:null};render()}
+  if(act==="flnew"){ui.flD={old:"",name:"",tipo:"consulta",angulos:"",disparo:"",skills:"",nodes:[],edges:[],sel:null};flAddNode(ui.flD);render()}
+  else if(act==="fledit"){const f=F.list[Number(b.dataset.i)];ui.flD={old:f.raw,name:f.name,tipo:f.tipo,angulos:(f.angulos??ANGULOS.split(", ")).join(", "),disparo:f.disparo.join(", "),skills:f.skills.join(", "),nodes:f.nodes.map(n=>({...n})),edges:f.edges.map(x=>({...x})),sel:null};render()}
   else if(act==="flcancel"){ui.flD=null;render()}
   else if(act==="flnodo"){flAddNode(ui.flD);render();document.querySelector(`.fl-canvas.edit .fl-node[data-node="${ui.flD.sel.id}"]`)?.scrollIntoView({block:"nearest",inline:"nearest"});document.querySelector('[data-fl="cerebro"]')?.focus({preventScroll:true})}
   else if(act==="flquitar"){flRemove(ui.flD);render()}
-  else if(act==="flsave"){const D=ui.flD;try{await post("/api/flujos",{op:"save",old:D.old,name:D.name,tipo:D.tipo,disparo:D.disparo,skills:D.skills,nodes:D.nodes,edges:D.edges});ui.flD=null;render();toast("Flujo guardado")}catch{}}
+  else if(act==="flsave"){const D=ui.flD;try{await post("/api/flujos",{op:"save",old:D.old,name:D.name,tipo:D.tipo,angulos:D.angulos,disparo:D.disparo,skills:D.skills,nodes:D.nodes,edges:D.edges});ui.flD=null;render();toast("Flujo guardado")}catch{}}
   else if(act==="flimp"){ui.flImp=!ui.flImp;ui.flImpText="";render();document.querySelector('[data-fl="imp"]')?.focus()}
   else if(act==="flnote"){ui.flNote="";render()}
   else if(act==="flshare"){const i=Number(b.dataset.i);ui.flShare=ui.flShare===i?null:i;render()}
@@ -1508,7 +1511,7 @@ async function flAct(act,b){
 // contenido.md: las ideas que dejan los flujos de tipo ideas (ds contenido add). Vos elegís:
 // sí → Cola, no → Descartadas; después Producción → Publicado.
 function ideaRow(x,sec,acts){
-  return `<div class="idea"><div class="idea-t"><span class="faint">${esc(alias(x.proyecto))}${x.flujo?" · "+esc(x.flujo):""}</span><b>${esc(x.idea)}</b>${x.gancho?`<span class="muted">${esc(x.gancho)}</span>`:""}</div>
+  return `<div class="idea"><div class="idea-t"><span class="faint">${x.angulo?`<span class="idea-ang">${esc(cap(x.angulo))}</span> · `:""}${esc(alias(x.proyecto))}${x.flujo?" · "+esc(x.flujo):""}</span><b>${esc(x.idea)}</b>${x.gancho?`<span class="muted">${esc(x.gancho)}</span>`:""}</div>
     <div class="idea-a">${acts.map(([lbl,op,to,cls])=>`<button class="btn ${cls||""}" data-act="cmove" data-op="${op}" data-to="${to||""}" data-line="${x.line}" data-raw="${esc(x.raw)}">${lbl}</button>`).join("")}</div></div>`;
 }
 function pContenido(){
