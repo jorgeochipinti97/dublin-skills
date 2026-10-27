@@ -16,6 +16,16 @@ Inspirations: Apple (breathing room, subtle depth), Linear (dark elegance), Verc
 
 ---
 
+## Cerebro de interfaces (consultar antes de decidir lo visual)
+
+If the user keeps a NotebookLM "cerebro" for design (`ds cerebro list`; the UI one is `apps-premium`), query it **before** choosing layout, typography, color, density or component patterns:
+
+```bash
+ds cerebro ask apps-premium "<concrete question about THIS screen: context, current problem, options>"
+```
+
+Ask about the specific case (not "how to make it premium"), apply what it answers, and tell the user in one line what you took from it. Answers are grounded only in its sources (Apple HIG, Linear, Geist, Primer, Material, Carbon, Radix/Base UI/shadcn, Refactoring UI…). If `ds` or NotebookLM auth is unavailable, say so and continue with this skill's rules — never invent what the cerebro "would say".
+
 ## 1. Parameter Dials (tune output to the project)
 
 Set these 3 dials at the start. They drive every decision below. Defaults shown; the user can override in chat ("set MOTION_INTENSITY to 9").

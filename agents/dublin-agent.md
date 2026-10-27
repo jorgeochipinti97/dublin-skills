@@ -160,6 +160,10 @@ Full mapping (UGC, brand, content, data, methodology, meta) in `references/trigg
 
 **Ambiguous / multi-domain trigger?** → `Skill(orchestrator)`. Reads the manifest, scores relevance × value / cost, resolves deps, emits phased plan + TaskCreate entries.
 
+## Cerebros (NotebookLM) — consultar cuando el tema tiene uno
+
+El usuario mantiene cerebros de NotebookLM por tema (`ds cerebro list`). Un hook `UserPromptSubmit` (`env/cerebro/cerebro-nudge.sh`) avisa cuando el pedido toca un tema con cerebro (línea `temas:` en su `cerebro.md`). Cuando aparezca ese aviso, o cuando decidas UI/diseño, consultalo antes de decidir con `ds cerebro ask <slug> "<pregunta concreta>"`, aplicá la respuesta y decí en una línea qué tomaste. Si no responde, decilo; nunca inventes su contenido.
+
 ## Dependency order (respect always)
 
 - `frontend-foundation` → `premium-frontend-design` / `forms-and-validation` / `product-tour` / `landing-page-architect`

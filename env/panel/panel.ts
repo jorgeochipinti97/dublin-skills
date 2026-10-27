@@ -1,0 +1,858 @@
+// `ds panel` — tu panel personal, local: proyectos + tareas, MCPs y finanzas.
+// Lee y escribe los mismos archivos de siempre (TASKS.md, finanzas.md) en cada
+// request, así que nunca se desincroniza. Solo escucha en 127.0.0.1.
+//
+//   Proyectos  $DUBLIN_PROJECTS → ~/.config/dublin/projects-root
+//   Finanzas   $DUBLIN_FINANZAS → <padre de proyectos>/finanzas.md
+//              una línea por movimiento: "- 2026-10-23 -15000 super #comida"
+import { existsSync, readFileSync, readdirSync, writeFileSync, appendFileSync, statSync, mkdirSync, statfsSync } from "node:fs";
+import { join, dirname, basename } from "node:path";
+import { homedir, totalmem } from "node:os";
+
+const HOME = homedir();
+const PORT = Number(process.env.PANEL_PORT ?? 4321);
+const CONF_DIR = join(HOME, ".config/dublin");
+const conf = (f: string) => { const p = join(CONF_DIR, f); return existsSync(p) ? readFileSync(p, "utf8").split("\n")[0].trim() : ""; };
+const tilde = (p: string) => p.replace(/^~/, HOME);
+const PROJECTS = tilde(process.env.DUBLIN_PROJECTS || conf("projects-root"));
+const FINANZAS = tilde(process.env.DUBLIN_FINANZAS || (PROJECTS ? join(dirname(PROJECTS), "finanzas.md") : join(HOME, "finanzas.md")));
+const MASCOTAS = tilde(process.env.DUBLIN_MASCOTAS || join(dirname(FINANZAS), "mascotas.md"));
+const USER = (process.env.USER || "yo").toLowerCase();
+
+const read = (p: string) => { try { return readFileSync(p, "utf8"); } catch { return ""; } };
+const dirs = (root: string) => { try { return readdirSync(root, { withFileTypes: true }).filter(d => d.isDirectory() && !d.name.startsWith(".")).map(d => d.name).sort(); } catch { return []; } };
+const today = () => new Date().toLocaleDateString("sv-SE");
+
+// Proyectos: cada carpeta del root; si una carpeta no es un proyecto pero adentro tiene
+// proyectos (ej. cliente/cliente-api), se listan esos como "cliente/cliente-api".
+// Todo lo que está en _archivo/ se lista (aunque no sea repo) y cuenta como archivado.
+const ARCHIVE_DIR = "_archivo";
+const isProject = (dir: string) => ["SESSION.md", "session.md", "TASKS.md", ".git", "package.json"].some(f => existsSync(join(dir, f)));
+function expandDir(rel: string, all: boolean): string[] {
+  if (isProject(join(PROJECTS, rel))) return [rel];
+  const inner = dirs(join(PROJECTS, rel)).filter(c => isProject(join(PROJECTS, rel, c)));
+  return inner.length ? inner.map(c => `${rel}/${c}`) : all || !rel.includes("/") ? [rel] : [];
+}
+function projectDirs() {
+  if (!PROJECTS) return [];
+  return dirs(PROJECTS).flatMap(d => d === ARCHIVE_DIR
+    ? dirs(join(PROJECTS, d)).flatMap(c => expandDir(`${d}/${c}`, true))
+    : expandDir(d, false));
+}
+
+// ---- Tareas: bloques "- [ ] …" (+ líneas indentadas de continuación) por sección ----
+const BUCKETS: [string, string][] = [["pains", "Client pains"], ["backlog", "Backlog"], ["doing", "Doing"], ["done", "Done"], ["ideas", "Future"]];
+const HEADER: Record<string, string> = { pains: "Client pains", backlog: "Backlog", doing: "Doing", done: "Done", ideas: "Future / ideas" };
+// "## Doing" o "## Future / ideas", pero no un párrafo que empiece con "## Doing`)…".
+const isHeader = (line: string, name: string) => new RegExp(`^## ${name}(\\s|$)`).test(line);
+const bucketOf = (line: string) => BUCKETS.find(([, name]) => isHeader(line, name))?.[0] ?? null;
+
+type Item = { line: number; end: number; raw: string; done: boolean; text: string; bucket: string };
+function parse(md: string, loose: boolean): Item[] {
+  const lines = md.split("\n"), items: Item[] = [];
+  let b: string | null = loose ? "backlog" : null; // los .local.md pueden tener ítems sin sección
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith("## ")) { b = bucketOf(lines[i]); continue; }
+    const m = lines[i].match(/^- \[( |x|X)\] (.*)$/);
+    if (!m || !b) continue;
+    let j = i + 1; while (j < lines.length && /^\s+\S/.test(lines[j])) j++;
+    const done = m[1] !== " ";
+    items.push({ line: i, end: j, raw: lines.slice(i, j).join("\n"), done, bucket: done ? "done" : b,
+      text: [m[2], ...lines.slice(i + 1, j).map(l => l.trim())].join(" ") });
+    i = j - 1;
+  }
+  return items;
+}
+
+function insertInto(lines: string[], bucket: string, block: string[]) {
+  const h = BUCKETS.find(([k]) => k === bucket)![1];
+  let s = lines.findIndex(l => isHeader(l, h));
+  if (s < 0) { while (lines.length && lines.at(-1) === "") lines.pop(); lines.push("", "## " + HEADER[bucket], ""); s = lines.length - 2; }
+  let e = lines.findIndex((l, i) => i > s && l.startsWith("## ")); if (e < 0) e = lines.length;
+  let k = e - 1; while (k > s && lines[k].trim() === "") k--;
+  lines.splice(k + 1, 0, ...block);
+}
+
+function taskFile(project: string, scope: string) {
+  const dir = join(PROJECTS, project);
+  if (scope !== "mine") return join(dir, "TASKS.md");
+  const found = readdirSync(dir).find(f => /^TASKS\..+\.local\.md$/.test(f));
+  return join(dir, found ?? `TASKS.${USER}.local.md`);
+}
+
+// Los *.local.md (tareas privadas, ficha del cliente) nunca se commitean.
+function ignoreLocal(dir: string) {
+  const gi = join(dir, ".gitignore");
+  if (!read(gi).split("\n").some(l => l.trim() === "*.local.md")) appendFileSync(gi, (read(gi) && !read(gi).endsWith("\n") ? "\n" : "") + "*.local.md\n");
+}
+
+function ensureFile(file: string, project: string, scope: string) {
+  if (existsSync(file)) return;
+  if (scope === "mine") {
+    writeFileSync(file, `# Tasks — ${project} (mías)\n\n## Backlog\n\n## Doing\n\n## Done\n`);
+    ignoreLocal(dirname(file));
+  } else {
+    writeFileSync(file, read(join(import.meta.dir, "../templates/TASKS.md")).replace(/__PROJECT__/g, project) || `# Tasks — ${project}\n`);
+  }
+}
+
+function taskOp(b: any) {
+  if (!projectDirs().includes(b.project)) throw new Error("Proyecto desconocido");
+  const file = taskFile(b.project, b.scope);
+  const clean = (t: string) => String(t ?? "").replace(/[\r\n]+/g, " ").trim();
+  if (b.op === "add") {
+    const text = clean(b.text); if (!text) throw new Error("Tarea vacía");
+    ensureFile(file, b.project, b.scope);
+    const lines = read(file).split("\n");
+    insertInto(lines, b.bucket, [`- [${b.bucket === "done" ? "x" : " "}] ${text}`]);
+    return writeFileSync(file, lines.join("\n"));
+  }
+  const lines = read(file).split("\n");
+  const it = parse(lines.join("\n"), b.scope === "mine").find(i => i.line === b.line && i.raw === b.raw);
+  if (!it) throw new Error("El archivo cambió — recargá");
+  const block = lines.splice(it.line, it.end - it.line);
+  if (b.op === "move") {
+    block[0] = block[0].replace(/^- \[[ xX]\]/, b.to === "done" ? "- [x]" : "- [ ]");
+    insertInto(lines, b.to, block);
+  } else if (b.op === "edit") {
+    const text = clean(b.text); if (!text) throw new Error("Tarea vacía");
+    lines.splice(it.line, 0, block[0].replace(/^(- \[[ xX]\] ).*$/, `$1${text}`), ...block.slice(1));
+  } else if (b.op !== "delete") throw new Error("Operación desconocida");
+  writeFileSync(file, lines.join("\n"));
+}
+
+function projects() {
+  return projectDirs().map(name => {
+    const dir = join(PROJECTS, name), files = readdirSync(dir);
+    const sf = files.find(f => f.toLowerCase() === "session.md");
+    const session = sf ? read(join(dir, sf)) : "";
+    let entry = ""; for (const l of session.split("\n")) if (/^- \d{4}-\d{2}-\d{2}/.test(l)) entry = l.slice(2);
+    const day = entry.match(/\d{4}-\d{2}-\d{2}/)?.[0] ?? (sf ? statSync(join(dir, sf)).mtime.toLocaleDateString("sv-SE") : "");
+    const mineFile = files.find(f => /^TASKS\..+\.local\.md$/.test(f));
+    return { name, hasSession: !!sf, hasTasks: files.includes("TASKS.md"), day,
+      entry: entry.replace(/^\d{4}-\d{2}-\d{2}\s*[—–·:-]?\s*/, ""),
+      shared: parse(read(join(dir, "TASKS.md")), false).map(({ end, ...i }) => i),
+      mine: mineFile ? parse(read(join(dir, mineFile)), true).map(({ end, ...i }) => i) : [] };
+  }).sort((a, b) => b.day.localeCompare(a.day) || a.name.localeCompare(b.name));
+}
+
+// ---- MCPs: user scope + local scope (~/.claude.json) + .mcp.json de cada proyecto ----
+function mcps() {
+  const by = new Map<string, { where: Set<string>; cmd: string }>();
+  const add = (server: string, where: string, cfg: any) => {
+    if (!by.has(server)) by.set(server, { where: new Set(), cmd: cfg?.url ?? [cfg?.command, ...(cfg?.args ?? [])].filter(Boolean).join(" ") });
+    by.get(server)!.where.add(where);
+  };
+  let cj: any = {}; try { cj = JSON.parse(read(join(HOME, ".claude.json")) || "{}"); } catch {}
+  for (const [s, c] of Object.entries<any>(cj.mcpServers ?? {})) add(s, "global", c);
+  for (const [p, v] of Object.entries<any>(cj.projects ?? {})) for (const [s, c] of Object.entries<any>(v.mcpServers ?? {})) add(s, basename(p), c);
+  for (const name of projectDirs()) {
+    try { for (const [s, c] of Object.entries<any>(JSON.parse(read(join(PROJECTS, name, ".mcp.json")) || "{}").mcpServers ?? {})) add(s, name, c); } catch {}
+  }
+  return [...by].map(([server, v]) => ({ server, cmd: v.cmd, where: [...v.where].sort() })).sort((a, b) => b.where.length - a.where.length);
+}
+
+// ---- Finanzas ----------------------------------------------------------------
+const MOV = /^- (\d{4}-\d{2}-\d{2}) ([+-]?\d+(?:\.\d+)?) (.*?)(?: #(\S+))?\s*$/;
+// finanzas.md: "## Objetivos" ("- Auto | meta 5000000 | ahorrado 1200000 | para 2027-06"),
+// "## Presupuestos" ("- comida 300000") y "## Movimientos" (una línea por movimiento, al final).
+const GOAL = /^- (.+?) \| meta (\d+(?:\.\d+)?) \| ahorrado (\d+(?:\.\d+)?)(?: \| para (\d{4}-\d{2}))?\s*$/;
+const BUDGET = /^- (\S+) (\d+(?:\.\d+)?)\s*$/;
+// "## Inversiones": "- Plazo fijo Galicia | plazo fijo | invertido 1000000 | actual 1050000 | ARS | vence 2026-11-30"
+const INV = /^- (.+?) \| (.+?) \| invertido (\d+(?:\.\d+)?) \| actual (\d+(?:\.\d+)?) \| (ARS|USD)(?: \| vence (\d{4}-\d{2}-\d{2}))?\s*$/;
+const num = (v: unknown) => Number(String(v ?? "").replace(/[^\d.,]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."));
+
+function finSection(lines: string[], name: string) {
+  const s = lines.findIndex(l => l.trim() === "## " + name); if (s < 0) return null;
+  let e = lines.findIndex((l, i) => i > s && l.startsWith("## ")); if (e < 0) e = lines.length;
+  return [s, e];
+}
+// Garantiza Objetivos / Presupuestos arriba y Movimientos al final (donde se agregan los nuevos).
+function finLines() {
+  if (!existsSync(FINANZAS)) writeFileSync(FINANZAS, "# Finanzas\n\n<!-- Movimientos: - AAAA-MM-DD <monto, negativo = gasto> <descripción> #categoría -->\n");
+  const lines = read(FINANZAS).split("\n");
+  if (!finSection(lines, "Movimientos")) {
+    const first = lines.findIndex(l => MOV.test(l));
+    if (first < 0) { while (lines.length && lines.at(-1) === "") lines.pop(); lines.push("", "## Movimientos", ""); }
+    else lines.splice(first, 0, "## Movimientos");
+  }
+  for (const name of ["Objetivos", "Presupuestos", "Inversiones"]) if (!finSection(lines, name)) {
+    const mv = finSection(lines, "Movimientos")![0]; lines.splice(mv, 0, "## " + name, "");
+  }
+  return lines;
+}
+function finInsert(lines: string[], name: string, line: string) {
+  const [s, e] = finSection(lines, name)!; let k = e - 1; while (k > s && lines[k].trim() === "") k--;
+  lines.splice(k + 1, 0, line);
+}
+
+function finanzas(month: string) {
+  const all = read(FINANZAS).split("\n");
+  const movs = all.map((l, line) => ({ l, line, m: l.match(MOV) })).filter(x => x.m)
+    .map(({ l, line, m }) => ({ line, raw: l, day: m![1], amount: Number(m![2]), desc: m![3], cat: m![4] ?? "otros" }));
+  const months = [...new Set([today().slice(0, 7), ...movs.map(m => m.day.slice(0, 7))])].sort().reverse();
+  const inSec = (name: string) => { const r = finSection(all, name); return r ? all.map((l, line) => ({ l, line })).slice(r[0] + 1, r[1]) : []; };
+  const goals = inSec("Objetivos").map(({ l, line }) => ({ line, raw: l, m: l.match(GOAL) })).filter(x => x.m)
+    .map(({ line, raw, m }) => ({ line, raw, name: m![1], meta: Number(m![2]), ahorrado: Number(m![3]), para: m![4] ?? "" }));
+  const budgets = inSec("Presupuestos").map(({ l, line }) => ({ line, raw: l, m: l.match(BUDGET) })).filter(x => x.m)
+    .map(({ line, raw, m }) => ({ line, raw, cat: m![1], amount: Number(m![2]) }));
+  const inversiones = inSec("Inversiones").map(({ l, line }) => ({ line, raw: l, m: l.match(INV) })).filter(x => x.m)
+    .map(({ line, raw, m }) => ({ line, raw, name: m![1], tipo: m![2], invertido: Number(m![3]), actual: Number(m![4]), moneda: m![5], vence: m![6] ?? "" }));
+  const net: Record<string, number> = {};
+  for (const m of movs) net[m.day.slice(0, 7)] = (net[m.day.slice(0, 7)] ?? 0) + m.amount;
+  return { file: FINANZAS, month, months, goals, budgets, inversiones,
+    history: Object.entries(net).sort().map(([month, net]) => ({ month, net })),
+    movs: movs.filter(m => m.day.startsWith(month)).sort((a, b) => b.day.localeCompare(a.day) || b.line - a.line) };
+}
+
+// ---- Mascotas ----------------------------------------------------------------
+// mascotas.md: "## <Nombre>" por mascota; arriba la ficha ("- especie: perro") y debajo
+//   ### Salud           - 2026-03-10 vacuna antirrábica | próxima 2027-03-10
+//   ### Recordatorios   - pipeta | cada 30 días | última 2026-10-01
+//   ### Rutina          - sentarse          (ejercicios de todos los días)
+//   ### Diario          - 2026-10-26 | hecho: sentarse, quieto | notas: se distrajo con otros perros
+// El diario lo puede escribir Claude a partir de lo que le contás: es el mismo formato.
+// Los gastos salen de finanzas.md (#mascotas).
+const SALUD = /^- (\d{4}-\d{2}-\d{2}) (.+?)(?: \| próxima (\d{4}-\d{2}-\d{2}))?\s*$/;
+const RECO = /^- (.+?) \| cada (\d+) días(?: \| última (\d{4}-\d{2}-\d{2}))?\s*$/;
+const DIA = /^- (\d{4}-\d{2}-\d{2})(?: \| hecho: ([^|]*?))?(?: \| notas: (.*?))?\s*$/;
+const diaLine = (day: string, hecho: string[], notas: string) =>
+  `- ${day}${hecho.length ? " | hecho: " + hecho.join(", ") : ""}${notas ? " | notas: " + notas : ""}`;
+const FICHA_M = /^- ([^:]+): (.*)$/;
+const PET_KEYS = ["especie", "raza", "nacimiento", "peso", "veterinaria", "notas"];
+const addDays = (d: string, n: number) => { const x = new Date(d + "T12:00:00"); x.setDate(x.getDate() + n); return x.toLocaleDateString("sv-SE"); };
+function petBounds(lines: string[], name: string) {
+  const s = lines.findIndex(l => l.trim() === "## " + name); if (s < 0) throw new Error("Mascota desconocida");
+  let e = lines.findIndex((l, i) => i > s && l.startsWith("## ")); if (e < 0) e = lines.length;
+  return [s, e];
+}
+function mascotas() {
+  const lines = read(MASCOTAS).split("\n"), pets: any[] = [];
+  let pet: any = null, sub = "";
+  lines.forEach((l, line) => {
+    if (l.startsWith("## ")) { pet = { name: l.slice(3).trim(), ficha: {}, salud: [], recos: [], rutina: [], diario: [] }; pets.push(pet); sub = ""; return; }
+    if (!pet) return;
+    if (l.startsWith("### ")) { sub = l.slice(4).trim().toLowerCase(); return; }
+    let m;
+    if (!sub && (m = l.match(FICHA_M))) pet.ficha[m[1].trim().toLowerCase()] = m[2].trim();
+    else if (sub === "salud" && (m = l.match(SALUD))) pet.salud.push({ line, raw: l, day: m[1], what: m[2], next: m[3] ?? "" });
+    else if (sub === "recordatorios" && (m = l.match(RECO))) pet.recos.push({ line, raw: l, what: m[1], every: Number(m[2]), last: m[3] ?? "", next: m[3] ? addDays(m[3], Number(m[2])) : "" });
+    else if (sub === "rutina" && (m = l.match(/^- (.+)$/))) pet.rutina.push({ line, raw: l, text: m[1].trim() });
+    else if (sub === "diario" && (m = l.match(DIA))) pet.diario.push({ line, raw: l, day: m[1],
+      hecho: (m[2] ?? "").split(",").map(x => x.trim()).filter(Boolean), notas: m[3]?.trim() ?? "" });
+  });
+  pets.forEach(p => { p.salud.sort((a: any, b: any) => b.day.localeCompare(a.day)); p.diario.sort((a: any, b: any) => b.day.localeCompare(a.day)); });
+  // Gastos #mascotas de los últimos 6 meses.
+  const gastos = read(FINANZAS).split("\n").map(l => l.match(MOV)).filter(m => m && m[4] === "mascotas" && Number(m[2]) < 0)
+    .map(m => ({ day: m![1], amount: -Number(m![2]), desc: m![3] })).sort((a, b) => b.day.localeCompare(a.day));
+  return { file: MASCOTAS, pets, gastos };
+}
+function mascotaOp(b: any) {
+  const clean = (t: unknown) => String(t ?? "").replace(/[\r\n|#]/g, " ").replace(/\s+/g, " ").trim();
+  const isDay = (d: unknown) => /^\d{4}-\d{2}-\d{2}$/.test(String(d ?? ""));
+  if (!existsSync(MASCOTAS)) writeFileSync(MASCOTAS, "# Mascotas\n");
+  const lines = read(MASCOTAS).split("\n");
+  const save = () => writeFileSync(MASCOTAS, lines.join("\n"));
+  if (b.op === "add") {
+    const name = clean(b.name); if (!name) throw new Error("Falta el nombre");
+    if (lines.some(l => l.trim() === "## " + name)) throw new Error("Ya existe");
+    while (lines.length && lines.at(-1) === "") lines.pop();
+    lines.push("", "## " + name, ...(clean(b.especie) ? [`- especie: ${clean(b.especie)}`] : []), "");
+    return save();
+  }
+  const [s, e] = petBounds(lines, b.pet);
+  // Agrega una línea al final de "### <sub>" dentro de la mascota (lo crea si falta).
+  const insert = (sub: string, line: string) => {
+    let h = lines.findIndex((l, i) => i > s && i < e && l.trim() === "### " + sub);
+    if (h < 0) { let k = e; while (k > s + 1 && lines[k - 1].trim() === "") k--; lines.splice(k, 0, "", "### " + sub); h = k + 1; }
+    let end = lines.findIndex((l, i) => i > h && (l.startsWith("#"))); if (end < 0) end = lines.length;
+    let k = end - 1; while (k > h && lines[k].trim() === "") k--;
+    lines.splice(k + 1, 0, line);
+  };
+  if (b.op === "ficha") {
+    // Reescribe la ficha (las líneas "- clave: valor" antes del primer ###), respetando claves desconocidas.
+    let f = lines.findIndex((l, i) => i > s && i < e && l.startsWith("### ")); if (f < 0) f = e;
+    const old = lines.slice(s + 1, f).filter(l => l.match(FICHA_M) && !PET_KEYS.includes(l.match(FICHA_M)![1].trim().toLowerCase()));
+    const fresh = PET_KEYS.filter(k => clean(b[k])).map(k => `- ${k}: ${clean(b[k])}`);
+    lines.splice(s + 1, f - s - 1, ...fresh, ...old, "");
+    return save();
+  }
+  if (b.op === "salud") {
+    const what = clean(b.what); if (!what) throw new Error("Falta qué fue");
+    insert("Salud", `- ${isDay(b.day) ? b.day : today()} ${what}${isDay(b.next) ? " | próxima " + b.next : ""}`); return save();
+  }
+  if (b.op === "reco") {
+    const what = clean(b.what), every = Math.round(Number(b.every)); if (!what || !(every > 0)) throw new Error("Falta qué o cada cuántos días");
+    insert("Recordatorios", `- ${what} | cada ${every} días${isDay(b.last) ? " | última " + b.last : ""}`); return save();
+  }
+  if (b.op === "rutina") {
+    const text = clean(b.text).replace(/,/g, " "); if (!text) throw new Error("Falta el ejercicio");
+    insert("Rutina", `- ${text}`); return save();
+  }
+  if (b.op === "dia" || b.op === "nota") {
+    // Una línea por día en "### Diario": tildar un ejercicio o escribir la nota la crea o la actualiza.
+    const day = today(), i = lines.findIndex((l, k) => k > s && k < e && l.startsWith(`- ${day}`) && DIA.test(l));
+    const m = i >= 0 ? lines[i].match(DIA)! : null;
+    let hecho = (m?.[2] ?? "").split(",").map(x => x.trim()).filter(Boolean), notas = m?.[3]?.trim() ?? "";
+    if (b.op === "dia") { const ex = clean(b.ex); hecho = hecho.includes(ex) ? hecho.filter(x => x !== ex) : [...hecho, ex]; }
+    else notas = clean(b.notas);
+    const line = diaLine(day, hecho, notas);
+    if (i >= 0) lines[i] = line; else insert("Diario", line);
+    return save();
+  }
+  if (lines[b.line] !== b.raw || b.line <= s || b.line >= e) throw new Error("El archivo cambió — recargá");
+  if (b.op === "hecho") { const m = b.raw.match(RECO); if (!m) throw new Error("No es un recordatorio"); lines[b.line] = `- ${m[1]} | cada ${m[2]} días | última ${today()}`; }
+  else if (b.op === "delete") lines.splice(b.line, 1);
+  else throw new Error("Operación desconocida");
+  save();
+}
+
+// Facturas de `ds factura` (sección "## Facturas"):
+// "- 2026-10-26 C 0002-00000007 2000000 Cliente (30123456789) · desc · 2026-10 · vto pago 2026-10-31 · CAE … vto … · iva 4 · pendiente"
+const FACT = /^- (\d{4}-\d{2}-\d{2}) ([BC]) (\d{4}-\d{8}) (\d+(?:\.\d+)?) (.*?) \((\d{11})\) · (.*)$/;
+const FACTURA_SH = join(import.meta.dir, "../factura/factura.sh");
+function facturas() {
+  return read(FINANZAS).split("\n").map(l => l.match(FACT)).filter(Boolean).map(m => {
+    const parts = m![7].split(" · "), estado = parts.at(-1) ?? "";
+    const find = (p: string) => parts.find(x => x.startsWith(p))?.slice(p.length) ?? "";
+    return { day: m![1], letra: m![2], id: m![3], monto: Number(m![4]), cliente: m![5], cuit: m![6],
+      desc: parts[0] ?? "", periodo: parts[1] ?? "", vto: find("vto pago "), cae: find("CAE ").split(" ")[0],
+      pagada: estado.startsWith("pagada") ? estado.slice(7) : "" };
+  }).sort((a, b) => b.day.localeCompare(a.day) || b.id.localeCompare(a.id));
+}
+// Pagar y PDF corren el mismo script que la terminal: una sola lógica.
+async function facturaOp(b: any) {
+  if (!/^\d{4}-\d{8}$/.test(b.id) || !facturas().some(f => f.id === b.id)) throw new Error("Factura desconocida");
+  const env = { ...process.env, DUBLIN_FINANZAS: FINANZAS };
+  const p = Bun.spawn(["bash", FACTURA_SH, b.op === "pdf" ? "pdf" : "pagar", b.id], { stdout: "pipe", stderr: "pipe", stdin: "ignore", env });
+  const t = setTimeout(() => p.kill(), 120000);
+  const [out, err] = await Promise.all([new Response(p.stdout).text(), new Response(p.stderr).text()]);
+  const code = await p.exited; clearTimeout(t);
+  const plain = (s: string) => s.replace(/\x1b\[[0-9;]*m/g, "").trim();
+  if (code !== 0) throw new Error(plain(err).split("\n").at(-1) || "Falló ds factura");
+  if (b.op === "pdf") { const f = plain(out).match(/PDF: (.+\.pdf)/)?.[1]; if (f) Bun.spawn(["open", f]); }
+}
+
+function finOp(b: any) {
+  const clean = (t: unknown) => String(t ?? "").replace(/[\r\n#|]/g, " ").replace(/\s+/g, " ").trim();
+  if (b.op === "add") {
+    const monto = num(b.monto), desc = clean(b.desc);
+    const cat = String(b.cat ?? "").trim().toLowerCase().replace(/\s+/g, "-").replace(/[^\p{L}\d-]/gu, "");
+    const day = /^\d{4}-\d{2}-\d{2}$/.test(b.day) ? b.day : today();
+    if (!(monto > 0) || !desc) throw new Error("Falta monto o descripción");
+    const lines = finLines(); while (lines.length && lines.at(-1) === "") lines.pop();
+    lines.push(`- ${day} ${b.tipo === "+" ? "" : "-"}${monto} ${desc}${cat ? " #" + cat : ""}`, "");
+    return writeFileSync(FINANZAS, lines.join("\n"));
+  }
+  if (b.op === "goal") {
+    const name = clean(b.name), meta = num(b.meta), ahorrado = num(b.ahorrado) || 0;
+    if (!name || !(meta > 0)) throw new Error("Falta nombre o meta");
+    const lines = finLines();
+    finInsert(lines, "Objetivos", `- ${name} | meta ${meta} | ahorrado ${ahorrado}${/^\d{4}-\d{2}$/.test(b.para) ? " | para " + b.para : ""}`);
+    return writeFileSync(FINANZAS, lines.join("\n"));
+  }
+  if (b.op === "inv") {
+    const name = clean(b.name), tipo = clean(b.tipo) || "otros", inv = num(b.invertido), act = num(b.actual) || inv;
+    const mon = b.moneda === "USD" ? "USD" : "ARS", vence = /^\d{4}-\d{2}-\d{2}$/.test(b.vence) ? " | vence " + b.vence : "";
+    if (!name || !(inv > 0)) throw new Error("Falta nombre o monto invertido");
+    const lines = finLines(); finInsert(lines, "Inversiones", `- ${name} | ${tipo} | invertido ${inv} | actual ${act} | ${mon}${vence}`);
+    return writeFileSync(FINANZAS, lines.join("\n"));
+  }
+  if (b.op === "budget") {
+    const cat = String(b.cat ?? "").trim().toLowerCase().replace(/\s+/g, "-").replace(/[^\p{L}\d-]/gu, ""), amount = num(b.amount);
+    if (!cat || !(amount > 0)) throw new Error("Falta categoría o monto");
+    const lines = finLines(), [s, e] = finSection(lines, "Presupuestos")!;
+    const i = lines.findIndex((l, k) => k > s && k < e && l.match(BUDGET)?.[1] === cat);
+    if (i >= 0) lines[i] = `- ${cat} ${amount}`; else finInsert(lines, "Presupuestos", `- ${cat} ${amount}`);
+    return writeFileSync(FINANZAS, lines.join("\n"));
+  }
+  const lines = read(FINANZAS).split("\n");
+  if (lines[b.line] !== b.raw) throw new Error("El archivo cambió — recargá");
+  if (b.op === "aportar") {
+    const m = lines[b.line].match(GOAL); if (!m) throw new Error("No es un objetivo");
+    const ahorrado = Math.max(0, Number(m[3]) + (b.tipo === "-" ? -1 : 1) * num(b.monto));
+    lines[b.line] = lines[b.line].replace(/\| ahorrado \d+(?:\.\d+)?/, `| ahorrado ${ahorrado}`);
+  } else if (b.op === "invact") {
+    if (!INV.test(lines[b.line])) throw new Error("No es una inversión");
+    const act = num(b.actual); if (!(act >= 0)) throw new Error("Monto inválido");
+    lines[b.line] = lines[b.line].replace(/\| actual \d+(?:\.\d+)?/, `| actual ${act}`);
+  } else if (b.op === "delete") lines.splice(b.line, 1);
+  else throw new Error("Operación desconocida");
+  writeFileSync(FINANZAS, lines.join("\n"));
+}
+
+// ---- Proyectos fijados / archivados (por persona, en ~/.config/dublin) ----------
+const listFile = (k: string) => join(CONF_DIR, `panel-${k}`);
+const readList = (k: string) => read(listFile(k)).split("\n").filter(Boolean);
+function projectOp(b: any) {
+  if (b.op === "order") { // orden manual de la lista (arrastrar)
+    const known = new Set(projectDirs()), names = (Array.isArray(b.names) ? b.names : []).filter((n: unknown) => known.has(String(n)));
+    mkdirSync(CONF_DIR, { recursive: true }); return writeFileSync(listFile("order"), names.join("\n") + "\n");
+  }
+  if (!projectDirs().includes(b.name)) throw new Error("Proyecto desconocido");
+  const k = { pin: "pinned", unpin: "pinned", archive: "archived", unarchive: "archived" }[b.op as string];
+  if (!k) throw new Error("Operación desconocida");
+  mkdirSync(CONF_DIR, { recursive: true });
+  const set = new Set(readList(k)); b.op.startsWith("un") ? set.delete(b.name) : set.add(b.name);
+  if (b.op === "archive") { const p = new Set(readList("pinned")); p.delete(b.name); writeFileSync(listFile("pinned"), [...p].join("\n") + "\n"); }
+  writeFileSync(listFile(k), [...set].join("\n") + "\n");
+}
+
+// ---- Calendario: direcciones iCal secretas (Google Calendar → Configuración →
+// "Dirección secreta en formato iCal"). Solo lectura, sin OAuth. Una por línea en
+// ~/.config/dublin/calendars ("<url> <nombre>"), con permisos 600 porque son secretas.
+const CAL_FILE = join(CONF_DIR, "calendars");
+const DAYS_AHEAD = 14;
+const calList = () => read(CAL_FILE).split("\n").filter(Boolean).map(l => { const [url, ...n] = l.split(" "); return { url, name: n.join(" ") || "Calendario" }; });
+const calCache = new Map<string, { at: number; text: string }>();
+
+function tzOffset(utcMs: number, tz: string) { // ms que la zona está adelantada respecto de UTC
+  try {
+    const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })
+      .formatToParts(new Date(utcMs)).map(x => [x.type, x.value]));
+    return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second) - utcMs;
+  } catch { return 0; }
+}
+// "20261023T150000Z" / TZID=… / "20261023" (todo el día) → { ms, allDay }
+function icsDate(v: string, params: string) {
+  const m = v.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?/); if (!m) return null;
+  const [, y, mo, d, h, mi, s, z] = m;
+  if (!h) return { ms: new Date(+y, +mo - 1, +d).getTime(), allDay: true };
+  const wall = Date.UTC(+y, +mo - 1, +d, +h, +mi, +s);
+  if (z) return { ms: wall, allDay: false };
+  const tz = params.match(/TZID=([^;:]+)/)?.[1];
+  if (!tz) return { ms: new Date(+y, +mo - 1, +d, +h, +mi, +s).getTime(), allDay: false };
+  const guess = wall - tzOffset(wall, tz);
+  return { ms: wall - tzOffset(guess, tz), allDay: false };
+}
+
+const WD = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
+function parseIcs(text: string, cal: string, from: number, to: number) {
+  const evs: any[] = []; let ev: any = null;
+  for (const l of text.replace(/\r?\n[ \t]/g, "").split(/\r?\n/)) {
+    if (l === "BEGIN:VEVENT") { ev = { ex: new Set<number>() }; continue; }
+    if (l === "END:VEVENT") { if (ev?.start) evs.push(ev); ev = null; continue; }
+    if (!ev) continue;
+    const i = l.indexOf(":"); if (i < 0) continue;
+    const [key, ...ps] = l.slice(0, i).split(";"), params = ps.join(";"), val = l.slice(i + 1);
+    const unesc = (s: string) => s.replace(/\\n/gi, " ").replace(/\\([,;\\])/g, "$1");
+    if (key === "DTSTART") ev.start = icsDate(val, params);
+    else if (key === "DTEND") ev.end = icsDate(val, params);
+    else if (key === "SUMMARY") ev.summary = unesc(val);
+    else if (key === "LOCATION") ev.location = unesc(val);
+    else if (key === "STATUS") ev.status = val;
+    else if (key === "UID") ev.uid = val;
+    else if (key === "RRULE") ev.rrule = Object.fromEntries(val.split(";").map(kv => kv.split("=")));
+    else if (key === "RECURRENCE-ID") ev.rid = icsDate(val, params)?.ms;
+    else if (key === "EXDATE") for (const d of val.split(",")) { const x = icsDate(d, params); if (x) ev.ex.add(x.ms); }
+  }
+  // Una instancia editada de una serie (RECURRENCE-ID) reemplaza a la original.
+  for (const o of evs) if (o.rid != null) evs.find(m => m.uid === o.uid && m.rrule)?.ex.add(o.rid);
+  const out: any[] = [];
+  for (const e of evs) {
+    if (e.status === "CANCELLED") continue;
+    const dur = (e.end?.ms ?? e.start.ms + (e.start.allDay ? 864e5 : 36e5)) - e.start.ms;
+    for (const s of expand(e, from - dur, to)) if (!e.ex.has(s))
+      out.push({ cal, title: e.summary || "(sin título)", location: e.location || "", start: s, end: s + dur, allDay: e.start.allDay });
+  }
+  return out;
+}
+// Expande RRULE (DAILY/WEEKLY/MONTHLY/YEARLY, INTERVAL, COUNT, UNTIL, BYDAY semanal) dentro de [from, to].
+function expand(ev: any, from: number, to: number): number[] {
+  const s0 = ev.start.ms, r = ev.rrule;
+  if (!r) return s0 <= to && s0 >= from ? [s0] : [];
+  const iv = Number(r.INTERVAL ?? 1), count = r.COUNT ? Number(r.COUNT) : Infinity;
+  const until = r.UNTIL ? icsDate(r.UNTIL, "")!.ms : Infinity, out: number[] = [];
+  const base = new Date(s0); let n = 0;
+  const push = (ms: number) => { n++; if (ms >= from && ms <= to && ms <= until) out.push(ms); };
+  if (r.FREQ === "WEEKLY") {
+    const days = (r.BYDAY ? r.BYDAY.split(",").map((d: string) => WD.indexOf(d.slice(-2))) : [base.getDay()]).sort();
+    const week0 = new Date(base); week0.setDate(base.getDate() - base.getDay());
+    for (let w = 0; n < count; w += iv) {
+      const ws = new Date(week0); ws.setDate(week0.getDate() + w * 7);
+      if (ws.getTime() > to || ws.getTime() > until) break;
+      for (const d of days) {
+        const x = new Date(ws); x.setDate(ws.getDate() + d); x.setHours(base.getHours(), base.getMinutes(), base.getSeconds());
+        if (x.getTime() < s0 || n >= count) continue; push(x.getTime());
+      }
+    }
+    return out;
+  }
+  for (let k = 0; n < count && k < 5000; k++) {
+    const x = new Date(base);
+    if (r.FREQ === "DAILY") x.setDate(base.getDate() + k * iv);
+    else if (r.FREQ === "MONTHLY") x.setMonth(base.getMonth() + k * iv);
+    else if (r.FREQ === "YEARLY") x.setFullYear(base.getFullYear() + k * iv);
+    else { push(s0); break; }
+    if (x.getTime() > to || x.getTime() > until) break; push(x.getTime());
+  }
+  return out;
+}
+
+async function calendar() {
+  const cals = calList(); if (!cals.length) return { configured: false, cals: [], events: [] };
+  const from = new Date(new Date().setHours(0, 0, 0, 0)).getTime(), to = from + DAYS_AHEAD * 864e5;
+  const errors: string[] = [], events: any[] = [];
+  await Promise.all(cals.map(async (c, idx) => {
+    try {
+      let hit = calCache.get(c.url);
+      if (!hit || Date.now() - hit.at > 5 * 60e3) {
+        const r = await fetch(c.url, { signal: AbortSignal.timeout(10000) });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        hit = { at: Date.now(), text: await r.text() }; calCache.set(c.url, hit);
+      }
+      events.push(...parseIcs(hit.text, String(idx), from, to));
+    } catch (e: any) { errors.push(`${c.name}: ${e.message}`); }
+  }));
+  return { configured: true, cals: cals.map((c, i) => ({ id: String(i), name: c.name })), errors,
+    events: events.sort((a, b) => a.start - b.start) };
+}
+
+function calOp(b: any) {
+  const cals = calList();
+  if (b.op === "add") {
+    const url = String(b.url ?? "").trim().replace(/^webcal:/, "https:");
+    if (!/^https:\/\/\S+$/.test(url)) throw new Error("Pegá la dirección iCal (empieza con https://)");
+    cals.push({ url, name: String(b.name ?? "").replace(/\s+/g, " ").trim() || "Calendario" });
+  } else if (b.op === "delete") cals.splice(Number(b.id), 1);
+  else throw new Error("Operación desconocida");
+  mkdirSync(CONF_DIR, { recursive: true });
+  writeFileSync(CAL_FILE, cals.map(c => `${c.url} ${c.name}`).join("\n") + (cals.length ? "\n" : ""), { mode: 0o600 });
+  calCache.clear();
+}
+
+// ---- Foco de hoy ---------------------------------------------------------------
+// Hasta 3 tareas elegidas para hoy. panel-foco: "AAAA-MM-DD<TAB>proyecto<TAB>scope<TAB>1ª línea".
+// Se guarda la línea de la tarea (no su posición) para que sobreviva a ediciones del TASKS.md.
+const FOCO_MAX = 3;
+const focoAll = () => read(listFile("foco")).split("\n").filter(Boolean).map(l => l.split("\t")).filter(p => p.length === 4).map(([day, project, scope, key]) => ({ day, project, scope, key }));
+const foco = () => focoAll().filter(f => f.day === today());
+
+function focoOp(b: any) {
+  const key = String(b.key ?? "").trim(), project = String(b.project ?? ""), scope = b.scope === "mine" ? "mine" : "shared";
+  if (!key || !projectDirs().includes(project)) throw new Error("Tarea desconocida");
+  const same = (f: { project: string; scope: string; key: string }) => f.project === project && f.scope === scope && f.key === key;
+  let list = foco();
+  if (b.op === "add") {
+    if (list.some(same)) return;
+    if (list.length >= FOCO_MAX) throw new Error(`Máximo ${FOCO_MAX} cosas por día — sacá una primero`);
+    list.push({ day: today(), project, scope, key });
+  } else if (b.op === "remove") list = list.filter(f => !same(f));
+  else throw new Error("Operación desconocida");
+  mkdirSync(CONF_DIR, { recursive: true }); // solo se guarda el día de hoy: el foco no se arrastra
+  writeFileSync(listFile("foco"), list.map(f => [f.day, f.project, f.scope, f.key.replace(/[\t\n]/g, " ")].join("\t")).join("\n") + "\n");
+}
+
+// ---- Compu -------------------------------------------------------------------
+// Disco y memoria ahora + una línea por día en compu.log ("AAAA-MM-DD <GB libres>")
+// para ver cómo evoluciona el espacio libre.
+const COMPU_LOG = join(CONF_DIR, "compu.log");
+// Bun 1.2.21 segfaulteó con Bun.spawnSync en macOS: disco por statfs (sin procesos),
+// vm_stat con spawn async.
+const sh = async (cmd: string[]) => { try { return await new Response(Bun.spawn(cmd, { stdout: "pipe", stderr: "ignore" }).stdout).text(); } catch { return ""; } };
+
+async function compu() {
+  const GB = 1024 ** 3;
+  const fs = statfsSync("/");
+  // "Usado" como lo cuenta df: total menos lo disponible para el usuario.
+  const disk = { total: fs.blocks * fs.bsize / GB, free: fs.bavail * fs.bsize / GB, used: 0 };
+  disk.used = disk.total - disk.free;
+  // vm_stat: libre real = free + inactive + speculative + purgeable (macOS los reclama al toque).
+  const vm = await sh(["vm_stat"]); const page = Number(vm.match(/page size of (\d+)/)?.[1] ?? 16384);
+  const pg = (k: string) => Number(vm.match(new RegExp(`Pages ${k}:\\s+(\\d+)`))?.[1] ?? 0);
+  const memTotal = totalmem() / GB;
+  const memFree = (pg("free") + pg("inactive") + pg("speculative") + pg("purgeable")) * page / GB;
+  const mem = { total: memTotal, used: Math.max(0, memTotal - memFree) };
+
+  const log = read(COMPU_LOG).split("\n").map(l => l.split(" ")).filter(p => /^\d{4}-\d{2}-\d{2}$/.test(p[0])).map(([day, gb]) => ({ day, free: Number(gb) }));
+  if (log.at(-1)?.day !== today()) {
+    mkdirSync(CONF_DIR, { recursive: true });
+    appendFileSync(COMPU_LOG, `${today()} ${disk.free.toFixed(1)}\n`);
+    log.push({ day: today(), free: disk.free });
+  } else log[log.length - 1].free = disk.free;
+  return { disk, mem, history: log.slice(-30) };
+}
+
+// ---- Página de proyecto: git + ficha (FICHA.local.md) + historial (SESSION.md) ----
+// git con Bun.spawn async (spawnSync crasheó Bun 1.2.21), en paralelo y con timeout:
+// si un comando falla o tarda, esa parte vuelve null y el resto sigue.
+async function run(cmd: string[], cwd: string, ms = 3000): Promise<string | null> {
+  try {
+    const p = Bun.spawn(cmd, { cwd, stdout: "pipe", stderr: "ignore", stdin: "ignore",
+      env: { ...process.env, GIT_OPTIONAL_LOCKS: "0", GIT_TERMINAL_PROMPT: "0", GH_PROMPT_DISABLED: "1" } });
+    const t = setTimeout(() => p.kill(), ms);
+    const out = await new Response(p.stdout).text(); const code = await p.exited; clearTimeout(t);
+    return code === 0 ? out : null;
+  } catch { return null; }
+}
+const git = (dir: string, ...a: string[]) => run(["git", ...a], dir);
+const SEP = "\x1f";
+// Solo el link canónico: nunca se manda la URL cruda del remoto (puede llevar un token).
+function githubUrl(remote: string) {
+  const m = remote.match(/github\.com[:/]+([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/);
+  return m ? `https://github.com/${m[1]}/${m[2]}` : null;
+}
+async function commits(dir: string, skip = 0, n = 10) {
+  const out = await git(dir, "log", `--skip=${skip}`, `-n${n}`, `--format=%H${SEP}%an${SEP}%cI${SEP}%s`);
+  return out === null ? null : out.split("\n").filter(Boolean).map(l => { const [hash, author, date, msg] = l.split(SEP); return { hash, author: author.split(/\s+/)[0], date, msg }; });
+}
+
+async function gitInfo(dir: string) {
+  if (!existsSync(join(dir, ".git"))) return null;
+  const [branch, status, remotes, track, log, refs, upRefs] = await Promise.all([
+    git(dir, "branch", "--show-current"), git(dir, "status", "--porcelain"), git(dir, "remote", "-v"),
+    git(dir, "rev-list", "--left-right", "--count", "@{u}...HEAD"), commits(dir),
+    git(dir, "for-each-ref", "refs/heads", `--format=%(refname:short)${SEP}%(committerdate:iso-strict)`),
+    git(dir, "for-each-ref", "refs/remotes", `--format=%(refname:short)${SEP}%(committerdate:iso-strict)`),
+  ]);
+  const remote = remotes?.split("\n").find(l => l.endsWith("(fetch)"))?.split(/\s+/)[1] ?? "";
+  const gh = githubUrl(remote);
+  const files = status === null ? null : status.split("\n").filter(Boolean).map(l => l.slice(3).replace(/^.* -> /, "").replace(/^"|"$/g, ""));
+  const [behind, ahead] = track ? track.trim().split(/\s+/).map(Number) : [null, null];
+  // Ramas del remoto ("origin/x" → "x"), sin "origin/HEAD" ni el remoto pelado.
+  const remoteRefs = (upRefs ?? "").split("\n").filter(Boolean).map(l => { const [ref, date] = l.split(SEP); return { ref, name: ref.replace(/^[^/]+\//, ""), date }; })
+    .filter(r => r.ref.includes("/") && r.name !== "HEAD");
+  const remoteBranches = new Set(remoteRefs.map(r => r.name));
+  const local = (refs ?? "").split("\n").filter(Boolean).map(l => { const [name, date] = l.split(SEP); return { name, date, ref: name, remoteOnly: false }; });
+  const base = ["main", "master"].find(b => local.some(l => l.name === b)) ?? null;
+  // Ramas: las locales (≤ 25) + las que existen solo en GitHub (≤ 15, las más nuevas); adelante/atrás de main en paralelo.
+  const localNames = new Set(local.map(l => l.name));
+  const onlyRemote = remoteRefs.filter(r => !localNames.has(r.name)).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 15).map(r => ({ ...r, remoteOnly: true }));
+  const list = [...local.sort((a, b) => (b.name === branch?.trim() ? 1 : 0) - (a.name === branch?.trim() ? 1 : 0) || b.date.localeCompare(a.date)).slice(0, 25), ...onlyRemote];
+  const hasGh = !!gh && !!Bun.which("gh");
+  const [merged, counts, prs, mergedPrs] = await Promise.all([
+    base ? git(dir, "branch", "--merged", base, "--format=%(refname:short)") : null,
+    Promise.all(list.map(l => base && l.name !== base ? git(dir, "rev-list", "--left-right", "--count", `${base}...${l.ref}`) : null)),
+    hasGh ? run(["gh", "pr", "list", "--state", "open", "--json", "number,title,headRefName,author,createdAt,updatedAt,isDraft,url"], dir, 5000) : null,
+    // Squash merge no deja rastro en git: las ramas de PRs mergeados también cuentan como mergeadas.
+    hasGh ? run(["gh", "pr", "list", "--state", "merged", "--limit", "200", "--json", "headRefName"], dir, 5000) : null,
+  ]);
+  const mergedSet = new Set((merged ?? "").split("\n").map(s => s.trim()).filter(Boolean));
+  try { if (mergedPrs) for (const p of JSON.parse(mergedPrs)) mergedSet.add(p.headRefName); } catch {}
+  let pulls = null;
+  try { if (prs) pulls = (JSON.parse(prs) as any[]).map(p => ({ number: p.number, title: p.title, branch: p.headRefName, author: p.author?.name?.split(/\s+/)[0] || p.author?.login || "", created: p.createdAt ?? null, updated: p.updatedAt, draft: !!p.isDraft, url: /^https:\/\/github\.com\//.test(p.url) ? p.url : null })); } catch {}
+  return {
+    branch: branch?.trim() || null, files, behind, ahead, hasRemote: remotes !== null ? !!remote : null,
+    upstream: track !== null, github: gh, commits: log, base, pulls,
+    // Última vez que se trajo del remoto (FETCH_HEAD se toca en cada fetch/pull).
+    fetched: existsSync(join(dir, ".git/FETCH_HEAD")) ? statSync(join(dir, ".git/FETCH_HEAD")).mtime.toISOString() : null,
+    branches: list.map((l, i) => { const c = counts[i]?.trim().split(/\s+/).map(Number);
+      return { name: l.name, date: l.date, current: l.name === branch?.trim(), behind: c?.[0] ?? null, ahead: c?.[1] ?? null, remoteOnly: l.remoteOnly,
+        merged: !!base && l.name !== base && (mergedSet.has(l.name) || (l.remoteOnly && c?.[1] === 0)), pushed: remoteBranches.has(l.name) }; })
+      // Las que están solo en GitHub y ya se mergearon son ruido: no se muestran.
+      .filter(b => !(b.remoteOnly && b.merged)),
+  };
+}
+
+// "Desde tu última visita": commits de todas las ramas (sin stash) desde `since`, agrupados por autor
+// con el nombre corto, y las ramas (locales o del remoto) que se movieron. Los PRs salen de gitInfo.
+const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/;
+const shortName = (a: string) => { const t = (a.split(/\s+/)[0] || a).replace(/[\d_-].*$/, "") || a; return t.charAt(0).toUpperCase() + t.slice(1); };
+async function recent(dir: string, since: string) {
+  if (!existsSync(join(dir, ".git")) || !ISO.test(since) || isNaN(Date.parse(since))) return null;
+  const LIMIT = 200;
+  const [log, refs] = await Promise.all([
+    git(dir, "log", "--branches", "--remotes", `--since=${since}`, "--no-merges", `-n${LIMIT + 1}`, `--format=%H${SEP}%an${SEP}%cI${SEP}%s`),
+    git(dir, "for-each-ref", "refs/heads", "refs/remotes", `--format=%(refname)${SEP}%(committerdate:iso-strict)`),
+  ]);
+  const rows = (log ?? "").split("\n").filter(Boolean).map(l => { const [hash, author, date, msg] = l.split(SEP); return { hash, author: shortName(author), date, msg }; });
+  const byAuthor = new Map<string, { name: string; count: number; samples: { hash: string; msg: string }[] }>();
+  for (const c of rows.slice(0, LIMIT)) {
+    const a = byAuthor.get(c.author) ?? { name: c.author, count: 0, samples: [] }; byAuthor.set(c.author, a);
+    a.count++; if (a.samples.length < 2 && !a.samples.some(x => x.msg === c.msg)) a.samples.push({ hash: c.hash, msg: c.msg });
+  }
+  const t = Date.parse(since), moved = new Map<string, { name: string; date: string; local: boolean; remote: boolean }>();
+  for (const l of (refs ?? "").split("\n").filter(Boolean)) {
+    const [ref, date] = l.split(SEP); const local = ref.startsWith("refs/heads/");
+    const name = local ? ref.slice("refs/heads/".length) : ref.replace(/^refs\/remotes\/[^/]+\/?/, "");
+    if (!name || name === "HEAD") continue;
+    const m = moved.get(name) ?? { name, date: "", local: false, remote: false }; moved.set(name, m);
+    if (local) m.local = true; else m.remote = true;
+    if (!m.date || Date.parse(date) > Date.parse(m.date)) m.date = date;
+  }
+  for (const [k, m] of moved) if (Date.parse(m.date) < t) moved.delete(k);
+  return { since, total: Math.min(rows.length, LIMIT), more: rows.length > LIMIT,
+    authors: [...byAuthor.values()].sort((a, b) => b.count - a.count),
+    branches: [...moved.values()].sort((a, b) => Date.parse(b.date) - Date.parse(a.date)) };
+}
+
+// Historial: SESSION.md en sus distintos formatos → [{date, text}] legible, más reciente primero.
+//   "- 2026-10-13 — …"   "## 2026-10-23 (noche) — …"   "## 13/10 (mar) — …"   "### 2026-10-10 — …"   "# Sesión 2026-04-30"
+const DATE = String.raw`(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)`;
+function isoOf(d: string, year: number) {
+  if (/^\d{4}-/.test(d)) return d;
+  const [dd, mm, yy] = d.split("/"); let y = yy ? Number(yy.length === 2 ? "20" + yy : yy) : year;
+  const iso = (yy: number) => `${yy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+  if (!yy && iso(y) > today()) y--;
+  return iso(y);
+}
+function cleanEntry(s: string) {
+  let t = s.replace(/^\s*\*\*([^*]{8,}?)\*\*/, "$1 — ") // "**Título.** resto" → título
+    .replace(/(?:\s(?:de|del|en|a|al|con|el|la|los|las|por))?\s*`[^`]*`/gi, " ").replace(/\[([^\]]+)\]\([^)]*\)/g, "$1").replace(/https?:\/\/\S+/g, " ")
+    .replace(/\*\*|__/g, "").replace(/\p{Extended_Pictographic}️?/gu, " ")
+    .replace(/\(([^()]*)\)/g, (m, inner) => /#\d|\/|\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b|\.\w{2,4}\b|^[A-ZÁÉÍÓÚ\s]+$/.test(inner) ? " " : m)
+    .replace(/(?:\s(?:de|del|en|el|al|con|por))?\s*\bPRs?\s+#?\d+(?:\s*(?:[–→,-]|y)\s*#?\d+)*/g, " ").replace(/#\d+(?:\s*[–→-]+\s*#?\d+)?/g, " ")
+    .replace(/\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b/g, " ")
+    .replace(/(?:^|\s)(?:~|\.{1,2})?\/[\w.@/-]+/g, " ").replace(/\b[\w.-]+\/[\w.-]+\/[\w./-]*/g, " ").replace(/\b[\w-]+\/[\w-]+\.\w+\b/g, " ")
+    .replace(/\b[\w-]+\.(?:tsx?|jsx?|mjs|md|json|ya?ml|py|sh|sql|css|html|env|toml|lock|mp4)\b/g, " ")
+    .replace(/^\s*blocker:/i, "Bloqueo:").replace(/project scaffolded with the Dublin operating model\.?/i, "Arranque del proyecto")
+    .replace(/\(([^()]*?)[\s,;]+\)/g, "($1)").replace(/\(\s*[,;.]?\s*\)/g, " ").replace(/\s+([,.;:)»])/g, "$1").replace(/([(«])\s+/g, "$1").replace(/\s{2,}/g, " ").trim();
+  t = t.replace(/^[\s—–:;,.·-]+/, "");
+  const dot = t.indexOf(" · "); if (dot >= 12) t = t.slice(0, dot); // "Título · PR … en prod"
+  t = t.replace(/:\s*\S+$/, m => m.length <= 14 ? "" : m); // "…: abiertos" (lo demás se fue al limpiar)
+  const cut = t.search(/(?<=[.!?])\s| — |; /);
+  if (cut >= 15) t = t.slice(0, cut);
+  t = t.replace(/\s*\(COMPLETADO\)|COMPLETADO,\s*/g, "").replace(/[\s—–:;,(·→-]+$/, "").replace(/\.$/, "");
+  if (t.length > 130) t = t.slice(0, 130).replace(/\s+\S*$/, "") + "…";
+  if (t.replace(/[^\p{L}]/gu, "").length >= 3 && t === t.toUpperCase()) t = t.toLowerCase(); // TÍTULO EN MAYÚSCULAS
+  t = t.charAt(0).toUpperCase() + t.slice(1);
+  return t.replace(/[^\p{L}]/gu, "").length >= 6 && /\p{L}{3}/u.test(t) ? t : "";
+}
+function history(dir: string) {
+  const sf = readdirSync(dir).find(f => f.toLowerCase() === "session.md"); if (!sf) return [];
+  const file = join(dir, sf), year = statSync(file).mtime.getFullYear();
+  const lines = read(file).split("\n"), raw: { date: string; text: string }[] = [];
+  const head = new RegExp(String.raw`^(#{1,4})\s+(?:Sesi[oó]n\s+)?${DATE}(.*)$`, "i");
+  const bullet = new RegExp(String.raw`^[-*]\s+(?:\*\*)?${DATE}(?:\*\*)?(.*)$`);
+  let inDated = false, pending: { date: string; text: string } | null = null;
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i], h = l.match(head);
+    if (h) {
+      inDated = true;
+      const rest = h[3].replace(/^\s*(?:→\s*[\d\/-]+\s*)?(?:\([^)]*\)\s*)*/, "").replace(/^[\s—–:·-]+/, "");
+      pending = { date: isoOf(h[2], year), text: rest }; raw.push(pending);
+      if (rest) pending = null; continue;
+    }
+    if (/^#{1,2}\s/.test(l)) { if (pending) pending.text = l.replace(/^#+\s*/, ""); inDated = false; pending = null; continue; }
+    if (/^#/.test(l)) continue;
+    if (pending && l.trim() && !/^(\*\*[^*]+\*\*:?|---)\s*$/.test(l.trim())) { pending.text = l.replace(/^\s*[-*]\s+/, ""); pending = null; continue; }
+    const b = !inDated && l.match(bullet);
+    if (b) {
+      let text = b[2]; while (i + 1 < lines.length && /^\s+\S/.test(lines[i + 1]) && !/^\s+[-*]\s/.test(lines[i + 1])) text += " " + lines[++i].trim();
+      raw.push({ date: isoOf(b[1], year), text: text.replace(/^\*\*/, "**").replace(/^\s*(?:\([^)]*\)\s*)*/, "") });
+    }
+  }
+  // Para fechas iguales: si el archivo va de viejo a nuevo, lo último anotado va primero.
+  const asc = raw.length > 1 && raw[0].date < raw.at(-1)!.date;
+  return raw.map((e, i) => ({ ...e, i, text: cleanEntry(e.text.replace(/^[\s—–:·-]+/, "").replace(/^\*\*\s*[—–:-]?\s*/, "")) }))
+    .filter(e => e.text)
+    .sort((a, b) => b.date.localeCompare(a.date) || (asc ? b.i - a.i : a.i - b.i))
+    .slice(0, 200).map(({ date, text }) => ({ date, text }));
+}
+
+// Ficha: FICHA.local.md (gitignored), editable a mano. Las claves/secciones que el panel
+// no conoce se conservan tal cual al guardar.
+const FICHA_KEYS: [string, string][] = [["nombre", "Nombre"], ["contacto", "Contacto"], ["cobro", "Cobro"]];
+const fichaFile = (p: string) => join(PROJECTS, p, "FICHA.local.md");
+function parseFicha(md: string) {
+  const out = { cliente: [] as [string, string][], links: [] as { label: string; url: string }[], notas: "", extra: [] as string[] };
+  let sec = "";
+  for (const l of md.split("\n")) {
+    if (/^# /.test(l)) continue;
+    const h = l.match(/^## (.+?)\s*$/); if (h) { sec = h[1].toLowerCase(); if (!["cliente", "links", "notas"].includes(sec)) out.extra.push(l); continue; }
+    const kv = l.match(/^- ([^:]+):\s*(.*)$/);
+    if (sec === "cliente" && kv) out.cliente.push([kv[1].trim(), kv[2].trim()]);
+    else if (sec === "links" && kv && /^https?:\/\//.test(kv[2].trim())) out.links.push({ label: kv[1].trim(), url: kv[2].trim() });
+    else if (sec === "notas") out.notas += l + "\n";
+    else if (sec && !["cliente", "links", "notas"].includes(sec)) out.extra.push(l);
+  }
+  out.notas = out.notas.trim();
+  return out;
+}
+function ficha(project: string) {
+  const f = fichaFile(project), exists = existsSync(f), p = parseFicha(exists ? read(f) : "");
+  const get = (k: string) => p.cliente.find(([key]) => key.toLowerCase() === k.toLowerCase())?.[1] ?? "";
+  return { exists, mtime: exists ? statSync(f).mtimeMs : 0, nombre: get("Nombre"), contacto: get("Contacto"), cobro: get("Cobro"), notas: p.notas, links: p.links };
+}
+function fichaOp(b: any) {
+  if (!projectDirs().includes(b.project)) throw new Error("Proyecto desconocido");
+  const f = fichaFile(b.project), exists = existsSync(f);
+  if (exists && Number(b.mtime) !== statSync(f).mtimeMs) throw new Error("La ficha cambió — recargá");
+  const one = (v: unknown, max = 200) => { const s = String(v ?? "").trim(); if (/[\r\n]/.test(s)) throw new Error("Sin saltos de línea en los campos"); if (s.length > max) throw new Error("Campo demasiado largo"); return s; };
+  const notas = String(b.notas ?? "").replace(/\r/g, "").trim();
+  if (notas.split("\n").some(l => /^#/.test(l))) throw new Error("Las notas no pueden tener líneas que empiecen con #");
+  if (notas.length > 5000) throw new Error("Notas demasiado largas");
+  const links = (Array.isArray(b.links) ? b.links : []).map((l: any) => ({ label: one(l?.label, 60).replace(/:/g, " "), url: one(l?.url, 500) }))
+    .filter((l: any) => l.label || l.url).map((l: any) => {
+      let ok = false; try { ok = /^https?:$/.test(new URL(l.url).protocol) && !/\s/.test(l.url); } catch {}
+      if (!ok) throw new Error(`Link inválido: ${l.label || l.url} (tiene que empezar con http:// o https://)`);
+      return { label: l.label || new URL(l.url).hostname, url: l.url };
+    });
+  const p = parseFicha(exists ? read(f) : "");
+  const vals: Record<string, string> = Object.fromEntries(FICHA_KEYS.map(([k]) => [k, one(b[k])]));
+  const known = new Set(FICHA_KEYS.map(([, l]) => l.toLowerCase()));
+  const cliente = [...FICHA_KEYS.filter(([k]) => vals[k]).map(([k, l]) => [l, vals[k]]), ...p.cliente.filter(([k]) => !known.has(k.toLowerCase()))];
+  const name = readList("alias").map(l => l.trim().split(/\s+/)).find(([k]) => k === b.project)?.slice(1).join(" ")
+    || basename(b.project).replace(/[-_]+/g, " ").replace(/(^|\s)\p{L}/gu, c => c.toUpperCase());
+  const md = [`# Ficha — ${name}`, "", "## Cliente", ...cliente.map(([k, v]) => `- ${k}: ${v}`), "", "## Links", ...links.map((l: any) => `- ${l.label}: ${l.url}`), "", "## Notas", ...(notas ? [notas] : []), "",
+    ...(p.extra.length ? [p.extra.join("\n").trim(), ""] : [])].join("\n");
+  writeFileSync(f, md);
+  ignoreLocal(join(PROJECTS, b.project)); // contacto y cobro nunca se commitean
+}
+
+// ---- Server ------------------------------------------------------------------
+const json = (d: unknown, status = 200) => Response.json(d, { status });
+const ORIGINS = [`http://127.0.0.1:${PORT}`, `http://localhost:${PORT}`];
+
+Bun.serve({
+  hostname: "127.0.0.1", port: PORT, idleTimeout: 255,
+  async fetch(req) {
+    const url = new URL(req.url);
+    if (url.pathname === "/") return new Response(Bun.file(join(import.meta.dir, "panel.html")));
+    if (req.method === "GET" && url.pathname === "/api/state") {
+      const month = /^\d{4}-\d{2}$/.test(url.searchParams.get("month") ?? "") ? url.searchParams.get("month")! : today().slice(0, 7);
+      return json({ today: today(), user: USER, roots: { projects: PROJECTS },
+        pinned: readList("pinned"), archived: readList("archived"), order: readList("order"),
+        projects: projects(), mcps: mcps(), finanzas: finanzas(month), facturas: facturas(), mascotas: mascotas(), compu: await compu(), foco: foco(),
+        // panel-alias: "carpeta Nombre visible" por línea (ej. "mi_app_v2 Mi App").
+        alias: Object.fromEntries(readList("alias").map(l => l.trim().split(/\s+/)).filter(p => p.length > 1).map(([k, ...v]) => [k, v.join(" ")])) });
+    }
+    if (req.method === "GET" && url.pathname.startsWith("/api/proj")) {
+      const name = url.searchParams.get("name") ?? "";
+      if (!projectDirs().includes(name)) return json({ error: "Proyecto desconocido" }, 404);
+      const dir = join(PROJECTS, name);
+      if (url.pathname === "/api/proj/commits") {
+        const skip = Math.max(0, Number(url.searchParams.get("skip")) || 0);
+        return json(existsSync(join(dir, ".git")) ? await commits(dir, skip, 20) ?? [] : []);
+      }
+      if (url.pathname === "/api/proj/recent") return json(await recent(dir, url.searchParams.get("since") ?? ""));
+      if (url.pathname === "/api/proj") return json({ name, git: await gitInfo(dir), ficha: ficha(name), history: history(dir) });
+    }
+    if (req.method === "GET" && url.pathname === "/api/calendar") return json(await calendar());
+    if (req.method === "POST") {
+      // Solo la propia página: otro sitio abierto en el navegador no puede escribir tus archivos.
+      if (!ORIGINS.includes(req.headers.get("origin") ?? "") || !req.headers.get("content-type")?.includes("application/json")) return json({ error: "Origen no permitido" }, 403);
+      try {
+        const b = await req.json();
+        if (url.pathname === "/api/task") { taskOp(b); return json({ ok: true }); }
+        if (url.pathname === "/api/fin") { finOp(b); return json({ ok: true }); }
+        if (url.pathname === "/api/mascota") { mascotaOp(b); return json({ ok: true }); }
+        if (url.pathname === "/api/factura") { await facturaOp(b); return json({ ok: true }); }
+        if (url.pathname === "/api/project") { projectOp(b); return json({ ok: true }); }
+        if (url.pathname === "/api/cal") { calOp(b); return json({ ok: true }); }
+        if (url.pathname === "/api/foco") { focoOp(b); return json({ ok: true }); }
+        if (url.pathname === "/api/ficha") { fichaOp(b); return json({ ok: true }); }
+        if (url.pathname === "/api/fetch") { // git fetch: trae lo nuevo de GitHub sin tocar el código local
+          if (!projectDirs().includes(b.name) || !existsSync(join(PROJECTS, b.name, ".git"))) throw new Error("Proyecto desconocido");
+          if (await run(["git", "fetch", "--prune", "--quiet"], join(PROJECTS, b.name), 30000) === null) throw new Error("No pude actualizar: sin conexión o sin acceso al repo");
+          return json({ ok: true });
+        }
+        if (url.pathname === "/api/pull") { // git pull seguro: solo fast-forward; si no se puede, no toca nada
+          if (!projectDirs().includes(b.name) || !existsSync(join(PROJECTS, b.name, ".git"))) throw new Error("Proyecto desconocido");
+          const dir = join(PROJECTS, b.name);
+          await run(["git", "fetch", "--quiet"], dir, 30000);
+          const counts = await git(dir, "rev-list", "--left-right", "--count", "@{u}...HEAD");
+          if (counts === null) throw new Error("Esta rama no está subida a GitHub");
+          const [behind, ahead] = counts.trim().split(/\s+/).map(Number);
+          if (!behind) return json({ ok: true, pulled: 0 });
+          if (ahead) throw new Error("Tu rama y GitHub tienen cambios distintos: hay que unirlos a mano");
+          if (await run(["git", "merge", "--ff-only", "--quiet", "@{u}"], dir, 30000) === null)
+            throw new Error("No traje nada: tenés cambios sin commitear en archivos que también cambiaron en GitHub");
+          return json({ ok: true, pulled: behind });
+        }
+      } catch (e: any) { return json({ error: e.message }, 400); }
+    }
+    return json({ error: "No existe" }, 404);
+  },
+});
+console.log(`Panel en http://127.0.0.1:${PORT}  (Ctrl+C para cerrar)`);
