@@ -677,6 +677,32 @@ install_hooks() {
     fi
 }
 
+# Cerebros y flujos (Claude Code, siempre user scope: los cerebros son de la persona, no del
+# proyecto). Comando /flujo + hook cerebro-nudge en cada pedido y después de cada skill.
+# Idempotente: no duplica el hook si ya está.
+install_cerebro_hooks() {
+    local tool="$1"
+    [[ "$tool" == "claude" ]] || return 0
+    local cmd="$ENV_SOURCE/cerebro/cerebro-nudge.sh" dest="$HOME/.claude/settings.json"
+    mkdir -p "$HOME/.claude/commands"
+    if [[ -f "$HOME/.claude/commands/flujo.md" ]] && ! cmp -s "$ENV_SOURCE/flujo/flujo.command.md" "$HOME/.claude/commands/flujo.md"; then
+        backup_file "$HOME/.claude/commands/flujo.md"
+    fi
+    cp "$ENV_SOURCE/flujo/flujo.command.md" "$HOME/.claude/commands/flujo.md"
+    echo "${GREEN}  ✓ /flujo → ~/.claude/commands/flujo.md${NC}"
+    if ! command -v jq >/dev/null 2>&1; then
+        echo "${YELLOW}  • jq no está instalado — agregá a mano el hook $cmd (UserPromptSubmit + PostToolUse Skill)${NC}"
+        return 0
+    fi
+    if [[ -f "$dest" ]]; then backup_file "$dest"; else echo '{}' > "$dest"; fi
+    jq --arg c "$cmd" '
+      def add(ev; entry): .hooks[ev] = ((.hooks[ev] // []) | if any(.[]?; any(.hooks[]?; .command == $c)) then . else . + [entry] end);
+      add("UserPromptSubmit"; {hooks: [{type: "command", command: $c}]})
+      | add("PostToolUse"; {matcher: "Skill", hooks: [{type: "command", command: $c}]})' "$dest" > "$dest.tmp" && mv "$dest.tmp" "$dest"
+    chmod +x "$cmd" "$ENV_SOURCE/flujo/flujo.sh" "$ENV_SOURCE/contenido/contenido.sh"
+    echo "${GREEN}  ✓ hook de cerebros y flujos → ~/.claude/settings.json${NC}"
+}
+
 # Branch hygiene for one repo. A branch is "done" when its PR is MERGED or
 # CLOSED (and no PR for it is still OPEN), or git sees it merged into the
 # default branch. Squash merges are invisible to `git branch --merged`, which is
@@ -909,6 +935,7 @@ install_team() {
 
     echo "${BLUE}5/6 Installing hooks…${NC}"
     install_hooks "$tool" "$scope" "$base"
+    install_cerebro_hooks "$tool"
     echo ""
 
     echo "${BLUE}6/6 Wiring engram (persistent memory)…${NC}"
