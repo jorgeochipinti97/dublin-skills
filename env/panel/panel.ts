@@ -121,6 +121,17 @@ function taskOp(b: any) {
   writeFileSync(file, lines.join("\n"));
 }
 
+// Copia de trabajo de git (worktree): .git es un archivo "gitdir: <repo>/.git/worktrees/<x>".
+// El panel la muestra adentro del repo principal, con el nombre de su rama.
+function wtInfo(dir: string) {
+  const g = join(dir, ".git"); let head = "", main = "";
+  try {
+    // Solo las copias: leer .git/HEAD de cada repo (archivados incluidos) puede trabar el server
+    // si el archivo está en iCloud sin descargar.
+    if (statSync(g).isFile()) { const gd = read(g).match(/^gitdir: *(.+)$/m)?.[1].trim() ?? ""; main = gd.split("/.git/worktrees/")[0]; head = read(join(gd, "HEAD")); }
+  } catch {}
+  return { parent: main.startsWith(PROJECTS + "/") ? main.slice(PROJECTS.length + 1) : "", branch: head.match(/^ref: refs\/heads\/(.+)$/m)?.[1].trim() ?? "" };
+}
 function projects() {
   return projectDirs().map(name => {
     const dir = join(PROJECTS, name), files = readdirSync(dir);
@@ -129,7 +140,7 @@ function projects() {
     let entry = ""; for (const l of session.split("\n")) if (/^- \d{4}-\d{2}-\d{2}/.test(l)) entry = l.slice(2);
     const day = entry.match(/\d{4}-\d{2}-\d{2}/)?.[0] ?? (sf ? statSync(join(dir, sf)).mtime.toLocaleDateString("sv-SE") : "");
     const mineFile = files.find(f => /^TASKS\..+\.local\.md$/.test(f));
-    return { name, hasSession: !!sf, hasTasks: files.includes("TASKS.md"), day,
+    return { name, ...wtInfo(dir), hasSession: !!sf, hasTasks: files.includes("TASKS.md"), day,
       entry: entry.replace(/^\d{4}-\d{2}-\d{2}\s*[—–·:-]?\s*/, ""),
       shared: parse(read(join(dir, "TASKS.md")), false).map(({ end, ...i }) => i),
       mine: mineFile ? parse(read(join(dir, mineFile)), true).map(({ end, ...i }) => i) : [] };
@@ -1138,6 +1149,141 @@ function fichaOp(b: any) {
   ignoreLocal(join(PROJECTS, b.project)); // contacto y cobro nunca se commitean
 }
 
+// ---- Mapa de producto -----------------------------------------------------------
+// PRODUCTO.md en la raíz del proyecto (se versiona: es del equipo): cada ## es una feature, con
+// sus funciones, en qué estado está y qué otras features usa. Se dibuja como lienzo en el panel.
+//   ## Login
+//   estado: hecho            (hecho | haciendo | proyectado)
+//   pos: 40,40
+//   código: src/auth, app/login
+//   usa: usuarios            (slugs de otras features)
+//   - Iniciar sesión con mail y clave
+// Un proyecto que no es repo pero tiene apps adentro (carpetas con package.json o .git, ej. onfit/)
+// tiene un PRODUCTO.md por app, en la carpeta de cada app; en el panel se elige la app arriba.
+// "Actualizar desde el código" corre `claude -p` de solo lectura en el proyecto: devuelve el
+// archivo por stdout y lo escribe el panel (Claude no puede tocar nada del repo).
+const ESTADOS = ["hecho", "haciendo", "proyectado"];
+const slug = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const productoFile = (project: string, app = "") => join(PROJECTS, project, app, "PRODUCTO.md");
+function appDirs(project: string) {
+  const dir = join(PROJECTS, project);
+  if (existsSync(join(dir, ".git"))) return [];
+  return dirs(dir).filter(d => d !== "node_modules" && (existsSync(join(dir, d, "package.json")) || existsSync(join(dir, d, ".git"))));
+}
+// Para el mapa general y la pestaña Código: rama, último commit y GitHub de cada app.
+async function appsInfo(project: string) {
+  return Promise.all(appDirs(project).map(async name => {
+    const dir = join(PROJECTS, project, name), isGit = existsSync(join(dir, ".git"));
+    const [log, branch, remote] = isGit ? await Promise.all([git(dir, "log", "-1", `--format=%cI${SEP}%s`), git(dir, "rev-parse", "--abbrev-ref", "HEAD"), git(dir, "remote", "get-url", "origin")]) : [null, null, null];
+    const [date, msg] = (log ?? "").trim().split(SEP);
+    return { name, git: isGit, branch: branch?.trim() ?? "", date: date ?? "", msg: msg ?? "", github: remote ? githubUrl(remote.trim()) : null, features: existsSync(productoFile(project, name)) ? parseProducto(read(productoFile(project, name))).length : 0 };
+  }));
+}
+const okScope = (project: string, app: string) => { if (!projectDirs().includes(project) || app && !appDirs(project).includes(app)) throw new Error("Proyecto desconocido"); };
+const mapJobs = new Map<string, { running: boolean; since: string; error?: string }>();
+function parseProducto(md: string) {
+  return md.split(/^## /m).slice(1).map(b => {
+    const ls = b.split("\n"), name = cleanTxt(ls[0]), get = (k: string) => ls.find(l => l.toLowerCase().startsWith(k + ":"))?.slice(k.length + 1).trim() ?? "";
+    const pos = get("pos").match(/^(-?\d+),\s*(-?\d+)$/), estado = get("estado").toLowerCase();
+    return { id: slug(name), name, estado: ESTADOS.includes(estado) ? estado : "hecho", x: pos ? Number(pos[1]) : null, y: pos ? Number(pos[2]) : null,
+      codigo: get("código") || get("codigo"), usa: get("usa").split(",").map(s => slug(s)).filter(Boolean), funciones: ls.filter(l => /^- /.test(l)).map(l => cleanTxt(l.slice(2))).filter(Boolean) };
+  }).filter(f => f.id);
+}
+function producto(project: string, app = "") {
+  const f = productoFile(project, app), exists = existsSync(f), features = exists ? parseProducto(read(f)) : [];
+  // Las que no tienen posición van en grilla debajo de las que sí.
+  const top = Math.max(-110, ...features.filter(x => x.y != null).map(x => x.y!)) + 110;
+  features.filter(x => x.x == null).forEach((x, i) => { x.x = 40 + (i % 3) * 270; x.y = top + Math.floor(i / 3) * 110; });
+  return { exists, mtime: exists ? statSync(f).mtimeMs : 0, features, job: mapJobs.get(join(project, app)) ?? null };
+}
+function writeProducto(project: string, app: string, list: any[]) {
+  const ids = new Map<string, string>(), seen = new Set<string>();
+  const fs = list.map((f: any) => {
+    const name = cleanTxt(f?.name).slice(0, 80), s = slug(name);
+    if (!s) throw new Error("Hay una feature sin nombre");
+    if (seen.has(s)) throw new Error(`Hay dos features que se llaman "${name}"`);
+    seen.add(s); ids.set(String(f.id ?? s), s);
+    return { ...f, name, s };
+  });
+  const md = [`# Producto — ${app || project}`, "", "<!-- Mapa de features del panel (Proyectos → Mapa). Cada ## es una feature; \"- \" son sus funciones. -->", "",
+    ...fs.flatMap(f => {
+      const usa = [...new Set((Array.isArray(f.usa) ? f.usa : []).map((u: any) => ids.get(String(u)) ?? slug(String(u))).filter((u: string) => seen.has(u) && u !== f.s))];
+      return [`## ${f.name}`, `estado: ${ESTADOS.includes(f.estado) ? f.estado : "hecho"}`, `pos: ${Math.round(Number(f.x) || 0)},${Math.round(Number(f.y) || 0)}`,
+        ...(cleanTxt(f.codigo) ? [`código: ${cleanTxt(f.codigo)}`] : []), ...(usa.length ? [`usa: ${usa.join(", ")}`] : []),
+        ...(Array.isArray(f.funciones) ? f.funciones : []).map(cleanTxt).filter(Boolean).slice(0, 30).map((x: string) => `- ${x}`), ""];
+    })].join("\n");
+  writeFileSync(productoFile(project, app), md);
+}
+// Ordenar: por capas, así los cables van de izquierda a derecha (A usa B → B a la derecha de A).
+function layout(fs: any[]) {
+  const col = new Map(fs.map(f => [f.id, 0]));
+  for (let k = 0; k < fs.length; k++) for (const f of fs) for (const u of f.usa) if (col.has(u) && col.get(u)! < col.get(f.id)! + 1) col.set(u, Math.min(col.get(f.id)! + 1, fs.length));
+  const rows = new Map<number, number>();
+  return [...fs].sort((a, b) => col.get(a.id)! - col.get(b.id)! || a.name.localeCompare(b.name, "es"))
+    .map(f => { const c = col.get(f.id)!, r = rows.get(c) ?? 0; rows.set(c, r + 1); return { ...f, x: 40 + c * 300, y: 40 + r * 110 }; });
+}
+function productoOp(b: any) {
+  const app = String(b.app ?? ""); okScope(b.project, app);
+  const f = productoFile(b.project, app);
+  if (existsSync(f) && Number(b.mtime) !== statSync(f).mtimeMs) throw new Error("El mapa cambió — recargá");
+  if (mapJobs.get(join(b.project, app))?.running) throw new Error("Claude está actualizando el mapa — esperá a que termine");
+  writeProducto(b.project, app, b.op === "layout" ? layout(producto(b.project, app).features) : Array.isArray(b.features) ? b.features : []);
+  return { mtime: statSync(f).mtimeMs };
+}
+function productoScan(project: string, app = "") {
+  okScope(project, app);
+  if (!app && appDirs(project).length) throw new Error("Elegí una app: cada una tiene su mapa");
+  const key = join(project, app); if (mapJobs.get(key)?.running) return;
+  const dir = join(PROJECTS, project, app), cur = existsSync(productoFile(project, app)) ? read(productoFile(project, app)) : "";
+  const tasks = read(join(PROJECTS, project, "TASKS.md")).slice(0, 6000), cer = Object.entries(cerebroInfo()).map(([s, i]) => `- ${s} — ${i.title}`).join("\n");
+  const skill = join(SKILLS_DIR, "product-planner", "SKILL.md");
+  const prompt = `Armá el mapa de producto de este proyecto (${app ? `${app}, una de las apps de ${project}` : project}) analizando el código. Solo podés leer: no modifiques ningún archivo.
+
+Qué es una feature: una capacidad que un usuario reconoce (Login, Carrito, Panel de pedidos), nunca un archivo ni una capa técnica. Cada feature lista sus funciones: lo que el usuario puede hacer, con verbo ("Recuperar contraseña"), máximo 8.
+${existsSync(skill) ? `Antes de agrupar, leé ${skill} y usá su criterio para nombrar y cortar las features desde el usuario.` : ""}
+${cer ? `Si alguno de estos cerebros sirve para nombrar o agrupar las features de este tipo de producto, consultalo (máximo 2 veces) con: ds cerebro ask <slug> "<pregunta concreta>"\n${cer}` : ""}
+
+Reglas:
+- Solo lo que existe en el código. Nada inventado: si no lo ves implementado, no va como hecho.
+- estado: hecho (implementado), haciendo (a medias, o en "## Doing" de TASKS.md), proyectado (no existe todavía).
+- Mantené las features proyectadas del mapa actual (son planes del equipo); si ya están implementadas, pasalas a hecho o haciendo.
+- Respetá los nombres del mapa actual cuando la feature siga existiendo.
+- código: 1 a 3 carpetas o archivos principales, separados por coma.
+- usa: slugs (minúsculas con guiones) de otras features de las que depende.
+- Entre 4 y 20 features.
+
+Respondé SOLO con el markdown, sin explicación ni bloque de código, con este formato exacto:
+# Producto — ${app || project}
+
+## Nombre de la feature
+estado: hecho
+código: src/carpeta
+usa: otra-feature
+- Función que puede hacer el usuario
+
+Mapa actual:
+${cur || "(no hay)"}
+
+TASKS.md${app ? ` (es de todo ${project}: usá solo lo que sea de ${app})` : ""}:
+${tasks || "(no hay)"}`;
+  mapJobs.set(key, { running: true, since: new Date().toISOString() });
+  (async () => {
+    let error = "";
+    try {
+      const out = await run(["claude", "-p", prompt, "--allowedTools", "Read", "Glob", "Grep", "Bash(ds cerebro ask:*)"], dir, 15 * 60000);
+      if (out === null) throw new Error("Claude no terminó (sin sesión, sin conexión o tardó más de 15 min)");
+      const nuevas = parseProducto(out.replace(/```\w*/g, ""));
+      if (!nuevas.length) throw new Error("Claude no devolvió features");
+      // Las posiciones son tuyas: se conservan por nombre; las nuevas van abajo en grilla.
+      const prev = new Map(producto(project, app).features.map(f => [f.id, f]));
+      const top = Math.max(-110, ...[...prev.values()].map(f => f.y ?? 0)) + 110; let k = 0;
+      if (!prev.size) writeProducto(project, app, layout(nuevas));
+      else writeProducto(project, app, nuevas.map(f => { const p = prev.get(f.id); if (p) return { ...f, x: p.x, y: p.y }; const i = k++; return { ...f, x: 40 + (i % 4) * 270, y: top + Math.floor(i / 4) * 110 }; }));
+    } catch (e: any) { error = e.message; }
+    mapJobs.set(key, { running: false, since: new Date().toISOString(), ...(error ? { error } : {}) });
+  })();
+}
+
 // ---- Server ------------------------------------------------------------------
 const json = (d: unknown, status = 200) => Response.json(d, { status });
 const ORIGINS = [`http://127.0.0.1:${PORT}`, `http://localhost:${PORT}`];
@@ -1164,7 +1310,8 @@ Bun.serve({
         return json(existsSync(join(dir, ".git")) ? await commits(dir, skip, 20) ?? [] : []);
       }
       if (url.pathname === "/api/proj/recent") return json(await recent(dir, url.searchParams.get("since") ?? ""));
-      if (url.pathname === "/api/proj") return json({ name, git: await gitInfo(dir), ficha: ficha(name), history: history(dir) });
+      if (url.pathname === "/api/proj") return json({ name, git: await gitInfo(dir), ficha: ficha(name), history: history(dir), ...await (async () => { const apps = await appsInfo(name);
+        return { apps, mapas: Object.fromEntries((apps.length ? apps.map(a => a.name) : [""]).map(a => [a, producto(name, a)])) }; })() });
     }
     if (req.method === "GET" && url.pathname === "/api/libro") {
       const p = libroPdf(url.searchParams.get("c") ?? "", url.searchParams.get("f") ?? "");
@@ -1192,6 +1339,7 @@ Bun.serve({
         if (url.pathname === "/api/cal") { calOp(b); return json({ ok: true }); }
         if (url.pathname === "/api/foco") { focoOp(b); return json({ ok: true }); }
         if (url.pathname === "/api/ficha") { fichaOp(b); return json({ ok: true }); }
+        if (url.pathname === "/api/producto") { if (b.op === "scan") { productoScan(b.project, String(b.app ?? "")); return json({ ok: true }); } return json(productoOp(b)); }
         if (url.pathname === "/api/fetch") { // git fetch: trae lo nuevo de GitHub sin tocar el código local
           if (!projectDirs().includes(b.name) || !existsSync(join(PROJECTS, b.name, ".git"))) throw new Error("Proyecto desconocido");
           if (await run(["git", "fetch", "--prune", "--quiet"], join(PROJECTS, b.name), 30000) === null) throw new Error("No pude actualizar: sin conexión o sin acceso al repo");

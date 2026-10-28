@@ -199,7 +199,11 @@ a.c-row:hover{background:var(--hover)}
 .prow .p-ico{width:22px;height:22px;border-radius:6px;font-size:11px}
 .prow a span:not(.p-ico){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .prow a small{font-size:12px;letter-spacing:0;color:var(--faint);font-variant-numeric:tabular-nums;font-weight:400}
-.prow.dragging{opacity:.4}
+.prow.dragging{opacity:.4}.prow{position:relative}
+.p-wt{position:absolute;right:6px;top:7px;height:22px;min-width:30px;padding:0 6px 0 16px;border:0;border-radius:999px;background:var(--chip);color:var(--muted);font:inherit;font-size:11.5px;cursor:pointer}
+.p-wt::before{content:"";position:absolute;left:7px;top:8px;width:4px;height:4px;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(-45deg);transition:transform .2s}
+.p-wt[aria-expanded="true"]::before{transform:rotate(45deg);top:6px}.p-wt:hover{color:var(--text)}
+.prow:has(.p-wt) a small{margin-right:34px}.prow.sub a{padding-left:44px;height:32px;font-size:13px}
 .prow.drop-before{box-shadow:0 -2px 0 var(--accent)}.prow.drop-after{box-shadow:0 2px 0 var(--accent)}
 .prow[draggable="true"] a{cursor:grab}
 .pmore{display:flex;flex-direction:column;margin-top:var(--s3);padding-top:var(--s3);border-top:1px solid var(--sep)}
@@ -477,6 +481,20 @@ a.pp-row .pp-ic,a.pp-ic{color:var(--faint)}
 .fl-cond{font-size:12px;padding:3px 8px;border-radius:999px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fl-dot{width:14px;height:14px;padding:0;border-radius:50%}.fl-dot::before{content:"";position:absolute;inset:-8px}
 .fl-cond.on,.fl-dot.on{border-color:var(--accent);color:var(--accent)}
+.mp .fl-node{cursor:grab}.mp-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px;background:var(--ok)}
+.mp-haciendo .mp-dot{background:var(--accent)}.mp-quieta .mp-dot{background:var(--warn)}
+.mp-apps{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:var(--s4)}
+.mp-apps button{display:flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:none;color:var(--muted);font:inherit;font-size:13.5px;cursor:pointer}
+.mp-apps button:hover{color:var(--text)}.mp-apps button[aria-selected="true"]{background:var(--sel);border-color:transparent;color:var(--text);font-weight:600}
+.mp-apps .mp-dot{margin:0}.mp-dot.off{background:var(--tx3)}.mp-apps small{font-size:12px;color:var(--faint);font-weight:400}.fl-node.mp-proyectado{border-style:dashed;background:var(--sunken)}.mp-proyectado .mp-dot{background:var(--tx3)}
+.fl-canvas.mp{position:relative;overflow:hidden;height:min(68vh,760px);max-height:none;cursor:grab;touch-action:none;overscroll-behavior:contain}.fl-canvas.mp.panning{cursor:grabbing}
+.mp .fl-plane{position:absolute;left:0;top:0;width:0;height:0;min-width:0;transform-origin:0 0}.mp .fl-wires{width:1px;height:1px}
+.fl-wire.dim{opacity:.22}#mp-arr path{fill:var(--tx3)}#mp-arr-on path{fill:var(--accent)}
+.mp-zoom{position:absolute;right:12px;bottom:12px;display:flex;gap:2px;padding:2px;border-radius:10px;background:var(--panel);border:1px solid var(--line);cursor:default}
+.mp-zoom button{min-width:34px;height:30px;border:0;background:none;color:var(--text);font:inherit;font-size:13px;border-radius:8px;cursor:pointer;font-variant-numeric:tabular-nums}.mp-zoom button:hover{background:var(--hover)}.mp-full{position:fixed;inset:0;z-index:60;margin:0;background:var(--bg);padding:var(--s4) var(--s5);display:flex;flex-direction:column}
+.mp-full .mp-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:var(--s4)}.mp-full .fl-canvas.mp{height:100%}.mp-full .fl-insp,.mp-full .mp-body>p{margin-top:0;align-self:start}
+@media (max-width:900px){.mp-full .mp-body{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}}
+.mp-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)}.mp-head p{margin:0}
 .fl-share{display:grid;gap:var(--s3);margin:0 0 var(--s3);padding:var(--s3);border-radius:var(--r2);background:var(--sunken)}
 .fl-paste{width:100%;height:160px;padding:var(--s3);font-family:var(--mono);font-size:12.5px;resize:vertical;box-sizing:border-box}
 .fl-node.skill{border-style:solid;border-color:color-mix(in srgb,var(--series-1) 55%,var(--line))}.fl-node.skill b{color:var(--series-1)}
@@ -614,7 +632,9 @@ const isClientTag=(t,p)=>!/^(owner|yo|mía|mia|p\d)$/i.test(t);
 
 const cutoff=()=>{const d=new Date();d.setDate(d.getDate()-STALE);return d.toLocaleDateString("sv-SE")};
 const inArchDir=p=>p.name.startsWith("_archivo/"),isArch=p=>S.archived.includes(p.name)||inArchDir(p),isPin=p=>S.pinned.includes(p.name);
-const active=()=>byOrder(S.projects.filter(p=>p.hasSession&&p.day>=cutoff()&&!isArch(p)));
+const isCopy=p=>!!p.parent&&p.parent!==p.name&&S.projects.some(x=>x.name===p.parent);   // worktree: va adentro de su repo
+const copies=p=>S.projects.filter(x=>x.parent===p.name&&x.name!==p.name);
+const active=()=>byOrder(S.projects.filter(p=>p.hasSession&&p.day>=cutoff()&&!isArch(p)&&!isCopy(p)));
 const byOrder=l=>{const o=S.order||[];return l.map((p,i)=>({p,i,k:o.indexOf(p.name)})).sort((a,b)=>(a.k<0?1e9+a.i:a.k)-(b.k<0?1e9+b.i:b.k)).map(x=>x.p)};
 const pname=n=>n.includes("/")?`<span class="faint">${esc(n.split("/")[0])}/</span>${esc(n.split("/").slice(1).join("/"))}`:esc(n);
 const open=p=>[...p.shared,...p.mine].filter(i=>i.bucket!=="done").length;
@@ -783,8 +803,10 @@ function pProyectos(){
   const q=ui.q.trim().toLowerCase(),match=p=>plabel(p.name).toLowerCase().includes(q)||p.name.toLowerCase().includes(q);
   // Una sola lista, igual que la sección Proyectos del Inicio: lo de la raíz no archivado con SESSION.md o TASKS.md, por nombre.
   const byName=l=>[...l].sort((x,y)=>plabel(x.name).localeCompare(plabel(y.name),"es"));
-  const all=byName(S.projects.filter(p=>!isArch(p)&&!p.name.includes("/")&&(p.hasSession||p.hasTasks||isPin(p)))),arch=byName(S.projects.filter(isArch));
-  const row=p=>`<div class="prow" data-name="${esc(p.name)}"><a href="${phref(p.name,ui.ptab)}" title="${esc(plabel(p.name))}" ${p.name===cur.name?'aria-current="true"':""}>${pico(p.name)}<span>${esc(plabel(p.name))}</span><small>${open(p)||""}</small></a></div>`;
+  const all=byName(S.projects.filter(p=>!isArch(p)&&!isCopy(p)&&!p.name.includes("/")&&(p.hasSession||p.hasTasks||isPin(p)))),arch=byName(S.projects.filter(isArch));
+  const row=p=>{const ch=q?[]:copies(p),o=ch.length&&(ui.wtOpen?.[p.name]??ch.some(c=>c.name===cur.name));
+    return `<div class="prow" data-name="${esc(p.name)}"><a href="${phref(p.name,ui.ptab)}" title="${esc(plabel(p.name))}" ${p.name===cur.name?'aria-current="true"':""}>${pico(p.name)}<span>${esc(plabel(p.name))}</span><small>${open(p)||""}</small></a>${ch.length?`<button class="p-wt" data-act="wt" data-p="${esc(p.name)}" aria-expanded="${!!o}" title="${ch.length} copias de trabajo (ramas)">${ch.length}</button>`:""}</div>`
+      +(o?ch.map(c=>`<div class="prow sub"><a href="${phref(c.name,ui.ptab)}" title="Copia de trabajo · rama ${esc(c.branch)}" ${c.name===cur.name?'aria-current="true"':""}><span>${esc(c.branch||plabel(c.name))}</span></a></div>`).join(""):"")};
   const group=(g,t,l)=>l.length?`<section class="pgroup" data-g="${g}" data-names="${esc(JSON.stringify(l.map(p=>p.name)))}"><h3>${t}</h3>${l.map(row).join("")}</section>`:"";
   const side=q?(group("res","Resultados",byName(S.projects.filter(match)))||`<p class="faint" style="font-size:13px;margin:var(--s3) var(--s2)">Nada con “${esc(ui.q)}”.</p>`)
     :`<section class="pgroup">${all.map(row).join("")}</section>`
@@ -991,15 +1013,23 @@ function ppFicha(d){
       :`<div class="pp-empty"><b>Completá la ficha</b><p>Quién es el cliente, cómo contactarlo y qué se le cobra. Queda solo en tu compu, nunca se sube al repo.</p><button class="btn" data-act="pedit" data-v="ficha">${svg("edit")}Completar</button></div>`}</section>`;
 }
 
+// Proyecto sin repo propio pero con apps adentro: una fila por app (rama, último commit, GitHub, mapa).
+function ppApps(apps,name){
+  const sorted=[...apps].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  return `<section class="t-sec"><div class="t-label"><span>Apps</span><span>${apps.length}</span></div><div class="ins">${sorted.map(a=>`<div class="pp-row"><div class="t-body"><p class="t-txt">${esc(a.name)}${a.branch?` <span class="faint">· ${esc(a.branch)}</span>`:""}</p>
+      <p class="t-det">${a.date?`${agoT(a.date)} · ${esc(cmsg(a.msg))}`:a.git?"Sin commits":"No es un repo git"}</p></div>
+      <a class="btn" href="${phref(name,"mapa")}" data-act="mpopen" data-app="${esc(a.name)}">Mapa</a>${ext(a.github,"Abrir en GitHub")}</div>`).join("")}</div></section>`;
+}
 // Secciones del proyecto: segunda columna en escritorio, pestañas en mobile. Cada una con su URL.
-const PSECS=[["tareas","Tareas"],["codigo","Código"],["ficha","Links y ficha"],["historial","Historial"]];
+const PSECS=[["tareas","Tareas"],["mapa","Mapa"],["codigo","Código"],["ficha","Links y ficha"],["historial","Historial"]];
 function ppTab(p,tab){
   if(!PJ||PJ.name!==p.name){if(PJreq!==p.name)loadProj(p.name).then(render);return `<p class="lead pp-wait">Cargando…</p>`}
   if(PJ.error)return `<p class="lead pp-wait">${esc(PJ.error)}</p>`;
   const d=PJ,h=d.history||[];
   if(tab!=="codigo")RC=null;
-  if(tab==="codigo")return d.git?ppGit(d.git,p.name):`<p class="k-none pp-wait">Esta carpeta no es un repositorio git.</p>`;
+  if(tab==="codigo")return d.git?ppGit(d.git,p.name):d.apps?.length?ppApps(d.apps,p.name):`<p class="k-none pp-wait">Esta carpeta no es un repositorio git.</p>`;
   if(tab==="ficha")return ppLinks(d)+ppFicha(d);
+  if(tab==="mapa")return d.mapas?ppMapa(mpCur()):`<p class="k-none pp-wait">Reiniciá <code>ds panel</code> para ver el mapa.</p>`;
   const shown=ui.histAll?h:h.slice(0,8);
   return `<section class="t-sec"><div class="t-label"><span>Historial</span><span>${h.length||""}</span></div>
       ${h.length?`<div class="ins">${shown.map(e=>`<div class="pp-h"><time datetime="${e.date}">${fecha(e.date)}</time><p>${esc(plain(e.text))}</p></div>`).join("")}
@@ -1372,6 +1402,149 @@ function pNutricion(){
         ${sel()}<input class="field" style="flex:3 1 180px" name="que" placeholder="Qué vas a comer" required aria-label="Qué vas a comer"><button class="btn">${svg("plus")}Agregar</button></form></section>
   </div></div>`;
 }
+
+/* ---------------- Mapa de producto ---------------- */
+// PRODUCTO.md del proyecto como lienzo: cada feature es un nodo con sus funciones, y un cable
+// A → B dice que A usa B. Se acomoda arrastrando y se guarda solo. Claude lo actualiza leyendo el código.
+const MW=210,MH=62,ESTL={hecho:"Hecha",haciendo:"Haciendo",proyectado:"Proyectada"};
+let mpDrag=null,mpPoll=null;
+// Proyectos con apps adentro (onfit/): se elige la app arriba y se ve su mapa. Sin elegir, la más reciente.
+const mpApps=()=>[...PJ?.apps||[]].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+const mpApp=()=>{const a=ui.mpApp?.[PJ?.name]??mpApps()[0]?.name??"";return PJ?.mapas?.[a]?a:""},mpCur=()=>PJ?.mapas?.[mpApp()],mpKey=()=>PJ.name+"/"+mpApp();
+function mpOpen(app){ui.mpApp={...ui.mpApp,[PJ.name]:app};ui.mpSel=null;ui.mpHover=null;render()}
+// Lienzo infinito: cada proyecto guarda su vista (corrimiento x,y y zoom z). Se mueve arrastrando
+// el fondo o con la rueda/trackpad; Ctrl/⌘ + rueda (o pellizcar) hace zoom.
+const mpView=()=>{ui.mpView??={};return ui.mpView[mpKey()]??={x:40,y:40,z:1}};
+// El cable sale del lado que mira al destino (y termina en flecha), así se ve de dónde viene.
+function mpEnds(a,b){
+  if(b.x>=a.x+MW+24)return [a.x+MW,a.y+MH/2,b.x,b.y+MH/2,"h"];
+  if(b.x+MW+24<=a.x)return [a.x,a.y+MH/2,b.x+MW,b.y+MH/2,"h"];
+  return b.y>a.y?[a.x+MW/2,a.y+MH,b.x+MW/2,b.y,"v"]:[a.x+MW/2,a.y,b.x+MW/2,b.y+MH,"v"];
+}
+function mpPath(x1,y1,x2,y2,o){
+  if(o==="v"){const d=Math.max(30,Math.abs(y2-y1)/2)*Math.sign(y2-y1||1);return `M${x1},${y1} C${x1},${y1+d} ${x2},${y2-d} ${x2},${y2}`}
+  const d=Math.max(30,Math.abs(x2-x1)/2)*Math.sign(x2-x1||1);return `M${x1},${y1} C${x1+d},${y1} ${x2-d},${y2} ${x2},${y2}`;
+}
+const mpEdges=P=>P.features.flatMap(f=>f.usa.map(u=>[f,P.features.find(x=>x.id===u)]).filter(([,b])=>b));
+// Con una feature elegida o bajo el mouse, sus cables se marcan y el resto se apaga.
+const mpFocus=()=>ui.mpSel?.t==="n"?ui.mpSel.id:ui.mpHover||null;
+const MP_ARR=`<defs>${[["mp-arr",""],["mp-arr-on","on"]].map(([id,c])=>`<marker id="${id}" class="${c}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,1 L9,5 L0,9 z"/></marker>`).join("")}</defs>`;
+function mpWires(P,tmp){const s=ui.mpSel,f=mpFocus();
+  return MP_ARR+mpEdges(P).map(([a,b])=>{const on=s?.t==="e"&&s.k===a.id+">"+b.id||f&&(a.id===f||b.id===f);
+    return `<path class="fl-wire ${on?"on":f?"dim":""}" marker-end="url(#mp-arr${on?"-on":""})" d="${mpPath(...mpEnds(a,b))}"/>`}).join("")
+    +(tmp?`<path class="fl-wire on tmp" d="${mpPath(tmp.a.x+MW,tmp.a.y+MH/2,tmp.x,tmp.y,"h")}"/>`:"")}
+// Los puntos para elegir un cable (y quitarlo) aparecen solo en los cables de la feature elegida.
+const mpDots=P=>{const s=ui.mpSel,f=s?.t==="n"?s.id:null,k0=s?.t==="e"?s.k:null;
+  return mpEdges(P).filter(([a,b])=>a.id===f||b.id===f||a.id+">"+b.id===k0).map(([a,b])=>{const [x1,y1,x2,y2]=mpEnds(a,b),k=a.id+">"+b.id;
+    return `<button type="button" class="fl-dot ${k0===k?"on":""}" data-medge="${esc(k)}" style="left:${(x1+x2)/2}px;top:${(y1+y2)/2}px" aria-label="Elegir conexión"></button>`}).join("")};
+const mpT=v=>`translate(${v.x}px,${v.y}px) scale(${v.z})`,mpBg=v=>`background-position:${v.x}px ${v.y}px;background-size:${18*v.z}px ${18*v.z}px`;
+const mpActiva=a=>a.date&&Date.now()-new Date(a.date)<30*864e5;
+function mpCanvas(P){
+  const fresh=!ui.mpView?.[mpKey()],v=mpView(),s=ui.mpSel;if(fresh)requestAnimationFrame(mpFit);
+  return `<div class="fl-canvas mp" style="${mpBg(v)}"><div class="fl-plane" style="transform:${mpT(v)}">
+    <svg class="fl-wires" width="1" height="1">${mpWires(P)}</svg>
+    ${P.features.map(f=>`<div class="fl-node mp-${f.estado} ${s?.t==="n"&&s.id===f.id?"on":""}" data-mp="${esc(f.id)}" style="left:${f.x}px;top:${f.y}px" title="${esc(f.funciones.join("\n"))}">
+      <b>${esc(f.name)}</b><small><i class="mp-dot"></i>${ESTL[f.estado]} · ${plural(f.funciones.length,"función","funciones")}</small>
+      <span class="fl-port out" data-mport="${esc(f.id)}"></span></div>`).join("")}
+    ${mpDots(P)}</div>
+    <div class="mp-zoom"><button type="button" data-act="mpz" data-v="out" aria-label="Alejar">−</button><button type="button" data-act="mpz" data-v="fit" title="Ver todo">${Math.round(v.z*100)}%</button><button type="button" data-act="mpz" data-v="in" aria-label="Acercar">+</button></div></div>`;
+}
+function mpApply(){const c=document.querySelector(".fl-canvas.mp");if(!c)return;const v=mpView();c.querySelector(".fl-plane").style.transform=mpT(v);
+  c.style.backgroundPosition=`${v.x}px ${v.y}px`;c.style.backgroundSize=`${18*v.z}px ${18*v.z}px`;const z=c.querySelector('[data-v="fit"]');if(z)z.textContent=Math.round(v.z*100)+"%"}
+function mpZoom(k,cx,cy){const v=mpView(),z=Math.min(2,Math.max(.25,v.z*k));v.x=cx-(cx-v.x)*z/v.z;v.y=cy-(cy-v.y)*z/v.z;v.z=z;mpApply()}
+// Ver todo: encuadra todas las features en el lienzo.
+function mpFit(){const c=document.querySelector(".fl-canvas.mp"),fs=mpCur()?.features;if(!c||!fs?.length)return;
+  const r=c.getBoundingClientRect(),x0=Math.min(...fs.map(f=>f.x)),y0=Math.min(...fs.map(f=>f.y)),w=Math.max(...fs.map(f=>f.x))+MW-x0,h=Math.max(...fs.map(f=>f.y))+MH-y0;
+  const z=Math.min(1,Math.max(.8,Math.min((r.width-80)/w,(r.height-80)/h))),v=mpView();v.z=z;v.x=Math.max(40-x0*z,(r.width-w*z)/2-x0*z);v.y=Math.max(40-y0*z,(r.height-h*z)/2-y0*z);mpApply()}
+function mpInsp(P){
+  const s=ui.mpSel,f=s?.t==="n"&&P.features.find(x=>x.id===s.id),e=s?.t==="e"&&s.k.split(">").map(id=>P.features.find(x=>x.id===id));
+  if(f)return `<div class="fl-insp"><label>Feature<input class="field" data-mpf="name" value="${esc(f.name)}"></label>
+    <label>Estado<select class="field" data-mpf="estado">${Object.entries(ESTL).map(([k,l])=>`<option value="${k}" ${k===f.estado?"selected":""}>${l}</option>`).join("")}</select></label>
+    <label>Funciones: qué puede hacer el usuario, una por línea<textarea class="field" data-mpf="funciones" rows="5">${esc(f.funciones.join("\n"))}</textarea></label>
+    <label>Dónde está en el código<input class="field" data-mpf="codigo" value="${esc(f.codigo)}" placeholder="src/auth, app/login"></label>
+    <div class="row"><button type="button" class="btn" data-act="mpdel">${svg("trash")}Quitar feature</button></div></div>`;
+  if(e&&e[0]&&e[1])return `<div class="fl-insp"><p style="margin:0"><b>${esc(e[0].name)}</b> usa <b>${esc(e[1].name)}</b>.</p>
+    <div class="row"><button type="button" class="btn" data-act="mpdel">${svg("trash")}Quitar conexión</button></div></div>`;
+  return `<p class="faint" style="margin:var(--s3) 0 0">Tocá una feature para ver y editar sus funciones. Arrastrá desde el punto de la derecha hasta otra para marcar que la usa. Las punteadas están proyectadas: todavía no existen.</p>`;
+}
+function ppMapa(P){
+  const job=P.job,n=e=>P.features.filter(f=>f.estado===e).length;
+  if(job?.running&&!mpPoll)mpPoll=setTimeout(async()=>{mpPoll=null;if(mpCur()?.job?.running){await loadProj(PJ.name);render()}},5000);
+  const app=mpApp(),apps=mpApps(),info=P.features.length?`${n("hecho")} hechas · ${n("haciendo")} haciendo · ${n("proyectado")} proyectadas`:"Las features del producto y qué hace cada una.";
+  const picker=apps.length?`<div class="mp-apps" role="tablist" aria-label="Apps">${apps.map(a=>`<button role="tab" data-act="mpopen" data-app="${esc(a.name)}" aria-selected="${a.name===app}" title="${a.date?"Último commit "+agoT(a.date):""}"><i class="mp-dot ${mpActiva(a)?"":"off"}"></i>${esc(a.name)}${a.features?`<small>${a.features}</small>`:""}</button>`).join("")}</div>`:"";
+  const scan=`<button class="btn ${P.features.length?"":"primary"}" data-act="mpscan" ${job?.running?"disabled":""}>${job?.running?"Claude está leyendo el código…":P.features.length?"Actualizar desde el código":"Armar el mapa desde el código"}</button>`;
+  return `<section class="t-sec ${ui.mpFull?"mp-full":""}">${picker}<div class="mp-head"><div><p class="muted">${info}</p></div>
+      <div class="row">${P.features.length?`<button class="btn" data-act="mpadd">${svg("plus")}Feature</button><button class="btn" data-act="mplayout">Ordenar</button><button class="btn" data-act="mpfull">${ui.mpFull?"Cerrar":"Pantalla completa"}</button>`:""}${scan}</div></div>
+    ${job?.error?`<p class="k-none">No pude actualizar: ${esc(job.error)}</p>`:""}
+    ${P.features.length?`<div class="mp-body">${mpCanvas(P)+mpInsp(P)}</div>`:`<div class="pp-empty"><p>Claude lee el código y arma las features con sus funciones (solo lee, no toca nada). Después las acomodás y sumás las que querés hacer como proyectadas. Queda en <code>PRODUCTO.md</code>, versionado con el repo.</p>
+      <button class="btn" data-act="mpadd">${svg("plus")}O empezá a mano</button></div>`}</section>`;
+}
+async function mpSave(){
+  clearTimeout(mpSave.t);const P=mpCur(),name=PJ.name;
+  const r=await fetch("/api/producto",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({project:name,app:mpApp(),mtime:P.mtime,features:P.features})});
+  const d=await r.json().catch(()=>({error:"Error"}));
+  if(!r.ok){toast(d.error||"Error");await loadProj(name);render();return}
+  if(mpCur()===P){P.mtime=d.mtime;P.exists=true}
+}
+const mpLater=()=>{clearTimeout(mpSave.t);mpSave.t=setTimeout(mpSave,600)};
+function mpRedraw(tmp){const c=document.querySelector(".fl-canvas.mp");if(!c)return;c.querySelector(".fl-wires").innerHTML=mpWires(mpCur(),tmp);
+  c.querySelectorAll(".fl-dot").forEach(x=>x.remove());c.querySelector(".fl-plane").insertAdjacentHTML("beforeend",mpDots(mpCur()))}
+function mpRemove(){const P=mpCur(),s=ui.mpSel;if(!s)return;
+  if(s.t==="n"){P.features=P.features.filter(f=>f.id!==s.id);P.features.forEach(f=>f.usa=f.usa.filter(u=>u!==s.id))}
+  else{const [a,b]=s.k.split(">"),f=P.features.find(x=>x.id===a);if(f)f.usa=f.usa.filter(u=>u!==b)}
+  ui.mpSel=null;render();mpSave()}
+async function mpAct(act){
+  const P=mpCur();if(!P)return;
+  if(act==="mpscan"){try{await fetch("/api/producto",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({op:"scan",project:PJ.name,app:mpApp()})});await loadProj(PJ.name);render();toast("Claude está leyendo el código: tarda unos minutos")}catch{toast("No pude arrancar el análisis")}}
+  else if(act==="mpadd"){const fs=P.features,y=fs.length?Math.max(...fs.map(f=>f.y))+MH+48:40,f={id:"f"+Date.now(),name:"Nueva feature "+(fs.length+1),estado:"proyectado",x:40,y,codigo:"",usa:[],funciones:[]};
+    fs.push(f);ui.mpSel={t:"n",id:f.id};render();mpSave();const i=document.querySelector('[data-mpf="name"]');i?.focus();i?.select()}
+  else if(act==="mpdel")mpRemove();
+  else if(act==="mpopen")mpOpen(b.dataset.app);
+  else if(act==="mpfull"){ui.mpFull=!ui.mpFull;render();requestAnimationFrame(mpFit)}
+  else if(act==="mpz"){const c=document.querySelector(".fl-canvas.mp").getBoundingClientRect();if(b.dataset.v==="fit")mpFit();else mpZoom(b.dataset.v==="in"?1.2:1/1.2,c.width/2,c.height/2)}
+  else if(act==="mplayout"){clearTimeout(mpSave.t);const r=await fetch("/api/producto",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({op:"layout",project:PJ.name,app:mpApp(),mtime:P.mtime})});
+    if(!r.ok)toast((await r.json().catch(()=>({}))).error||"Error");await loadProj(PJ.name);delete ui.mpView?.[mpKey()];render()}
+}
+document.addEventListener("pointerdown",e=>{
+  const c=e.target.closest?.(".fl-canvas.mp");if(!c||!mpCur()||e.target.closest(".mp-zoom")||e.button>0)return;
+  const P=mpCur(),v=mpView(),cr=c.getBoundingClientRect(),w=ev=>({x:(ev.clientX-cr.left-v.x)/v.z,y:(ev.clientY-cr.top-v.y)/v.z});
+  const port=e.target.closest("[data-mport]"),node=e.target.closest("[data-mp]"),edge=e.target.closest("[data-medge]");
+  if(port){e.preventDefault();mpDrag={t:"wire",from:P.features.find(f=>f.id===port.dataset.mport),w}}
+  else if(edge){ui.mpSel={t:"e",k:edge.dataset.medge};render()}
+  else if(node){const f=P.features.find(x=>x.id===node.dataset.mp),p=w(e);mpDrag={t:"move",f,el:node,dx:p.x-f.x,dy:p.y-f.y,x0:e.clientX,y0:e.clientY,w};node.setPointerCapture?.(e.pointerId)}
+  else{mpDrag={t:"pan",x0:e.clientX,y0:e.clientY,vx:v.x,vy:v.y,c};c.classList.add("panning");c.setPointerCapture?.(e.pointerId)}
+});
+document.addEventListener("pointermove",e=>{
+  if(!mpDrag)return;const d=mpDrag;
+  if(d.t==="pan"){const v=mpView();v.x=d.vx+e.clientX-d.x0;v.y=d.vy+e.clientY-d.y0;mpApply();return}
+  const p=d.w(e);
+  if(d.t==="move"){d.f.x=Math.round(p.x-d.dx);d.f.y=Math.round(p.y-d.dy);d.el.style.left=d.f.x+"px";d.el.style.top=d.f.y+"px";mpRedraw()}
+  else mpRedraw({a:d.from,x:p.x,y:p.y});
+});
+document.addEventListener("pointerup",e=>{
+  if(!mpDrag)return;const d=mpDrag;mpDrag=null;
+  if(d.t==="pan"){d.c.classList.remove("panning");if(Math.abs(e.clientX-d.x0)<4&&Math.abs(e.clientY-d.y0)<4&&ui.mpSel){ui.mpSel=null;render()}return}
+  if(d.t==="move"){if(Math.abs(e.clientX-d.x0)<4&&Math.abs(e.clientY-d.y0)<4){ui.mpSel={t:"n",id:d.f.id};render()}else mpSave();return}
+  const to=document.elementFromPoint(e.clientX,e.clientY)?.closest("[data-mp]")?.dataset.mp;
+  if(to&&to!==d.from.id&&!d.from.usa.includes(to)){d.from.usa.push(to);ui.mpSel={t:"e",k:d.from.id+">"+to};mpSave()}
+  render();
+});
+document.addEventListener("wheel",e=>{
+  const c=e.target.closest?.(".fl-canvas.mp");if(!c||!mpCur())return;e.preventDefault();const v=mpView(),r=c.getBoundingClientRect();
+  if(e.ctrlKey||e.metaKey)mpZoom(Math.exp(-e.deltaY*.01),e.clientX-r.left,e.clientY-r.top);else{v.x-=e.deltaX;v.y-=e.deltaY;mpApply()}
+},{passive:false});
+document.addEventListener("pointerover",e=>{const n=!mpDrag&&e.target.closest?.(".fl-canvas.mp [data-mp]")?.dataset.mp||null;if(n!==(ui.mpHover||null)&&document.querySelector(".fl-canvas.mp")){ui.mpHover=n;mpRedraw()}});
+document.addEventListener("input",e=>{
+  const k=e.target.dataset?.mpf,s=ui.mpSel;if(!k||s?.t!=="n"||!mpCur())return;const f=mpCur().features.find(x=>x.id===s.id);if(!f)return;
+  if(k==="funciones")f.funciones=e.target.value.split("\n").map(x=>x.trim()).filter(Boolean);else f[k]=e.target.value;
+  if(k==="estado")render();else{const el=document.querySelector(`[data-mp="${CSS.escape(f.id)}"]`);if(el){el.querySelector("b").textContent=f.name;el.querySelector("small").lastChild.textContent=`${ESTL[f.estado]} · ${plural(f.funciones.length,"función","funciones")}`}}
+  mpLater();
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&ui.mpFull){ui.mpFull=false;render()}});
+document.addEventListener("keydown",e=>{
+  if(!ui.mpSel||ui.ptab!=="mapa"||route().page!=="proyectos"||!["Delete","Backspace"].includes(e.key)||e.target.closest?.("input,select,textarea"))return;
+  e.preventDefault();mpRemove();
+});
 
 /* ---------------- Flujos ---------------- */
 // Qué cerebros consulta el agente, y por qué camino, antes de ciertas tareas. Vive en flujos.md.
@@ -1846,6 +2019,8 @@ document.addEventListener("click",async e=>{
   else if(act==="erep"){const t=b.dataset.tema,cb=t&&S.estudio.cerebros.find(x=>x.slug===t),c=cb?.due[0]?{...cb.due[0],slug:t}:dueList()[0];if(!c)return;ui.showBack=false;
     post("/api/estudio",{op:"repaso",slug:c.slug,file:c.file,raw:c.raw,ok:!!b.dataset.ok}).then(()=>toast(b.dataset.ok?"Bien, vuelve más adelante":"Vuelve mañana")).catch(()=>{})}
   else if(act.startsWith("fl"))flAct(act,b);
+  else if(act.startsWith("mp"))mpAct(act,b);
+  else if(act==="wt"){const n=b.dataset.p,ch=copies(S.projects.find(p=>p.name===n)),cur=curProject();ui.wtOpen={...ui.wtOpen,[n]:!(ui.wtOpen?.[n]??ch.some(c=>c.name===cur.name))};render()}
   else if(act==="cang"){ui.cAng=b.dataset.k||null;ui.cSel=0;render()}
   else if(act==="copen"){const k=b.dataset.k;ui.cOpen=ui.cOpen===k?null:k;const r=b.closest("[data-idea]");if(r)ui.cSel=Number(r.dataset.idea);render()}
   else if(act==="cmove"&&b.dataset.op==="prod"){const x=Object.values(S.contenido.secs).flat().find(i=>i.raw===b.dataset.raw),f=prodFlow();
@@ -1956,7 +2131,7 @@ document.addEventListener("toggle",e=>{const g=e.target.dataset?.g;if(g&&!ui.q){
   // Pasos de un libro/curso: se dibujan solo al abrir. El <details open> recién dibujado también dispara toggle: ahí no se re-renderiza.
   const l=e.target.dataset?.lib;if(l!=null){if(e.target.open&&ui.libOpen!==l){ui.libOpen=l;render()}else if(!e.target.open&&ui.libOpen===l)ui.libOpen=null}},true);
 addEventListener("resize",()=>{clearTimeout(drawCharts.t);drawCharts.t=setTimeout(drawCharts,120)});
-addEventListener("hashchange",()=>{ui.editing=null;ui.confirm=null;ui.showDone=false;ui.pEdit=null;ui.histAll=false;render();scrollTo(0,0)});
+addEventListener("hashchange",()=>{ui.mpFull=false;ui.mpSel=null;ui.editing=null;ui.confirm=null;ui.showDone=false;ui.pEdit=null;ui.histAll=false;render();scrollTo(0,0)});
 addEventListener("focus",()=>{if(ui.editing==null&&!ui.pEdit)load()});
 renderNav();load();loadCal();setInterval(loadCal,5*60e3);
 </script>
