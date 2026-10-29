@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # `ds contenido` — bandeja de ideas de contenido. La llenan los flujos de tipo "ideas"
 # (ds panel → Flujos) y se elige en ds panel → Contenido (sí → Cola, no → Descartadas).
-#   ds contenido add <proyecto> "<idea>" ["<gancho>"] ["<flujo>"] ["<ángulo>"] ["<tratamiento>"]
+#   ds contenido add <proyecto> "<idea>" ["<gancho>"] ["<flujo>"] ["<ángulo>"] ["<tratamiento>"] ["<campaña>"]
 #     idea = título corto · gancho = la frase que abre el video · tratamiento = cómo filmarlo/editarlo
+#     Se organiza como Meta: proyecto → campaña → conjunto (el ángulo) → anuncios (cada idea es una variante).
 #   ds contenido list [bandeja|cola|produccion|publicado|descartadas]
 #   ds contenido mover "<parte del título o gancho>" <bandeja|cola|produccion|publicado|descartadas>
 #
 # contenido.md (al lado de finanzas.md; $DUBLIN_CONTENIDO lo cambia), una idea por línea:
-#   ## Bandeja      - 2026-10-27 | mi-app | La idea | El gancho | Contenido para proyectos | dolor | Cómo filmarlo
+#   ## Bandeja      - 2026-10-27 | mi-app | La idea | El gancho | Contenido para proyectos | dolor | Cómo filmarlo | Campaña
 #   ## Cola / ## Producción / ## Publicado / ## Descartadas   (mismas líneas, movidas desde el panel)
 set -euo pipefail
 
@@ -25,9 +26,9 @@ ensure() {
 }
 
 cmd_add() {
-  local proy idea gancho flujo angulo det line
-  proy="$(clean "${1:-}")"; idea="$(clean "${2:-}")"; gancho="$(clean "${3:-}")"; flujo="$(clean "${4:-}")"; angulo="$(clean "${5:-}")"; det="$(clean "${6:-}")"
-  [ -n "$proy" ] && [ -n "$idea" ] || die "Uso: ds contenido add <proyecto> \"<idea>\" [\"<gancho>\"] [\"<flujo>\"] [\"<ángulo>\"] [\"<tratamiento>\"]"
+  local proy idea gancho flujo angulo det camp line
+  proy="$(clean "${1:-}")"; idea="$(clean "${2:-}")"; gancho="$(clean "${3:-}")"; flujo="$(clean "${4:-}")"; angulo="$(clean "${5:-}")"; det="$(clean "${6:-}")"; camp="$(clean "${7:-}")"
+  [ -n "$proy" ] && [ -n "$idea" ] || die "Uso: ds contenido add <proyecto> \"<idea>\" [\"<gancho>\"] [\"<flujo>\"] [\"<ángulo>\"] [\"<tratamiento>\"] [\"<campaña>\"]"
   # Filtro duro: lo que suena a error interno no es contenido, lo mande quien lo mande.
   local todo; todo="$(printf '%s %s %s' "$idea" "$gancho" "$det" | perl -CSD -MUnicode::Normalize -pe '$_ = lc NFD($_); s/\pM//g')"
   if grep -qE '\b(bugs?|error(es)?|falla(s|ron)?|fallo|crash|incidentes?|hotfix|deuda tecnica|migracion|mal (cargad|anotad|importad)|(se|fue) (anoto|cargo|importo) (mal|distinto)|duplicad[oa]s?|inconsistenc|datos? (sucio|corrupt|rot))' <<< "$todo"; then
@@ -37,8 +38,9 @@ cmd_add() {
   # Ya propuesta (en cualquier sección, incluidas las descartadas): no se repite.
   grep -qiF "| $proy | $idea |" "$FILE" && { echo "· ya estaba: $idea"; return 0; }
   line="- $(date +%F) | $proy | $idea | $gancho | $flujo"
-  [ -n "$angulo$det" ] && line+=" | $angulo"
-  [ -n "$det" ] && line+=" | $det"
+  [ -n "$angulo$det$camp" ] && line+=" | $angulo"
+  [ -n "$det$camp" ] && line+=" | $det"
+  [ -n "$camp" ] && line+=" | $camp"
   # Al final de ## Bandeja (antes de la próxima sección).
   awk -v l="$line" '
     $0 == "## Bandeja" { on = 1; print; next }
