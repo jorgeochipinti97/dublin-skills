@@ -135,6 +135,7 @@ ${L_USAGE}:
   ds factura emitir|pagar|list          # facturas electrónicas ARCA (wsfe) registradas en finanzas.md
   ds contenido add|list                 # bandeja de ideas de contenido (la llenan los flujos de tipo ideas)
   ds flujo [<nombre> [proyecto…]]       # pasos de un flujo de cerebros (en Claude Code: /flujo); sin nombre los lista
+  ds render <carpeta> [args]           # render de onetake en el servidor (~/.config/dublin/render), no en tu compu
   ds install                            # install/upgrade the FULL environment in existing project (asks tool + scope)
   ds install <project-path>             # full environment into a project
   ds install --tool=claude --scope=project # non-interactive
@@ -1155,7 +1156,7 @@ parse_args() {
             --remote) REMOTE_FLAG=1 ;;
             --dry-run|-n) DRY_RUN_FLAG=1 ;;
             --help|-h) print_usage; exit 0 ;;
-            agent|update|list|team|install|new|app|daily|status|voz|cerebro|panel|factura|contenido|flujo|doctor|git-clean)
+            agent|update|list|team|install|new|app|daily|status|voz|cerebro|panel|factura|contenido|flujo|render|doctor|git-clean)
                 if [[ -z "$COMMAND" ]]; then
                     COMMAND="$arg"
                 else
@@ -1275,6 +1276,10 @@ main() {
 
     if [[ "$COMMAND" == "contenido" ]]; then
         bash "$ENV_SOURCE/contenido/contenido.sh" "${POSITIONAL[@]}"; exit $?
+    fi
+
+    if [[ "$COMMAND" == "render" ]]; then
+        bash "$ENV_SOURCE/render/render.sh" "${POSITIONAL[@]}"; exit $?
     fi
 
     if [[ "$COMMAND" == "factura" ]]; then

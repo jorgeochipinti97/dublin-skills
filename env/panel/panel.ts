@@ -171,6 +171,8 @@ const GOAL = /^- (.+?) \| meta (\d+(?:\.\d+)?) \| ahorrado (\d+(?:\.\d+)?)(?: \|
 const BUDGET = /^- (\S+) (\d+(?:\.\d+)?)\s*$/;
 // "## Inversiones": "- Plazo fijo Galicia | plazo fijo | invertido 1000000 | actual 1050000 | ARS | vence 2026-11-30"
 const INV = /^- (.+?) \| (.+?) \| invertido (\d+(?:\.\d+)?) \| actual (\d+(?:\.\d+)?) \| (ARS|USD)(?: \| vence (\d{4}-\d{2}-\d{2}))?\s*$/;
+// "## Fijos": "- Monotributo | 95280.12 | día 20 | #impuestos | hasta 2027-09 | pagado 2026-10" (hasta y pagado opcionales)
+const FIJO = /^- (.+?) \| (\d+(?:\.\d+)?) \| día (\d{1,2}) \| #(\S+)(?: \| hasta (\d{4}-\d{2}))?(?: \| pagado (\d{4}-\d{2}))?\s*$/;
 const num = (v: unknown) => Number(String(v ?? "").replace(/[^\d.,]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", "."));
 
 function finSection(lines: string[], name: string) {
@@ -187,7 +189,7 @@ function finLines() {
     if (first < 0) { while (lines.length && lines.at(-1) === "") lines.pop(); lines.push("", "## Movimientos", ""); }
     else lines.splice(first, 0, "## Movimientos");
   }
-  for (const name of ["Objetivos", "Presupuestos", "Inversiones"]) if (!finSection(lines, name)) {
+  for (const name of ["Objetivos", "Presupuestos", "Inversiones", "Fijos"]) if (!finSection(lines, name)) {
     const mv = finSection(lines, "Movimientos")![0]; lines.splice(mv, 0, "## " + name, "");
   }
   return lines;
@@ -209,9 +211,11 @@ function finanzas(month: string) {
     .map(({ line, raw, m }) => ({ line, raw, cat: m![1], amount: Number(m![2]) }));
   const inversiones = inSec("Inversiones").map(({ l, line }) => ({ line, raw: l, m: l.match(INV) })).filter(x => x.m)
     .map(({ line, raw, m }) => ({ line, raw, name: m![1], tipo: m![2], invertido: Number(m![3]), actual: Number(m![4]), moneda: m![5], vence: m![6] ?? "" }));
+  const fijos = inSec("Fijos").map(({ l, line }) => ({ line, raw: l, m: l.match(FIJO) })).filter(x => x.m)
+    .map(({ line, raw, m }) => ({ line, raw, name: m![1], monto: Number(m![2]), dia: Number(m![3]), cat: m![4], hasta: m![5] ?? "", pagado: m![6] ?? "" }));
   const net: Record<string, number> = {};
   for (const m of movs) net[m.day.slice(0, 7)] = (net[m.day.slice(0, 7)] ?? 0) + m.amount;
-  return { file: FINANZAS, month, months, goals, budgets, inversiones,
+  return { file: FINANZAS, month, months, goals, budgets, inversiones, fijos,
     history: Object.entries(net).sort().map(([month, net]) => ({ month, net })),
     movs: movs.filter(m => m.day.startsWith(month)).sort((a, b) => b.day.localeCompare(a.day) || b.line - a.line) };
 }
@@ -613,23 +617,26 @@ function flujosOp(b: any) {
 // ---- Contenido ----------------------------------------------------------------
 // contenido.md (al lado de finanzas.md): ideas que dejan los flujos de tipo "ideas" con
 // `ds contenido add`. Se eligen acá: Bandeja → Cola (sí) o Descartadas (no) → Producción → Publicado.
-//   ## Bandeja   - 2026-10-27 | rumen | La idea | El gancho | Contenido para proyectos
+//   ## Bandeja   - 2026-10-27 | rumen | La idea | El gancho | Contenido para proyectos | dolor | Cómo filmarlo | Campaña
+// Se organiza como Meta: proyecto → campaña → conjunto (el ángulo) → anuncios (cada idea es una variante).
 const CONTENIDO = tilde(process.env.DUBLIN_CONTENIDO || join(dirname(FINANZAS), "contenido.md"));
 const CSECS = ["Bandeja", "Cola", "Producción", "Publicado", "Descartadas"];
-const IDEA = /^- (\d{4}-\d{2}-\d{2}) \| ([^|]*)\| ([^|]*)\|?([^|]*)\|?([^|]*)\|?([^|]*)\|?(.*)$/;   // … | gancho | flujo | ángulo | tratamiento
+const IDEA = /^- (\d{4}-\d{2}-\d{2}) \| ([^|]*)\| ([^|]*)\|?([^|]*)\|?([^|]*)\|?([^|]*)\|?([^|]*)\|?(.*)$/;   // … | gancho | flujo | ángulo (= conjunto) | tratamiento | campaña
 function contenido() {
   const lines = existsSync(CONTENIDO) ? read(CONTENIDO).split("\n") : [];
   return { file: CONTENIDO, secs: Object.fromEntries(CSECS.map(n => [n, secRows(lines, n, IDEA).map(({ line, raw, m }) =>
-    ({ line, raw, day: m![1], proyecto: m![2].trim(), idea: m![3].trim(), gancho: m![4].trim(), flujo: m![5].trim(), angulo: m![6].trim(), detalle: m![7].trim() }))])) };
+    ({ line, raw, day: m![1], proyecto: m![2].trim(), idea: m![3].trim(), gancho: m![4].trim(), flujo: m![5].trim(), angulo: m![6].trim(), detalle: m![7].trim(), campana: m![8].trim() }))])) };
 }
+// Corta los campos vacíos del final: las líneas viejas (sin ángulo/tratamiento/campaña) siguen igual.
+const ideaLine = (f: string[]) => { while (f.length > 5 && !f.at(-1)) f.pop(); return `- ${f[0]} | ${f.slice(1).join(" | ")}`; };
 function contenidoOp(b: any) {
   if (!existsSync(CONTENIDO)) writeFileSync(CONTENIDO, "# Contenido\n" + CSECS.map(n => `\n## ${n}\n`).join(""));
   const lines = read(CONTENIDO).split("\n");
   if (b.op === "add") {
     const proy = cleanTxt(b.proyecto), idea = cleanTxt(b.idea);
     if (!proy || !idea) throw new Error("Falta el proyecto o la idea");
-    const ang = cleanTxt(b.angulo), det = cleanTxt(b.detalle);
-    secAdd(lines, "Bandeja", `- ${today()} | ${proy} | ${idea} | ${cleanTxt(b.gancho)} | ${ang || det ? " | " + ang : ""}${det ? " | " + det : ""}`);
+    const ang = cleanTxt(b.angulo), det = cleanTxt(b.detalle), camp = cleanTxt(b.campana);
+    secAdd(lines, "Bandeja", ideaLine([today(), proy, idea, cleanTxt(b.gancho), "", ang, det, camp]));
     return writeFileSync(CONTENIDO, lines.join("\n"));
   }
   if (lines[b.line] !== b.raw || !b.raw) throw new Error("El archivo cambió — recargá");
@@ -637,8 +644,12 @@ function contenidoOp(b: any) {
   else if (b.op === "move") {
     if (!CSECS.includes(b.to)) throw new Error("Sección desconocida");
     lines.splice(b.line, 1); secAdd(lines, b.to, b.raw);
-  } else if (b.op === "up" || b.op === "down") {   // ordenar dentro de la misma sección
-    const j = b.line + (b.op === "up" ? -1 : 1);
+  } else if (b.op === "camp") {   // asignar campaña (vacía = sin campaña)
+    const m = b.raw.match(IDEA)!; lines[b.line] = ideaLine([m[1], ...m.slice(2, 8).map((x: string) => x.trim()), cleanTxt(b.campana)]);
+  } else if (b.op === "up" || b.op === "down") {   // ordenar dentro de la misma sección y campaña
+    const key = (l: string) => { const m = l.match(IDEA); return m && m[2].trim() + "|" + m[8].trim(); }, k = key(b.raw), d = b.op === "up" ? -1 : 1;
+    let j = b.line + d;
+    while (lines[j]?.startsWith("- ") && key(lines[j]) !== k) j += d;
     if (!lines[j]?.startsWith("- ")) return;
     [lines[b.line], lines[j]] = [lines[j], lines[b.line]];
   } else throw new Error("Operación desconocida");
@@ -725,8 +736,24 @@ function finOp(b: any) {
     if (i >= 0) lines[i] = `- ${cat} ${amount}`; else finInsert(lines, "Presupuestos", `- ${cat} ${amount}`);
     return writeFileSync(FINANZAS, lines.join("\n"));
   }
+  if (b.op === "fijo") {
+    const name = clean(b.name), monto = num(b.monto), dia = Math.round(num(b.dia));
+    const cat = String(b.cat ?? "").trim().toLowerCase().replace(/\s+/g, "-").replace(/[^\p{L}\d-]/gu, "") || "fijos";
+    if (!name || !(monto > 0) || !(dia >= 1 && dia <= 31)) throw new Error("Falta nombre, monto o día (1-31)");
+    const lines = finLines(); finInsert(lines, "Fijos", `- ${name} | ${monto} | día ${dia} | #${cat}${/^\d{4}-\d{2}$/.test(b.hasta) ? " | hasta " + b.hasta : ""}`);
+    return writeFileSync(FINANZAS, lines.join("\n"));
+  }
   const lines = read(FINANZAS).split("\n");
   if (lines[b.line] !== b.raw) throw new Error("El archivo cambió — recargá");
+  if (b.op === "fpaga") {
+    // Marca el fijo como pagado este mes y anota el gasto en Movimientos.
+    const m = lines[b.line].match(FIJO); if (!m) throw new Error("No es un gasto fijo");
+    const mes = today().slice(0, 7); if (m[6] === mes) throw new Error("Ya está pagado este mes");
+    lines[b.line] = lines[b.line].replace(/ \| pagado \d{4}-\d{2}\s*$/, "").trimEnd() + ` | pagado ${mes}`;
+    while (lines.length && lines.at(-1) === "") lines.pop();
+    lines.push(`- ${today()} -${m[2]} ${m[1]} #${m[4]}`, "");
+    return writeFileSync(FINANZAS, lines.join("\n"));
+  }
   if (b.op === "aportar") {
     const m = lines[b.line].match(GOAL); if (!m) throw new Error("No es un objetivo");
     const ahorrado = Math.max(0, Number(m[3]) + (b.tipo === "-" ? -1 : 1) * num(b.monto));
@@ -1067,6 +1094,19 @@ function cleanEntry(s: string) {
   t = t.charAt(0).toUpperCase() + t.slice(1);
   return t.replace(/[^\p{L}]/gu, "").length >= 6 && /\p{L}{3}/u.test(t) ? t : "";
 }
+// Docs del proyecto: los .md de la raíz, reports/ y docs/ (sin los que ya tienen su pestaña ni las reglas del agente).
+const DOC_SKIP = /^(session|tasks.*|claude|agents|producto)\.md$/i;
+function docs(dir: string) {
+  const out: { path: string; title: string; mtime: number }[] = [];
+  for (const sub of ["", "reports", "docs"]) {
+    let names: string[] = []; try { names = readdirSync(join(dir, sub)); } catch { continue; }
+    for (const f of names.filter(f => f.toLowerCase().endsWith(".md") && !(sub === "" && DOC_SKIP.test(f)))) {
+      const path = sub ? `${sub}/${f}` : f, txt = read(join(dir, path));
+      out.push({ path, title: (txt.match(/^#\s+(.+)$/m)?.[1] ?? f.replace(/\.md$/i, "")).trim(), mtime: statSync(join(dir, path)).mtimeMs });
+    }
+  }
+  return out.sort((a, b) => b.mtime - a.mtime);
+}
 function history(dir: string) {
   const sf = readdirSync(dir).find(f => f.toLowerCase() === "session.md"); if (!sf) return [];
   const file = join(dir, sf), year = statSync(file).mtime.getFullYear();
@@ -1284,8 +1324,141 @@ ${tasks || "(no hay)"}`;
   })();
 }
 
+// ---- Servidores --------------------------------------------------------------
+// ~/.config/dublin/servers: "nombre usuario@host clave [nota]" por línea.
+// Solo lectura: entra por SSH, corre REMOTE (df, docker, apt…) y sale. Nada escribe en el server.
+const SERVERS = join(CONF_DIR, "servers");
+const REMOTE = String.raw`
+s(){ echo "@@$1"; }
+s host; hostname
+s os; . /etc/os-release 2>/dev/null; echo "$PRETTY_NAME"
+s up; cut -d' ' -f1 /proc/uptime
+s load; cut -d' ' -f1-3 /proc/loadavg; nproc
+s df; df -PB1 / | tail -1
+s mem; free -b | awk '/^Mem:/{print $2,$7} /^Swap:/{print $2,$3}'
+s ps; docker ps -a --format '{{.Names}}	{{.Label "com.docker.compose.project"}}	{{.State}}	{{.Status}}	{{.Image}}' 2>&1
+s stats; docker stats --no-stream --format '{{.Name}}	{{.MemUsage}}	{{.CPUPerc}}' 2>/dev/null
+s pm2; pm2 jlist 2>/dev/null; echo
+s tree; ps -eo pid=,ppid=,rss=
+s dfd; docker system df --format '{{.Type}}	{{.Size}}	{{.Reclaimable}}' 2>/dev/null
+s vol; timeout 20 docker system df -v 2>/dev/null | awk '/^VOLUME NAME/{f=1;next} f&&NF==0{f=0} f{print $1,$NF}'
+s dirs; timeout 20 du -sxB1 /opt/*/ /srv/*/ /home/*/ 2>/dev/null
+s apt; timeout 20 apt list --upgradable 2>/dev/null | grep -c / ; timeout 20 apt list --upgradable 2>/dev/null | grep -c -- -security
+s reboot; [ -f /var/run/reboot-required ] && echo si
+s uu; dpkg -s unattended-upgrades 2>/dev/null | grep -c 'Status: install ok'
+s journal; journalctl --disk-usage 2>/dev/null | grep -oE '[0-9.]+[KMGT]'
+s logrot; grep -c max-size /etc/docker/daemon.json 2>/dev/null
+s sshpw; grep -hiE '^\s*PasswordAuthentication' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf 2>/dev/null | head -1
+s f2b; systemctl is-active fail2ban 2>/dev/null
+s backup; { crontab -l 2>/dev/null; cat /etc/cron.d/* /etc/crontab 2>/dev/null; systemctl list-timers --all --no-legend 2>/dev/null; } | grep -ciE 'backup|restic|borg|pg_dump|snapshot'
+`;
+const UNIT: Record<string, number> = { B: 1, kB: 1e3, KB: 1e3, MB: 1e6, GB: 1e9, TB: 1e12, K: 1024, M: 1024 ** 2, G: 1024 ** 3, T: 1024 ** 4, KiB: 1024, MiB: 1024 ** 2, GiB: 1024 ** 3, TiB: 1024 ** 4 };
+const bytes = (s = "") => { const m = s.match(/([\d.]+)\s*([kKMGT]?i?B?)/); return m ? Number(m[1]) * (UNIT[m[2] || "B"] ?? 1) : 0; };
+
+type Finding = { key: string; level: "bad" | "warn" | "ok"; title: string; fix: string };
+function parseServer(out: string, alias: Record<string, string> = {}) {
+  const sec: Record<string, string[]> = {}; let cur = "";
+  for (const l of out.split("\n")) { if (l.startsWith("@@")) { cur = l.slice(2).trim(); sec[cur] = []; } else if (cur && l.trim()) sec[cur].push(l); }
+  const [, total, , avail] = (sec.df?.[0] ?? "").trim().split(/\s+/).map(Number);
+  const mem = (sec.mem?.[0] ?? "").split(" ").map(Number), swap = (sec.mem?.[1] ?? "").split(" ").map(Number);
+  const dockerOk = !(sec.ps ?? []).some(l => /permission denied|not found|Cannot connect/i.test(l));
+  const containers = dockerOk ? (sec.ps ?? []).map(l => { const [name, project, state, status, image] = l.split("\t"); return { name, project: project || "", state, status, image }; }) : [];
+  const stats = new Map((sec.stats ?? []).map(l => { const [name, mem = "", cpu = ""] = l.split("\t"); return [name, { mem: bytes(mem.split("/")[0]), cpu: parseFloat(cpu) || 0 }]; }));
+  const vols = (sec.vol ?? []).map(l => { const [name, size] = l.split(" "); return { name, size: bytes(size) }; });
+  const dirs = (sec.dirs ?? []).map(l => { const [size, path = ""] = l.split("\t"); return { path: path.replace(/\/$/, ""), size: Number(size) }; });
+  const dfd = Object.fromEntries((sec.dfd ?? []).map(l => { const [t, size, rec] = l.split("\t"); return [t, { size: bytes(size), reclaimable: bytes(rec) }]; }));
+  const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  // Proyecto = proyecto de docker compose; su espacio = sus volúmenes + su carpeta (/opt/<proyecto>…).
+  // Sin label de compose, el grupo sale del nombre ("chuck-db-1" → chuck); "stoic_antonelli" queda suelto.
+  const groupOf = (c: { name: string; project: string }) => c.project || (/^[a-z0-9]+-/i.test(c.name) ? c.name.split("-")[0] : "(sueltos)");
+  // Apps fuera de Docker (PM2): se suman al grupo de su carpeta (/opt/chuck/app → chuck).
+  let pm2: any[] = []; try { pm2 = JSON.parse((sec.pm2 ?? []).join("")); } catch {}
+  // PM2 mide solo su proceso (ej. "npm start"); la app real es un hijo (next-server): se suma el árbol entero.
+  const kids = new Map<number, number[]>(), rss = new Map<number, number>();
+  for (const l of sec.tree ?? []) { const [pid, ppid, kb] = l.trim().split(/\s+/).map(Number); rss.set(pid, kb * 1024); kids.set(ppid, [...(kids.get(ppid) ?? []), pid]); }
+  const treeMem = (pid: number): number => (rss.get(pid) ?? 0) + (kids.get(pid) ?? []).reduce((n, k) => n + treeMem(k), 0);
+  const apps = pm2.map(a => { const cwd = String(a.pm2_env?.pm_cwd ?? ""), top = cwd.match(/^\/(?:opt|srv|var\/www|home\/[^/]+)\/([^/]+)/)?.[1];
+    return { name: `${a.name} (PM2)`, project: top || a.name, state: a.pm2_env?.status === "online" ? "running" : "exited", status: `PM2 ${a.pm2_env?.status ?? ""}`, image: cwd, mem: a.pid ? treeMem(Number(a.pid)) || Number(a.monit?.memory ?? 0) : 0, cpu: Number(a.monit?.cpu ?? 0) }; });
+  const names = [...new Set([...containers.map(groupOf), ...apps.map(a => a.project)])];
+  const projects = names.map(p => {
+    const cs = [...containers.filter(c => groupOf(c) === p), ...apps.filter(a => a.project === p)];
+    const vs = p === "(sueltos)" ? [] : vols.filter(v => v.name.startsWith(p + "_"));
+    const ds = p === "(sueltos)" ? [] : dirs.filter(d => { const b = norm(basename(d.path)); return b && (b.startsWith(norm(p)) || norm(p).startsWith(b)); });
+    const mem = (c: any) => c.mem ?? stats.get(c.name)?.mem ?? 0, cpu = (c: any) => c.cpu ?? stats.get(c.name)?.cpu ?? 0;
+    return { name: alias[p] ?? p, id: p, containers: cs, running: cs.filter(c => c.state === "running").length,
+      ram: cs.reduce((n, c) => n + mem(c), 0), cpu: cs.reduce((n, c) => n + cpu(c), 0),
+      volumes: vs.reduce((n, v) => n + v.size, 0), dir: ds.reduce((n, d) => n + d.size, 0), dirPaths: ds.map(d => d.path) };
+  }).sort((a, b) => b.ram - a.ram);
+  const used = new Set(projects.flatMap(p => p.dirPaths));
+  const r = {
+    host: sec.host?.[0] ?? "", os: sec.os?.[0] ?? "", uptimeDays: Math.floor(Number(sec.up?.[0] ?? 0) / 86400),
+    load: Number((sec.load?.[0] ?? "").split(" ")[0]), cpus: Number(sec.load?.[1] ?? 1),
+    disk: { total: total || 0, free: avail || 0 }, mem: { total: mem[0] || 0, free: mem[1] || 0 }, swap: { total: swap[0] || 0, used: swap[1] || 0 },
+    docker: dockerOk, dfd, projects, otherDirs: dirs.filter(d => !used.has(d.path) && d.size > 50e6).sort((a, b) => b.size - a.size),
+    apt: { total: Number(sec.apt?.[0] ?? 0), security: Number(sec.apt?.[1] ?? 0) }, reboot: sec.reboot?.[0] === "si",
+    reclaim: 0, findings: [] as Finding[],
+  };
+  // Análisis: reglas fijas de mantenimiento; cada hallazgo dice qué hacer.
+  const F = (key: string, level: Finding["level"], title: string, fix: string) => r.findings.push({ key, level, title, fix });
+  // Disco "real" = usado menos lo que Docker libera con un prune: un disco lleno de caché no es riesgo.
+  const rec = Math.min((dfd.Images?.reclaimable ?? 0) + (dfd["Build Cache"]?.reclaimable ?? 0), r.disk.total - r.disk.free);
+  r.reclaim = rec;
+  const diskP = r.disk.total ? 1 - r.disk.free / r.disk.total : 0, realP = r.disk.total ? (r.disk.total - r.disk.free - rec) / r.disk.total : 0;
+  const prune = "`docker image prune -a` y `docker builder prune`: borran imágenes sin usar y caché de build, no tocan volúmenes ni containers corriendo.";
+  if (realP >= .9) F("disk", "bad", `Disco al ${Math.round(realP * 100)}% con datos reales`, "Con el disco lleno Postgres deja de escribir y los containers se caen. Agrandá el volumen o mové datos ya.");
+  else if (realP >= .8) F("disk", "warn", `Disco al ${Math.round(realP * 100)}% con datos reales`, "Mantenelo debajo del 80%: agrandá el volumen o limpiá backups locales antes de que sea urgente.");
+  // Los deploys dejan caché a propósito (3-10 GB) para buildear rápido: avisar sólo si es mucha o si el disco aprieta.
+  if (rec >= 10e9 || (diskP >= .7 && rec >= 3e9)) F("reclaim", "warn", `${(rec / 1e9).toFixed(1)} GB para liberar${diskP >= .8 ? ` (disco al ${Math.round(diskP * 100)}% por esto)` : ""}`, prune);
+  // Un one-shot (migrate/seed/init) que terminó con 0 hizo su trabajo: no es un container caído.
+  const oneShot = (c: { name: string; status: string }) => /migrat|seed|init|setup/i.test(c.name) && /Exited \(0\)/.test(c.status);
+  const down = containers.filter(c => (c.state === "exited" || c.state === "dead") && !oneShot(c)), restarting = containers.filter(c => c.state === "restarting"), unhealthy = containers.filter(c => /unhealthy/.test(c.status));
+  const pl = (n: number, a: string, b: string) => `${n} ${n === 1 ? a : b}`;
+  if (restarting.length) F("restart", "bad", `${pl(restarting.length, "container reiniciándose", "containers reiniciándose")} en loop`, `${restarting.map(c => c.name).join(", ")}: mirá \`docker logs\`; un loop así suele ser config o base caída.`);
+  if (unhealthy.length) F("unhealthy", "bad", `${pl(unhealthy.length, "container", "containers")} unhealthy`, `${unhealthy.map(c => c.name).join(", ")}: el healthcheck falla aunque el proceso siga vivo.`);
+  if (down.length) F("down", "warn", pl(down.length, "container parado", "containers parados"), `${down.map(c => c.name).join(", ")}. Si ya no se usan, borralos (\`docker rm\`) para que no confundan; si deberían correr, \`restart: unless-stopped\`.`);
+  if (!dockerOk) F("docker", "warn", "No pude leer Docker", "El usuario de SSH no está en el grupo docker: el panel no ve containers ni volúmenes.");
+  if (r.apt.security) F("security", "warn", `${r.apt.security} actualizaciones de seguridad pendientes`, "Aplicalas en una ventana tranquila (`apt upgrade`), con snapshot antes.");
+  else if (r.apt.total >= 30) F("apt", "warn", `${r.apt.total} paquetes desactualizados`, "Actualizar seguido es más seguro que juntar meses de cambios.");
+  if (r.reboot) F("reboot", "warn", "Pide reinicio", "Hay un kernel o librería nueva que no se aplica hasta reiniciar. Programalo fuera de hora pico.");
+  if (sec.uu?.[0] !== "1") F("uu", "warn", "Sin actualizaciones automáticas", "Instalá `unattended-upgrades` para que los parches de seguridad entren solos.");
+  if (r.mem.total && !r.swap.total) F("swap", "warn", "Sin swap", "Sin swap, un pico de memoria mata procesos (OOM). Un swapfile de 2–4 GB es un seguro barato.");
+  if (r.mem.total && r.mem.free / r.mem.total < .1) F("mem", "warn", `Memoria disponible: ${Math.round(r.mem.free / r.mem.total * 100)}%`, "Queda poco margen: mirá qué container consume (`docker stats`).");
+  if (r.load > r.cpus * 1.5) F("load", "warn", `Carga alta (${r.load} con ${r.cpus} CPU)`, "El server está saturado: algo consume CPU de más o se quedó chico.");
+  if (bytes(sec.journal?.[0]) > 1024 ** 3) F("journal", "warn", `Journal de ${sec.journal![0]}`, "Limitalo con `SystemMaxUse=500M` en journald.conf y `journalctl --vacuum-size=500M`.");
+  if (dockerOk && Number(sec.logrot?.[0] ?? 0) < 1) F("logrot", "warn", "Logs de Docker sin límite", "Sin `max-size` en /etc/docker/daemon.json los logs de cada container crecen hasta llenar el disco.");
+  if (/yes/i.test(sec.sshpw?.[0] ?? "")) F("sshpw", "bad", "SSH acepta contraseñas", "Dejá solo claves: `PasswordAuthentication no` en sshd_config.");
+  if (sec.f2b?.[0] !== "active") F("f2b", "warn", "Sin fail2ban", "Nada frena los intentos de fuerza bruta contra SSH. Si el firewall ya limita el 22 por IP, es menos urgente.");
+  if (Number(sec.backup?.[0] ?? 0) < 1) F("backup", "warn", "No veo backups programados", "No encontré ningún cron/timer de backup visible para este usuario. Un backup sirve si está fuera del server y lo restauraste alguna vez.");
+  if (r.uptimeDays > 120) F("uptime", "warn", `${r.uptimeDays} días sin reiniciar`, "Probablemente corre un kernel viejo sin parches.");
+  if (!r.findings.length) F("ok", "ok", "Todo en orden", "No encontré nada para corregir con las reglas del panel.");
+  return r;
+}
+
+let srvCache: { at: number; data: unknown } | null = null;
+async function servers(force: boolean) {
+  if (!force && srvCache && Date.now() - srvCache.at < 10 * 60e3) return srvCache.data;
+  const lines = read(SERVERS).split("\n").map(l => l.trim()).filter(l => l && !l.startsWith("#"));
+  // "= <grupo> <Nombre visible>": cómo se llama cada proyecto (ej. "= infra Rumen360").
+  const alias = Object.fromEntries(lines.filter(l => l.startsWith("=")).map(l => l.slice(1).trim().split(/\s+/)).filter(a => a.length > 1).map(([k, ...v]) => [k, v.join(" ")]));
+  const list = lines.filter(l => !l.startsWith("=")).map(l => { const [name, target, key, ...note] = l.split(/\s+/); return { name, target, key: tilde(key ?? ""), note: note.join(" ") }; });
+  // Tu IP pública de ahora: si cambia (VPN, red nueva), los servers con firewall por IP dan timeout.
+  const myIp = await fetch("https://api.ipify.org", { signal: AbortSignal.timeout(5000) }).then(r => r.text()).catch(() => "");
+  const data = { configured: existsSync(SERVERS), at: new Date().toISOString(), myIp, servers: await Promise.all(list.map(async s => {
+    const base = { name: s.name, target: s.target, note: s.note };
+    try {
+      const p = Bun.spawn(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=8", "-o", "IdentitiesOnly=yes", "-i", s.key, s.target, "sh -s"], { stdin: new Blob([REMOTE]), stdout: "pipe", stderr: "pipe" });
+      const t = setTimeout(() => p.kill(), 60000);
+      const [out, err] = await Promise.all([new Response(p.stdout).text(), new Response(p.stderr).text()]); const code = await p.exited; clearTimeout(t);
+      if (!out.includes("@@host")) return { ...base, error: /timed out/i.test(err) ? `No responde por SSH: tu IP de ahora${myIp ? ` (${myIp})` : ""} no está habilitada en su firewall. Si usás VPN, apagala y apretá Actualizar.` : /Permission denied/i.test(err) ? "La clave no entra (Permission denied)" : (err.trim().split("\n").pop() || `ssh salió con ${code}`) };
+      return { ...base, ...parseServer(out, alias) };
+    } catch (e: any) { return { ...base, error: e.message }; }
+  })) };
+  srvCache = { at: Date.now(), data };
+  return data;
+}
+
 // ---- Server ------------------------------------------------------------------
-const json = (d: unknown, status = 200) => Response.json(d, { status });
+const json =(d: unknown, status = 200) => Response.json(d, { status });
 const ORIGINS = [`http://127.0.0.1:${PORT}`, `http://localhost:${PORT}`];
 
 Bun.serve({
@@ -1310,7 +1483,11 @@ Bun.serve({
         return json(existsSync(join(dir, ".git")) ? await commits(dir, skip, 20) ?? [] : []);
       }
       if (url.pathname === "/api/proj/recent") return json(await recent(dir, url.searchParams.get("since") ?? ""));
-      if (url.pathname === "/api/proj") return json({ name, git: await gitInfo(dir), ficha: ficha(name), history: history(dir), ...await (async () => { const apps = await appsInfo(name);
+      if (url.pathname === "/api/proj/doc") { // solo un .md de la lista de docs (nada fuera de esa lista)
+        const path = url.searchParams.get("path") ?? "";
+        return docs(dir).some(d => d.path === path) ? json({ text: read(join(dir, path)) }) : json({ error: "No existe" }, 404);
+      }
+      if (url.pathname === "/api/proj") return json({ name, git: await gitInfo(dir), ficha: ficha(name), history: history(dir), docs: docs(dir), ...await (async () => { const apps = await appsInfo(name);
         return { apps, mapas: Object.fromEntries((apps.length ? apps.map(a => a.name) : [""]).map(a => [a, producto(name, a)])) }; })() });
     }
     if (req.method === "GET" && url.pathname === "/api/libro") {
@@ -1318,6 +1495,7 @@ Bun.serve({
       return p ? new Response(Bun.file(p), { headers: { "content-type": "application/pdf" } }) : json({ error: "No existe" }, 404);
     }
     if (req.method === "GET" && url.pathname === "/api/calendar") return json(await calendar());
+    if (req.method === "GET" && url.pathname === "/api/servers") return json(await servers(url.searchParams.has("force")));
     if (req.method === "POST") {
       // Solo la propia página: otro sitio abierto en el navegador no puede escribir tus archivos.
       if (!ORIGINS.includes(req.headers.get("origin") ?? "") || !req.headers.get("content-type")?.includes("application/json")) return json({ error: "Origen no permitido" }, 403);

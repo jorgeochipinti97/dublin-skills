@@ -80,10 +80,10 @@ steps() {
   local flow="$1" tipo="$2" text="$3" encamino="$4" proys="$5" mas="$6" menos="$7" indic="${8:-}" c q cand=""
   if [ "$tipo" = produccion ]; then
     # En producción lo que sigue al nombre es la idea a producir, no proyectos.
-    echo "🎬 Flujo «${flow}» — producir la pieza de ${proys:+la idea «${proys}»}${proys:-la idea que elija el usuario}. Seguí el camino paso a paso; cada paso usa lo que salió del anterior."
+    echo "🎬 Flujo «${flow}» — producir la pieza de $([ -n "$proys" ] && echo "la idea «${proys}»" || echo "la idea que elija el usuario"). Seguí el camino paso a paso; cada paso usa lo que salió del anterior."
     # Qué idea producir la elige SIEMPRE el usuario: sin idea, o si la palabra coincide con varias, se le pregunta.
     local lista; lista="$(bash "$(dirname "$0")/../contenido/contenido.sh" list produccion 2>/dev/null; bash "$(dirname "$0")/../contenido/contenido.sh" list cola 2>/dev/null)"
-    echo "ELEGIR LA IDEA — la elige el usuario, nunca vos. ${proys:+Si «${proys}» coincide con más de una idea, o con ninguna, p}${proys:-P}reguntale con la herramienta de preguntas (AskUserQuestion): una opción por idea con el gancho como texto y el ángulo y el título como descripción, primero las de En producción y después las de la Cola (máximo 4; si hay más, las 4 primeras y que escriba otra en «Other»). No arranques hasta que elija. Ideas disponibles:"
+    echo "ELEGIR LA IDEA — la elige el usuario, nunca vos. $([ -n "$proys" ] && echo "Si «${proys}» coincide con más de una idea, o con ninguna, p" || echo P)reguntale con la herramienta de preguntas (AskUserQuestion): una opción por idea con el gancho como texto y el ángulo y el título como descripción, primero las de En producción y después las de la Cola (máximo 4; si hay más, las 4 primeras y que escriba otra en «Other»). No arranques hasta que elija. Ideas disponibles:"
     printf '%s\n' "${lista:-  (no hay ideas en Cola ni En producción: decile que apruebe alguna en ds panel → Contenido)}"
     echo "Antes de empezar: buscala con \`ds contenido list\` (título, gancho y tratamiento son el brief) y pasala a producción: ds contenido mover \"<parte del título o gancho>\" produccion"
     echo "  [0] IDENTIDAD DEL PROYECTO — obligatorio, antes de cualquier skill. Estás en la carpeta del proyecto (si no, preguntá cuál es). Leé DESIGN.md (colores, tipografía, espaciado, movimiento), PRESSKIT.md si existe (voz, qué sí / qué no, assets), los logos (buscá public/brand, assets, *logo*), los tokens del código (globals.css, tailwind/theme) y las pantallas reales de la feature que muestra la idea (rutas y componentes de la app). Todo color, fuente, forma y pantalla sale de ahí: nada inventado, nada de paletas genéricas. Si no hay PRESSKIT.md, armalo primero con la skill presskit (le preguntás al usuario lo que falte). Prohibido: SESSION.md, TASKS.md y datos reales de clientes en pantalla (usá datos de ejemplo verosímiles)."
@@ -98,6 +98,11 @@ steps() {
              "comic10|Reel papercut de fútbol desde una noticia"; do
       d="${k%%|*}"; [ -f "$HOME/.claude/skills/${d%%+*}/SKILL.md" ] && fmt+="      · ${d//+/ → } — ${k#*|}"$'\n'
     done
+    # Clips de Veo en Google Flow con los créditos de tus cuentas (bot personal, fuera del repo: ~/.config/dublin/flow-bot tiene su ruta)
+    if [ -s "$HOME/.config/dublin/flow-bot" ] && [ -d "$HOME/.config/dublin/flow" ]; then
+      local fb; fb="$(cat "$HOME/.config/dublin/flow-bot")"
+      fmt+="      · flow — Escenas reales generadas con Veo en Google Flow, con los créditos de tus cuentas. Prompts con la skill ugc-video-prompting; cada clip: $fb/.venv/bin/python $fb/generar.py \"<prompt>\" --out clips/escena-N.mp4 (borrador: Veo Lite, ~10 puntos; --modelo quality solo para el final aprobado). Después se combinan con onetake o se editan."$'\n'
+    fi
     echo "  [0b] FORMATO — lo elige el usuario, antes del guion. Preguntale con AskUserQuestion qué tipo de pieza quiere, con estas opciones (las instaladas; marcá como recomendada la que mejor sirve a esta idea y decí por qué en la descripción). Esa skill hace el render al final del camino y el guion se escribe para ese formato:"
     printf '%s' "$fmt"
   else
@@ -123,6 +128,7 @@ steps() {
   if [ "$tipo" = produccion ]; then
     echo "Último paso: hacé la pieza con la skill del formato que eligió el usuario en [0b] (cargala con el tool Skill), usando la identidad de [0] y lo que salió de cada paso. Primero un borrador; el final solo cuando lo apruebe."
     echo "EL USUARIO ELIGE EN CADA PASO CREATIVO, con la herramienta de preguntas (AskUserQuestion), y no avanzás hasta que conteste: (1) concepto: 2 o 3 opciones distintas, cada una en una línea; (2) guion y escenas: los mostrás y aprueba o pide cambios; (3) borrador del video: lo mira y aprueba antes del render final. Si en otro paso hay una decisión de gusto (estilo, música, voz), también le das opciones."
+    echo "CTA — lo decide el usuario, nunca vos: no inventes llamados a la acción (\"comentá X\", palabras clave, links) ni los saques del tratamiento de la idea. Dejá el cierre marcado como [CTA] y preguntale cuál va."
     echo "Al terminar el render: pasale al usuario la ruta del video y marcala publicada recién cuando él lo confirme: ds contenido mover \"<parte del título o gancho>\" publicado"
   fi
   if [ "$tipo" = ideas ]; then
@@ -135,8 +141,10 @@ steps() {
     echo "FUENTE DEL PROYECTO: las FEATURES, investigando el código. Recorré pantallas, rutas, comandos, integraciones y el README para entender qué puede hacer el usuario con el producto y qué problema le resuelve cada cosa; de ahí salen las ideas. Si existe <proyecto>/.agents/product-marketing.md, sumalo (cliente, objeciones, cómo habla). NO uses SESSION.md ni TASKS.md (son la bitácora del agente: bugs, pendientes), ni datos reales: base de datos, seeds, fixtures, logs, exports o planillas de clientes (de ahí salen nombres de campos y números que no son resultados). Cada idea tiene que poder decir qué feature muestra."
     echo "Mirá \`ds contenido list\` para no repetir (tampoco las descartadas) y dejá cada idea en la bandeja con:"
     echo "  ds contenido add <proyecto> \"<título>\" \"<gancho>\" \"${flow}\" \"<ángulo>\" \"<tratamiento>\""
+    echo "Si la indicación nombra una campaña, pasala como 7º argumento (\"<campaña>\") con el nombre exacto: el panel agrupa proyecto → campaña → conjunto (el ángulo) → anuncios, como Meta."
     echo "Qué NO es material de contenido (el SESSION.md y el TASKS.md son contexto interno, no fuente de ideas): bugs, errores de datos, incidentes, métricas que salieron mal por un problema del sistema, deuda técnica, cosas a medio hacer, y nombres o datos de clientes o campos reales. Un número entra solo si es un resultado real que el producto le dio a un cliente, no un dato que sale de un error o de cómo se cargó algo. Ante la duda sobre un dato, dejalo afuera o preguntale al usuario. Cada idea le habla a quien compra o usa el producto (no a founders ni a otros devs), salvo que la indicación del usuario diga otra cosa."
     echo "Formato (se decide en una bandeja, tiene que leerse de un vistazo): título = qué es, en 4 a 10 palabras, sin detalles técnicos; gancho = la frase exacta que abre el video, la que se dice o se lee en el primer segundo; tratamiento = todo lo de cómo hacerlo (estructura, planos, edición, efectos, datos a mostrar), en 1 a 3 frases. Nunca metas el tratamiento en el título."
+    echo "Sin CTA: no pongas llamados a la acción (\"comentá X\", palabras clave, links) en el tratamiento; el CTA lo decide el usuario al producir."
     echo "Al final decile cuántas dejaste: las elige en ds panel → Contenido."
   fi
 }
