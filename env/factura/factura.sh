@@ -95,8 +95,8 @@ pdf() {
   local q="${1:-}"; [ -n "$q" ] || die "Uso: ds factura pdf <nro>"
   command -v uv >/dev/null || die "Falta uv: brew install uv"
   : "${ARCA_NOMBRE:?falta ARCA_NOMBRE en $CONF}" "${ARCA_DOMICILIO:?falta ARCA_DOMICILIO en $CONF}" "${ARCA_INICIO:?falta ARCA_INICIO en $CONF}"
-  local pat; [[ "$q" == *-* ]] && pat=" $q " || pat="-0*$((10#$q)) "
-  local l; l=$(grep -E "^- [0-9-]{10} [BC] [0-9]{4}${pat}" "$FIN" 2>/dev/null)
+  local pat; [[ "$q" == *-* ]] && pat="$q" || pat="[0-9]{4}-0*$((10#$q))"
+  local l; l=$(grep -E "^- [0-9-]{10} [BC] ${pat} " "$FIN" 2>/dev/null)
   [ "$(grep -c . <<<"$l")" -eq 1 ] && [ -n "$l" ] || die "No encuentro una única factura \"$q\" en $FIN"
   local fecha letra id monto cuit desc periodo vto cae cvto rest
   read -r _ fecha letra id monto rest <<<"$l"
