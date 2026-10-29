@@ -13,6 +13,9 @@
 #   ds render exec <carpeta> <comando…>   corre otra cosa en el server y baja la carpeta: la voz y el sonido (espera)
 #     ej: ds render exec videos/mi-video python3 /ot/scripts/vo_tools.py tts vo/lines.txt --engine kokoro --voice em_alex --lang es --out vo/alex
 #         ds render exec videos/mi-video python3 score.py          (score.py importa /ot/scripts/sfx_palette)
+#   ds render hoja <carpeta> <t1,t2,…> [--width W --height H]   hoja de contactos en el server → baja stills.png
+#   ds render verificar <carpeta> [--shots t0,t1,…] [args de render.py]   verify_promo en el server → baja verify.txt
+#     el mp4 no está ni acá ni en el server (va a Drive), así que renderiza su borrador con blur (como --lindo) y lo tira
 # En el server (worker.sh): de a uno, tope de CPU/RAM y prioridad baja frente a lo que ya corre ahí; al terminar sube
 # a Drive, avisa por ntfy (celular/compu) con el link y borra todo del server.
 #
@@ -102,7 +105,7 @@ case "${1:-}" in
     "${RSYNC[@]}" "$HOST:$REMOTE/hechos/$2/" ./ && "${SSH[@]}" "rm -rf $REMOTE/hechos/$(printf '%q' "$2")" && echo "✓ bajado acá"; exit 0 ;;
 esac
 
-EXEC=""; [ "${1:-}" = "exec" ] && { EXEC=1; shift; }
+EXEC=""; case "${1:-}" in exec|hoja|verificar) EXEC="$1"; shift ;; esac
 [ $# -ge 1 ] || die "uso: ds render <carpeta|comp.html> [--lindo|--final] [--destino a/b] [args de render.py]  ·  ds render estado"
 
 SRC="$1"; shift
@@ -116,6 +119,14 @@ JOB="$(basename "$SRC")"
 "${RSYNC[@]}" --delete "$ONETAKE/scripts/" "$HOST:$REMOTE/onetake/scripts/"
 
 if [ -n "$EXEC" ]; then
+  case "$EXEC" in
+    hoja) [ $# -ge 1 ] || die "uso: ds render hoja <carpeta> <t1,t2,…> [--width W --height H]"
+      t="$1"; shift; set -- python3 /ot/scripts/stills.py "$COMP" --times "$t" --out stills.png "$@" ;;
+    verificar) SHOTS="" R=""
+      while [ $# -gt 0 ]; do case "$1" in --shots) SHOTS=" --shots $(printf '%q' "${2:?falta --shots t0,t1,…}")"; shift ;; *) R+=" $(printf '%q' "$1")" ;; esac; shift; done
+      c="$(printf '%q' "$COMP")"   # verify_promo sale con 1 si algo falla: el tee deja bajar verify.txt igual
+      set -- sh -c "python3 /ot/scripts/render.py $c --samples 4 --samples-max 4 --workers $WORKERS --out _verif.mp4$R && { python3 /ot/scripts/verify_promo.py _verif.mp4 --comp $c$SHOTS 2>&1 | tee verify.txt; rm -f _verif.*; }" ;;
+  esac
   [ $# -ge 1 ] || die "uso: ds render exec <carpeta> <comando…>"
   ARGS=""; for a in "$@"; do ARGS+=" $(printf '%q' "$a")"; done
   "${RSYNC[@]}" --delete --exclude _frames --exclude chk --exclude '*.mp4' "$SRC/" "$HOST:$REMOTE/jobs/$JOB/"

@@ -98,6 +98,11 @@ steps() {
              "comic10|Reel papercut de fútbol desde una noticia"; do
       d="${k%%|*}"; [ -f "$HOME/.claude/skills/${d%%+*}/SKILL.md" ] && fmt+="      · ${d//+/ → } — ${k#*|}"$'\n'
     done
+    # Clips de Veo en Google Flow con los créditos de tus cuentas (bot personal, fuera del repo: ~/.config/dublin/flow-bot tiene su ruta)
+    if [ -s "$HOME/.config/dublin/flow-bot" ] && [ -d "$HOME/.config/dublin/flow" ]; then
+      local fb; fb="$(cat "$HOME/.config/dublin/flow-bot")"
+      fmt+="      · flow — Escenas reales generadas con Veo en Google Flow, con los créditos de tus cuentas. Prompts con la skill ugc-video-prompting; cada clip: $fb/.venv/bin/python $fb/generar.py \"<prompt>\" --out clips/escena-N.mp4 (borrador: Veo Lite, ~10 puntos; --modelo quality solo para el final aprobado). Después se combinan con onetake o se editan."$'\n'
+    fi
     echo "  [0b] FORMATO — lo elige el usuario, antes del guion. Preguntale con AskUserQuestion qué tipo de pieza quiere, con estas opciones (las instaladas; marcá como recomendada la que mejor sirve a esta idea y decí por qué en la descripción). Esa skill hace el render al final del camino y el guion se escribe para ese formato:"
     printf '%s' "$fmt"
   else
